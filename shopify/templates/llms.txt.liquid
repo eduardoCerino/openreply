@@ -1,0 +1,35 @@
+{%- comment -%}
+  Peach Perfect — /llms.txt
+  Copia este archivo al tema de Shopify como templates/llms.txt.liquid
+  (Tienda online → Temas → ⋯ → Editar código → Templates → Nuevo archivo).
+  Shopify lo sirve en https://peachperfect.com.mx/llms.txt. La lista de
+  artículos se actualiza sola con cada publicación del blog.
+{%- endcomment -%}
+{%- assign blog = blogs['suplementos'] -%}
+# Peach Perfect
+
+> Peach Perfect es una marca mexicana de suplementos hechos para mujeres. Vende dos productos principales: creatina para mujeres con colágeno, enfocada en apoyar el entrenamiento de glúteos y la fuerza, e inositol en polvo para mujeres que combina myo-inositol y d-chiro-inositol en proporción 80:1, pensado para apoyar el balance hormonal (por ejemplo en el SOP, hoy llamado SOMP). Envía a todo México desde {{ shop.url }}.
+
+Peach Perfect publica en su blog guías en español de México sobre SOP/SOMP, balance hormonal, ciclo menstrual, entrenamiento de glúteos, creatina e inositol. El contenido es informativo y no sustituye la consulta con un profesional de la salud.
+
+## Productos
+
+- [Peach Perfect Creatina]({{ shop.url }}/products/creatina-para-mujeres): creatina para mujeres con colágeno, pensada para acompañar el entrenamiento de glúteos y pierna. Presentaciones de 1, 3 y 6 frascos.
+- [Peach Perfect Inositol 135g]({{ shop.url }}/products/inositol-en-polvo): inositol en polvo con myo-inositol y d-chiro-inositol en proporción 80:1, para mujeres que buscan apoyar su balance hormonal. Presentaciones de 1, 3 y 6 frascos.
+- [Pack Creatina + Multivitamínicos]({{ shop.url }}/products/pack-creatina-inositol)
+
+## Blog
+
+- [Blog de suplementos]({{ shop.url }}/blogs/suplementos): todos los artículos.
+- [Artículos sobre inositol, SOP y hormonas]({{ shop.url }}/blogs/suplementos/tagged/inositol)
+- [Artículos sobre creatina, glúteos y fuerza]({{ shop.url }}/blogs/suplementos/tagged/creatina)
+
+## Artículos recientes
+{% for article in blog.articles limit: 40 %}
+- [{{ article.title }}]({{ shop.url }}{{ article.url }}){% if article.excerpt != blank %}: {{ article.excerpt | strip_html | strip_newlines | truncate: 160 }}{% endif %}
+{%- endfor %}
+
+## Información de la tienda
+
+- [Página de inicio]({{ shop.url }})
+- [Instrucciones para agentes de compra]({{ shop.url }}/agents.md): cómo buscar productos y comprar con el Universal Commerce Protocol de Shopify.

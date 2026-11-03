@@ -59,4 +59,6 @@ in the repo. Full descriptions are in [setup.md](setup.md#environment-variables)
 `NEXTAUTH_URL`, `NEXTAUTH_SECRET`, `CRON_SECRET`, `ENCRYPTION_KEY`, `DATABASE_URL`,
 `REDIS_URL`, `RESEND_API_KEY`, `EMAIL_FROM`, `META_GRAPH_API_VERSION`,
 `INSTAGRAM_APP_ID`, `INSTAGRAM_APP_SECRET`, `FACEBOOK_APP_SECRET`,
-`WEBHOOK_VERIFY_TOKEN`.
+`WEBHOOK_VERIFY_TOKEN`. Optional Shopify blog autopublisher: `OPENAI_API_KEY`,
+`SHOPIFY_CLIENT_ID`, `SHOPIFY_CLIENT_SECRET`, `BLOG_AUTOPUBLISH_ENABLED` and the
+others listed in [blog.md](blog.md#variables-de-entorno).

@@ -2,6 +2,7 @@ import { createDMWorker } from "@/lib/queue/dm-worker";
 import { recordWorkerHeartbeat } from "@/lib/ops/worker-health";
 import { reconcileComments } from "@/lib/polling/comment-reconciler";
 import { attachPendingNextReels } from "@/lib/automation/attach-next-reel";
+import { startBlogWorker } from "@/lib/blog/jobs";
 import os from "node:os";
 
 const worker = createDMWorker();
@@ -14,6 +15,16 @@ const POLL_INTERVAL_MS = Number(
 );
 
 console.log("[DM Worker] Started");
+
+// The blog consumer shares this process. A failure to start it (bad cron,
+// Redis hiccup) is logged and must never take the DM worker down with it.
+const blogWorkerPromise = startBlogWorker().catch((error) => {
+  console.error(
+    "[Blog Worker] Failed to start:",
+    error instanceof Error ? error.message : error
+  );
+  return null;
+});
 
 async function heartbeat() {
   try {
@@ -53,6 +64,7 @@ async function shutdown(signal: string) {
   clearInterval(heartbeatTimer);
   clearInterval(pollTimer);
   await worker.close();
+  await (await blogWorkerPromise)?.close();
   process.exit(0);
 }
 

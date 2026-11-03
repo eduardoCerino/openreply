@@ -1,0 +1,31 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Cola de artículos del blog",
+  "type": "object",
+  "required": ["items"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "items": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "order", "keyword", "title", "intent", "product", "tags"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$", "description": "Identificador único y handle (slug) del artículo en Shopify." },
+          "order": { "type": "number", "description": "Prioridad: el job diario toma el menor pendiente." },
+          "publishOn": { "type": ["string", "null"], "pattern": "^\\d{4}-\\d{2}-\\d{2}$", "description": "Fecha mínima de publicación (YYYY-MM-DD). null = en cuanto le toque." },
+          "enabled": { "type": "boolean", "description": "false = el job lo salta." },
+          "keyword": { "type": "string" },
+          "secondaryKeywords": { "type": "array", "items": { "type": "string" } },
+          "title": { "type": "string", "description": "Ángulo/título sugerido (H1)." },
+          "angle": { "type": "string", "description": "Enfoque del artículo para la IA." },
+          "intent": { "enum": ["informativa", "comercial"] },
+          "product": { "enum": ["inositol", "creatina", "none"] },
+          "tags": { "type": "array", "items": { "type": "string" } },
+          "productUrl": { "type": ["string", "null"] },
+          "generateImage": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

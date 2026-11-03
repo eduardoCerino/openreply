@@ -12,7 +12,8 @@
     "db:migrate": "prisma migrate deploy",
     "worker": "tsx worker/dm-worker.ts",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "blog:run": "tsx scripts/blog-run.ts"
   },
   "dependencies": {
     "@auth/prisma-adapter": "^2.11.2",
@@ -28,6 +29,7 @@
     "react": "19.2.4",
     "react-dom": "19.2.4",
     "recharts": "^3.8.1",
+    "sharp": "^0.34.5",
     "zod": "^4.3.6"
   },
   "devDependencies": {

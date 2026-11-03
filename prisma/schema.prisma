@@ -435,3 +435,103 @@ model PostbackDelivery {
   id String @id
   createdAt DateTime @default(now())
 }
+
+// ─── Shopify blog autopublisher ─────────────────────────────────────────────
+// Store-wide, not workspace-scoped: one Shopify store configured by env.
+
+enum BlogPostSource {
+  QUEUE
+  MANUAL
+}
+
+enum BlogPostStatus {
+  GENERATING
+  READY
+  PUBLISHING
+  PUBLISHED
+  DISCARDED
+  FAILED
+}
+
+enum BlogQueueItemStatus {
+  PUBLISHED
+  SKIPPED
+  FAILED
+}
+
+enum BlogRunTrigger {
+  SCHEDULED
+  MANUAL
+  CLI
+}
+
+enum BlogRunStatus {
+  RUNNING
+  SUCCEEDED
+  SKIPPED
+  FAILED
+}
+
+// One generated article, from the daily queue or the manual panel. Dry runs
+// and drafts awaiting review stay here; nothing reaches Shopify until publish.
+model BlogPost {
+  id                String         @id @default(cuid())
+  source            BlogPostSource
+  status            BlogPostStatus @default(GENERATING)
+  dryRun            Boolean        @default(false)
+  queueKey          String?
+  idea              String?
+  keyword           String
+  secondaryKeywords String[]
+  intent            String
+  product           String
+  generateImage     Boolean        @default(false)
+  title             String?
+  titleTag          String?
+  metaDescription   String?
+  handle            String?
+  summary           String?
+  bodyHtml          String?
+  tags              String[]
+  faqs              Json?
+  checks            Json?
+  imageAlt          String?
+  imageData         Bytes?
+  imageMimeType     String?
+  model             String?
+  error             String?
+  shopifyArticleId  String?
+  shopifyUrl        String?
+  publishedAt       DateTime?
+  createdById       String?
+  createdAt         DateTime       @default(now())
+  updatedAt         DateTime       @updatedAt
+
+  @@index([status, createdAt])
+  @@index([queueKey])
+}
+
+// Consumption state of content/blog-queue.json entries, keyed by entry id. A
+// PUBLISHED or SKIPPED row is what stops the daily job from repeating a topic.
+model BlogQueueState {
+  queueKey   String              @id
+  status     BlogQueueItemStatus
+  attempts   Int                 @default(0)
+  postId     String?
+  lastError  String?
+  updatedAt  DateTime            @updatedAt
+}
+
+model BlogRun {
+  id         String         @id @default(cuid())
+  trigger    BlogRunTrigger
+  dryRun     Boolean        @default(false)
+  status     BlogRunStatus  @default(RUNNING)
+  queueKey   String?
+  postId     String?
+  message    String?
+  startedAt  DateTime       @default(now())
+  finishedAt DateTime?
+
+  @@index([startedAt])
+}

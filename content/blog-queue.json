@@ -1,0 +1,2229 @@
+{
+  "$schema": "./blog-queue.schema.json",
+  "items": [
+    {
+      "id": "somp-nuevo-nombre-sop",
+      "order": 1,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "somp nuevo nombre del sop",
+      "secondaryKeywords": [
+        "somp que es",
+        "sindrome ovarico metabolico poliendocrino",
+        "cambio de nombre sop"
+      ],
+      "title": "SOMP: el nuevo nombre del SOP y qué cambia para ti",
+      "angle": "Explica el cambio de nombre de 2026, qué significa cada palabra y qué implica en diagnóstico y tratamiento",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "sop",
+        "somp",
+        "hormonas"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "que-es-el-sop",
+      "order": 2,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "que es el sop",
+      "secondaryKeywords": [
+        "sindrome de ovario poliquistico",
+        "sop que es",
+        "sop causas"
+      ],
+      "title": "¿Qué es el SOP? Guía clara para entender el síndrome de ovario poliquístico",
+      "angle": "Definición, causas, cómo se diagnostica (criterios de Rotterdam) y mitos frecuentes",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "sop",
+        "hormonas"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "sintomas-de-ovario-poliquistico",
+      "order": 3,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "sintomas de ovario poliquistico",
+      "secondaryKeywords": [
+        "sintomas sop",
+        "sop sintomas en mujeres",
+        "señales de sop"
+      ],
+      "title": "Síntomas de ovario poliquístico: señales que no debes ignorar",
+      "angle": "Síntomas físicos, menstruales, metabólicos y emocionales; cuándo ir al médico",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "sop",
+        "hormonas"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "ovario-poliquistico-tratamiento",
+      "order": 4,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "ovario poliquistico tratamiento",
+      "secondaryKeywords": [
+        "tratamiento sop",
+        "como tratar el sop",
+        "sop tratamiento natural"
+      ],
+      "title": "Ovario poliquístico: tratamiento y opciones que existen hoy",
+      "angle": "Opciones médicas, cambios de estilo de vida y suplementos con evidencia; enfatiza acompañamiento médico",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "sop",
+        "hormonas"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "inositol-para-sop",
+      "order": 5,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "inositol para sop",
+      "secondaryKeywords": [
+        "myo inositol sop",
+        "inositol y ovario poliquistico",
+        "inositol beneficios sop"
+      ],
+      "title": "Inositol para SOP: qué dice la evidencia y cómo tomarlo",
+      "angle": "Mecanismo (sensibilidad a la insulina), qué formas de inositol se han estudiado en el SOP y cómo elegir un suplemento (forma, proporción myo + d-chiro, dosis por porción)",
+      "intent": "comercial",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "sop",
+        "hormonas"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "para-que-sirve-la-creatina-en-mujeres",
+      "order": 6,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "para que sirve la creatina en mujeres",
+      "secondaryKeywords": [
+        "creatina mujeres beneficios",
+        "creatina en mujeres",
+        "creatina sirve mujeres"
+      ],
+      "title": "¿Para qué sirve la creatina en mujeres? Beneficios reales",
+      "angle": "Fuerza, recuperación, energía cerebral y mitos de retención de líquidos",
+      "intent": "informativa",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "fuerza",
+        "gluteos"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    },
+    {
+      "id": "creatina-para-gluteos",
+      "order": 7,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "creatina para gluteos",
+      "secondaryKeywords": [
+        "creatina gluteos",
+        "aumentar gluteos creatina",
+        "creatina para pierna"
+      ],
+      "title": "Creatina para glúteos: cómo ayuda a tu entrenamiento de pierna",
+      "angle": "Rol en fuerza y volumen de entrenamiento, rutina sugerida y expectativas realistas",
+      "intent": "comercial",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "gluteos",
+        "fuerza"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    },
+    {
+      "id": "inositol-para-que-sirve-en-mujeres",
+      "order": 8,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "inositol para que sirve en mujeres",
+      "secondaryKeywords": [
+        "inositol beneficios mujeres",
+        "inositol que es",
+        "myo inositol para que sirve"
+      ],
+      "title": "Inositol: para qué sirve en mujeres y cuándo considerarlo",
+      "angle": "Usos con evidencia: SOP, ciclo, sensibilidad a la insulina, ánimo",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "hormonas",
+        "sop"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "inositol-para-bajar-de-peso",
+      "order": 9,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "inositol para bajar de peso",
+      "secondaryKeywords": [
+        "inositol peso",
+        "myo inositol adelgazar",
+        "inositol y metabolismo"
+      ],
+      "title": "Inositol para bajar de peso: lo que sí y lo que no puede hacer",
+      "angle": "Relación insulina-peso en SOP, evidencia, expectativas y hábitos que lo acompañan",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "sop",
+        "peso"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "creatina-para-mujeres",
+      "order": 10,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "creatina para mujeres",
+      "secondaryKeywords": [
+        "mejor creatina para mujeres",
+        "creatina mujer",
+        "creatina femenina"
+      ],
+      "title": "Creatina para mujeres: guía completa para empezar",
+      "angle": "Qué es, dosis habitual de 3-5 g, cómo elegir una buena creatina, diferencias para mujeres",
+      "intent": "comercial",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "fuerza",
+        "gluteos"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    },
+    {
+      "id": "somp-sintomas",
+      "order": 11,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "somp sintomas",
+      "secondaryKeywords": [
+        "sintomas somp",
+        "somp mujeres",
+        "somp diagnostico"
+      ],
+      "title": "SOMP: síntomas y cómo saber si podrías tenerlo",
+      "angle": "Síntomas bajo el nuevo enfoque metabólico y endocrino del SOMP",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "sop",
+        "somp"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "somp-vs-sop-diferencias",
+      "order": 12,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "somp vs sop diferencias",
+      "secondaryKeywords": [
+        "diferencia somp sop",
+        "sop ahora se llama somp",
+        "nuevo nombre sindrome ovario poliquistico"
+      ],
+      "title": "SOMP vs SOP: ¿es lo mismo? Diferencias explicadas",
+      "angle": "Qué cambió además del nombre y qué se mantiene igual",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "sop",
+        "somp"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "creatina-con-colageno",
+      "order": 13,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "creatina con colageno",
+      "secondaryKeywords": [
+        "creatina y colageno juntos",
+        "colageno y creatina beneficios",
+        "creatina colageno mujeres"
+      ],
+      "title": "Creatina con colágeno: ¿vale la pena combinarlos?",
+      "angle": "Qué aporta cada uno, cómo se complementan para mujeres activas",
+      "intent": "comercial",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "fuerza",
+        "colageno"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    },
+    {
+      "id": "myo-inositol-y-d-chiro-inositol",
+      "order": 14,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "myo inositol y d-chiro inositol",
+      "secondaryKeywords": [
+        "myo inositol d chiro",
+        "proporcion inositol",
+        "inositol 40 1"
+      ],
+      "title": "Myo-inositol y D-chiro-inositol: qué son y por qué importa la proporción",
+      "angle": "Explica ambas formas, proporciones usadas en estudios y la fórmula 80:1 de Peach Perfect",
+      "intent": "comercial",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "sop",
+        "hormonas"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "creatina-en-la-menopausia",
+      "order": 15,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "creatina en la menopausia",
+      "secondaryKeywords": [
+        "creatina menopausia",
+        "creatina mujeres 40",
+        "creatina perimenopausia"
+      ],
+      "title": "Creatina en la menopausia: músculo, huesos y energía",
+      "angle": "Pérdida de masa muscular con la edad y lo que muestra la evidencia",
+      "intent": "informativa",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "fuerza",
+        "menopausia"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    },
+    {
+      "id": "sop-y-embarazo",
+      "order": 16,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "sop y embarazo",
+      "secondaryKeywords": [
+        "quedar embarazada con sop",
+        "sop fertilidad",
+        "ovario poliquistico embarazo"
+      ],
+      "title": "SOP y embarazo: lo que necesitas saber si quieres ser mamá",
+      "angle": "Fertilidad con SOP, ovulación, acompañamiento médico; inositol como apoyo",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "sop",
+        "fertilidad"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "sop-resistencia-a-la-insulina",
+      "order": 17,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "sop resistencia a la insulina",
+      "secondaryKeywords": [
+        "resistencia a la insulina sop",
+        "insulina ovario poliquistico",
+        "sintomas resistencia insulina"
+      ],
+      "title": "SOP y resistencia a la insulina: la conexión que debes conocer",
+      "angle": "Qué es la resistencia a la insulina, cómo se mide y cómo se maneja",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "sop",
+        "insulina"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "dieta-para-sop",
+      "order": 18,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "dieta para sop",
+      "secondaryKeywords": [
+        "alimentacion sop",
+        "que comer con sop",
+        "menu para sop"
+      ],
+      "title": "Dieta para SOP: guía práctica para tu día a día",
+      "angle": "Patrón de alimentación, índice glucémico, proteína, ejemplos de menú mexicano",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "sop",
+        "nutricion"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "como-saber-si-tengo-sop",
+      "order": 19,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "como saber si tengo sop",
+      "secondaryKeywords": [
+        "diagnostico sop",
+        "estudios para sop",
+        "prueba sop"
+      ],
+      "title": "¿Cómo saber si tengo SOP? Pasos para un diagnóstico",
+      "angle": "Estudios típicos (ultrasonido, hormonas), criterios y qué preguntar al ginecólogo",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "sop",
+        "hormonas"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "sop-y-acne",
+      "order": 20,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "sop y acne",
+      "secondaryKeywords": [
+        "acne hormonal sop",
+        "acne ovario poliquistico",
+        "granos por sop"
+      ],
+      "title": "SOP y acné: por qué pasa y cómo manejarlo",
+      "angle": "Andrógenos, cuidado de la piel y abordaje integral",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "sop",
+        "piel"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "sop-y-caida-de-cabello",
+      "order": 21,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "sop y caida de cabello",
+      "secondaryKeywords": [
+        "caida de cabello sop",
+        "alopecia sop",
+        "cabello ovario poliquistico"
+      ],
+      "title": "SOP y caída de cabello: causas y qué puedes hacer",
+      "angle": "Alopecia androgénica, hirsutismo y opciones",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "sop",
+        "cabello"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "periodo-irregular-causas",
+      "order": 22,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "periodo irregular causas",
+      "secondaryKeywords": [
+        "menstruacion irregular",
+        "regla irregular causas",
+        "ciclo irregular"
+      ],
+      "title": "Periodo irregular: causas comunes y cuándo preocuparte",
+      "angle": "Estrés, tiroides, SOP, peso; cuándo consultar",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "ciclo",
+        "hormonas"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "desbalance-hormonal-en-mujeres",
+      "order": 23,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "desbalance hormonal en mujeres",
+      "secondaryKeywords": [
+        "sintomas desbalance hormonal",
+        "hormonas desbalanceadas mujer",
+        "equilibrio hormonal"
+      ],
+      "title": "Desbalance hormonal en mujeres: señales y causas",
+      "angle": "Síntomas, hormonas involucradas y hábitos que ayudan",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "hormonas"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "como-bajar-de-peso-con-sop",
+      "order": 24,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "como bajar de peso con sop",
+      "secondaryKeywords": [
+        "bajar de peso sop",
+        "adelgazar con ovario poliquistico",
+        "perder peso sop"
+      ],
+      "title": "Cómo bajar de peso con SOP sin frustrarte",
+      "angle": "Por qué cuesta más, estrategias de alimentación, fuerza y sueño",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "sop",
+        "peso"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "ejercicio-para-sop",
+      "order": 25,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "ejercicio para sop",
+      "secondaryKeywords": [
+        "rutina para sop",
+        "entrenamiento sop",
+        "ejercicio ovario poliquistico"
+      ],
+      "title": "Ejercicio para SOP: qué tipo de entrenamiento te conviene",
+      "angle": "Fuerza vs cardio, frecuencia, beneficios metabólicos",
+      "intent": "informativa",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "sop",
+        "fuerza"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    },
+    {
+      "id": "cuanta-creatina-tomar-al-dia-mujer",
+      "order": 26,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "cuanta creatina tomar al dia mujer",
+      "secondaryKeywords": [
+        "dosis creatina mujer",
+        "creatina gramos al dia",
+        "cuanta creatina tomar"
+      ],
+      "title": "¿Cuánta creatina tomar al día siendo mujer?",
+      "angle": "Dosis de mantenimiento 3-5 g, fase de carga opcional, constancia",
+      "intent": "informativa",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "fuerza"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    },
+    {
+      "id": "cuando-tomar-creatina",
+      "order": 27,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "cuando tomar creatina",
+      "secondaryKeywords": [
+        "creatina antes o despues de entrenar",
+        "mejor hora para tomar creatina",
+        "como tomar creatina"
+      ],
+      "title": "¿Cuándo tomar creatina? Antes, después o en cualquier momento",
+      "angle": "Timing vs constancia, cómo integrarla en la rutina",
+      "intent": "informativa",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "fuerza"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    },
+    {
+      "id": "creatina-retiene-liquidos",
+      "order": 28,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "creatina retiene liquidos",
+      "secondaryKeywords": [
+        "creatina hincha",
+        "creatina retencion de agua",
+        "creatina engorda"
+      ],
+      "title": "¿La creatina retiene líquidos? La verdad para mujeres",
+      "angle": "Agua intramuscular vs hinchazón, qué esperar en las primeras semanas",
+      "intent": "informativa",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "fuerza",
+        "mitos"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    },
+    {
+      "id": "creatina-engorda",
+      "order": 29,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "creatina engorda",
+      "secondaryKeywords": [
+        "creatina sube de peso",
+        "creatina aumenta peso mujeres",
+        "creatina grasa"
+      ],
+      "title": "¿La creatina engorda? Mitos y realidades",
+      "angle": "Peso en báscula vs grasa, composición corporal",
+      "intent": "informativa",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "fuerza",
+        "mitos"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    },
+    {
+      "id": "como-aumentar-gluteos",
+      "order": 30,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "como aumentar gluteos",
+      "secondaryKeywords": [
+        "aumentar gluteos rapido",
+        "crecer gluteos",
+        "ejercicios para gluteos"
+      ],
+      "title": "Cómo aumentar glúteos: entrenamiento, comida y descanso",
+      "angle": "Principios de hipertrofia, ejercicios clave, progresión",
+      "intent": "informativa",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "gluteos",
+        "fuerza"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    },
+    {
+      "id": "ejercicios-para-gluteos-en-casa",
+      "order": 31,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "ejercicios para gluteos en casa",
+      "secondaryKeywords": [
+        "rutina gluteos en casa",
+        "gluteos sin pesas",
+        "ejercicios gluteo medio"
+      ],
+      "title": "Ejercicios para glúteos en casa: rutina de 30 minutos",
+      "angle": "Rutina sin equipo/bandas, progresión semanal",
+      "intent": "informativa",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "gluteos"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    },
+    {
+      "id": "hip-thrust",
+      "order": 32,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "hip thrust",
+      "secondaryKeywords": [
+        "hip thrust tecnica",
+        "empuje de cadera",
+        "hip thrust mujeres"
+      ],
+      "title": "Hip thrust: cómo hacerlo bien para trabajar glúteos",
+      "angle": "Técnica, errores comunes, variantes y series",
+      "intent": "informativa",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "gluteos",
+        "fuerza"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    },
+    {
+      "id": "proteina-para-mujeres",
+      "order": 33,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "proteina para mujeres",
+      "secondaryKeywords": [
+        "cuanta proteina comer mujer",
+        "proteina para ganar musculo",
+        "alimentos con proteina"
+      ],
+      "title": "Proteína para mujeres: cuánta necesitas y de dónde obtenerla",
+      "angle": "g/kg recomendados, fuentes mexicanas, reparto en el día",
+      "intent": "informativa",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "nutricion",
+        "fuerza"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    },
+    {
+      "id": "masa-muscular-en-mujeres",
+      "order": 34,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "masa muscular en mujeres",
+      "secondaryKeywords": [
+        "ganar musculo mujer",
+        "hipertrofia mujeres",
+        "tonificar cuerpo"
+      ],
+      "title": "Cómo ganar masa muscular siendo mujer",
+      "angle": "Entrenamiento de fuerza, proteína, descanso y suplementos con evidencia",
+      "intent": "informativa",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "fuerza"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    },
+    {
+      "id": "inositol-efectos-secundarios",
+      "order": 35,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "inositol efectos secundarios",
+      "secondaryKeywords": [
+        "inositol contraindicaciones",
+        "inositol riesgos",
+        "inositol efectos adversos"
+      ],
+      "title": "Inositol: efectos secundarios y precauciones",
+      "angle": "Tolerancia digestiva, dosis, cuándo consultar",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "hormonas"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "como-tomar-inositol",
+      "order": 36,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "como tomar inositol",
+      "secondaryKeywords": [
+        "dosis inositol",
+        "inositol en polvo como tomar",
+        "inositol cuanto tiempo tomar"
+      ],
+      "title": "Cómo tomar inositol: dosis, horario y constancia",
+      "angle": "Dosis usadas en estudios, en polvo vs cápsulas, cuánto tarda",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "sop",
+        "hormonas"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "myo-inositol",
+      "order": 37,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "myo inositol",
+      "secondaryKeywords": [
+        "myo inositol beneficios",
+        "myo inositol mujeres",
+        "myo inositol que es"
+      ],
+      "title": "Myo-inositol: qué es y para qué sirve",
+      "angle": "Explicación sencilla, alimentos que lo contienen, usos",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "hormonas",
+        "sop"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "inositol-y-fertilidad",
+      "order": 38,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "inositol y fertilidad",
+      "secondaryKeywords": [
+        "inositol para embarazarse",
+        "inositol ovulacion",
+        "myo inositol fertilidad"
+      ],
+      "title": "Inositol y fertilidad: lo que dice la ciencia",
+      "angle": "Calidad ovocitaria, ovulación en SOP, acompañamiento médico",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "fertilidad",
+        "sop"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "inositol-y-ansiedad",
+      "order": 39,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "inositol y ansiedad",
+      "secondaryKeywords": [
+        "inositol estres",
+        "inositol estado de animo",
+        "inositol salud mental"
+      ],
+      "title": "Inositol y ansiedad: ¿puede ayudar?",
+      "angle": "Evidencia preliminar, límites y qué más ayuda",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "hormonas",
+        "bienestar"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "hirsutismo",
+      "order": 40,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "hirsutismo",
+      "secondaryKeywords": [
+        "vello facial mujer",
+        "hirsutismo sop",
+        "exceso de vello"
+      ],
+      "title": "Hirsutismo: por qué aparece vello extra y qué hacer",
+      "angle": "Relación con andrógenos y SOP, opciones",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "sop",
+        "hormonas"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "sindrome-premenstrual",
+      "order": 41,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "sindrome premenstrual",
+      "secondaryKeywords": [
+        "sintomas premenstruales",
+        "spm",
+        "colicos menstruales"
+      ],
+      "title": "Síndrome premenstrual: síntomas y cómo aliviarlo",
+      "angle": "Síntomas, hábitos y cuándo es más que SPM",
+      "intent": "informativa",
+      "product": "none",
+      "tags": [
+        "ciclo",
+        "hormonas"
+      ],
+      "productUrl": null,
+      "generateImage": true
+    },
+    {
+      "id": "fases-del-ciclo-menstrual",
+      "order": 42,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "fases del ciclo menstrual",
+      "secondaryKeywords": [
+        "ciclo menstrual fases",
+        "entrenar segun ciclo",
+        "ciclo menstrual y ejercicio"
+      ],
+      "title": "Fases del ciclo menstrual y cómo entrenar en cada una",
+      "angle": "Folicular, ovulatoria, lútea, menstrual; energía y entrenamiento",
+      "intent": "informativa",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "ciclo",
+        "fuerza"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    },
+    {
+      "id": "insulina-alta-sintomas",
+      "order": 43,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "insulina alta sintomas",
+      "secondaryKeywords": [
+        "hiperinsulinemia",
+        "como bajar la insulina",
+        "insulina alta en mujeres"
+      ],
+      "title": "Insulina alta: síntomas y cómo bajarla",
+      "angle": "Señales, estudios (HOMA-IR), hábitos",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "insulina",
+        "hormonas"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "ovulacion-sintomas",
+      "order": 44,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "ovulacion sintomas",
+      "secondaryKeywords": [
+        "como saber si estoy ovulando",
+        "dias fertiles",
+        "sintomas de ovulacion"
+      ],
+      "title": "Síntomas de ovulación: cómo reconocer tus días fértiles",
+      "angle": "Moco cervical, temperatura, pruebas",
+      "intent": "informativa",
+      "product": "none",
+      "tags": [
+        "ciclo",
+        "fertilidad"
+      ],
+      "productUrl": null,
+      "generateImage": true
+    },
+    {
+      "id": "ovario-poliquistico-causas",
+      "order": 45,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "ovario poliquistico causas",
+      "secondaryKeywords": [
+        "por que da sop",
+        "causas del sop",
+        "origen ovario poliquistico"
+      ],
+      "title": "Ovario poliquístico: causas y factores de riesgo",
+      "angle": "Genética, insulina, inflamación; lo que se sabe y lo que no",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "sop",
+        "hormonas"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "inositol-en-polvo",
+      "order": 46,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "inositol en polvo",
+      "secondaryKeywords": [
+        "inositol polvo",
+        "inositol en polvo beneficios",
+        "inositol polvo o capsulas"
+      ],
+      "title": "Inositol en polvo: ventajas frente a cápsulas",
+      "angle": "Dosis completas, absorción, cómo prepararlo",
+      "intent": "comercial",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "sop",
+        "hormonas"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "mejor-inositol-para-sop",
+      "order": 47,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "mejor inositol para sop",
+      "secondaryKeywords": [
+        "inositol recomendado sop",
+        "que inositol comprar",
+        "inositol marcas"
+      ],
+      "title": "¿Cuál es el mejor inositol para SOP? Cómo elegir",
+      "angle": "Criterios: forma, proporción, dosis por porción, pureza",
+      "intent": "comercial",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "sop",
+        "hormonas"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "inositol-40-1",
+      "order": 48,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "inositol 40 1",
+      "secondaryKeywords": [
+        "proporcion 40 1 inositol",
+        "inositol 80 1",
+        "myo d chiro proporcion"
+      ],
+      "title": "Inositol 40:1 y otras proporciones: ¿cuál conviene?",
+      "angle": "Qué proporciones de myo-inositol y d-chiro-inositol se han estudiado, qué se sabe de cada una y cómo se compara la fórmula 80:1 de Peach Perfect, sin afirmar superioridad no demostrada",
+      "intent": "comercial",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "sop",
+        "hormonas"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "inositol-y-metformina",
+      "order": 49,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "inositol y metformina",
+      "secondaryKeywords": [
+        "inositol o metformina",
+        "inositol vs metformina",
+        "metformina sop"
+      ],
+      "title": "Inositol y metformina: diferencias y cómo se usan",
+      "angle": "Mecanismos distintos, no sustituir sin médico",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "sop",
+        "insulina"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "inositol-cuanto-tiempo-tarda-en-hacer-efecto",
+      "order": 50,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "inositol cuanto tiempo tarda en hacer efecto",
+      "secondaryKeywords": [
+        "inositol resultados",
+        "inositol cuanto tiempo",
+        "inositol cuando funciona"
+      ],
+      "title": "¿Cuánto tarda el inositol en hacer efecto?",
+      "angle": "Tiempos en estudios (8-12 semanas+), qué observar",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "sop",
+        "hormonas"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "inositol-sin-sop",
+      "order": 51,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "inositol sin sop",
+      "secondaryKeywords": [
+        "inositol para mujeres sin sop",
+        "inositol beneficios generales",
+        "inositol para todas"
+      ],
+      "title": "¿Sirve el inositol si no tengo SOP?",
+      "angle": "Usos fuera del SOP y cuándo no es necesario",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "hormonas"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "creatina-monohidratada",
+      "order": 52,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "creatina monohidratada",
+      "secondaryKeywords": [
+        "creatina monohidrato",
+        "tipos de creatina",
+        "mejor tipo de creatina"
+      ],
+      "title": "Creatina monohidratada: por qué es la más estudiada",
+      "angle": "Formas de creatina, pureza, cómo reconocer calidad",
+      "intent": "comercial",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "fuerza"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    },
+    {
+      "id": "mejor-creatina-para-mujeres",
+      "order": 53,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "mejor creatina para mujeres",
+      "secondaryKeywords": [
+        "creatina recomendada mujeres",
+        "que creatina comprar",
+        "creatina para mujer marca"
+      ],
+      "title": "Mejor creatina para mujeres: cómo elegir sin perderte",
+      "angle": "Criterios, sabor, solubilidad, extras como colágeno",
+      "intent": "comercial",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "fuerza",
+        "gluteos"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    },
+    {
+      "id": "creatina-para-tonificar",
+      "order": 54,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "creatina para tonificar",
+      "secondaryKeywords": [
+        "creatina tonificar mujer",
+        "creatina definir",
+        "tonificar piernas"
+      ],
+      "title": "Creatina para tonificar: lo que realmente hace",
+      "angle": "Tonificar = músculo + menos grasa; rol de la creatina",
+      "intent": "comercial",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "fuerza",
+        "gluteos"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    },
+    {
+      "id": "creatina-sin-entrenar",
+      "order": 55,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "creatina sin entrenar",
+      "secondaryKeywords": [
+        "creatina sin ejercicio",
+        "creatina dias de descanso",
+        "creatina sin gym"
+      ],
+      "title": "¿Sirve la creatina si no entreno?",
+      "angle": "Beneficios fuera del gimnasio y límites",
+      "intent": "informativa",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "fuerza"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    },
+    {
+      "id": "creatina-y-cafe",
+      "order": 56,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "creatina y cafe",
+      "secondaryKeywords": [
+        "creatina con cafeina",
+        "creatina y cafe juntos",
+        "creatina en la mañana"
+      ],
+      "title": "¿Se puede tomar creatina con café?",
+      "angle": "Cafeína y creatina, evidencia y recomendaciones",
+      "intent": "informativa",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "fuerza"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    },
+    {
+      "id": "creatina-caida-de-cabello",
+      "order": 57,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "creatina caida de cabello",
+      "secondaryKeywords": [
+        "creatina calvicie",
+        "creatina pelo",
+        "creatina dht"
+      ],
+      "title": "¿La creatina causa caída de cabello? Lo que dice la evidencia",
+      "angle": "Estudio DHT de 2009, límites y conclusión prudente",
+      "intent": "informativa",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "fuerza",
+        "mitos"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    },
+    {
+      "id": "creatina-y-rinones",
+      "order": 58,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "creatina y riñones",
+      "secondaryKeywords": [
+        "creatina daña riñones",
+        "creatina seguridad",
+        "creatina efectos secundarios"
+      ],
+      "title": "Creatina y riñones: ¿es segura?",
+      "angle": "Seguridad en personas sanas, cuándo consultar",
+      "intent": "informativa",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "fuerza",
+        "mitos"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    },
+    {
+      "id": "creatina-efectos-secundarios-mujeres",
+      "order": 59,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "creatina efectos secundarios mujeres",
+      "secondaryKeywords": [
+        "creatina contraindicaciones",
+        "creatina riesgos mujeres",
+        "creatina malestar"
+      ],
+      "title": "Creatina: efectos secundarios en mujeres",
+      "angle": "Molestias digestivas, retención inicial, hidratación",
+      "intent": "informativa",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "fuerza"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    },
+    {
+      "id": "creatina-fase-de-carga",
+      "order": 60,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "creatina fase de carga",
+      "secondaryKeywords": [
+        "carga de creatina",
+        "creatina 20 gramos",
+        "saturacion creatina"
+      ],
+      "title": "Fase de carga de creatina: ¿necesaria o no?",
+      "angle": "Carga vs dosis constante, pros y contras",
+      "intent": "informativa",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "fuerza"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    },
+    {
+      "id": "creatina-y-ciclo-menstrual",
+      "order": 61,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "creatina y ciclo menstrual",
+      "secondaryKeywords": [
+        "creatina menstruacion",
+        "creatina hormonas mujer",
+        "creatina regla"
+      ],
+      "title": "Creatina y ciclo menstrual: ¿hay que ajustarla?",
+      "angle": "Hormonas, fuerza a lo largo del ciclo, constancia",
+      "intent": "informativa",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "fuerza",
+        "ciclo"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    },
+    {
+      "id": "creatina-para-el-cerebro",
+      "order": 62,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "creatina para el cerebro",
+      "secondaryKeywords": [
+        "creatina cognitiva",
+        "creatina memoria",
+        "creatina concentracion"
+      ],
+      "title": "Creatina para el cerebro: energía mental y memoria",
+      "angle": "Evidencia en cognición, sueño y estrés",
+      "intent": "informativa",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "bienestar"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    },
+    {
+      "id": "creatina-y-colageno-beneficios",
+      "order": 63,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "creatina y colageno beneficios",
+      "secondaryKeywords": [
+        "colageno beneficios",
+        "colageno hidrolizado",
+        "colageno para articulaciones"
+      ],
+      "title": "Colágeno: beneficios reales para mujeres activas",
+      "angle": "Piel, articulaciones, tejido conectivo; combinación con creatina",
+      "intent": "comercial",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "colageno",
+        "fuerza"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    },
+    {
+      "id": "rutina-de-gluteos-en-gimnasio",
+      "order": 64,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "rutina de gluteos en gimnasio",
+      "secondaryKeywords": [
+        "rutina gluteos gym",
+        "ejercicios gluteos gimnasio",
+        "rutina pierna mujer"
+      ],
+      "title": "Rutina de glúteos en el gimnasio para principiantes",
+      "angle": "3 días a la semana, ejercicios, series y progresión",
+      "intent": "informativa",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "gluteos",
+        "fuerza"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    },
+    {
+      "id": "gluteo-medio-ejercicios",
+      "order": 65,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "gluteo medio ejercicios",
+      "secondaryKeywords": [
+        "ejercicios gluteo medio",
+        "gluteo medio y menor",
+        "cadera ejercicios"
+      ],
+      "title": "Glúteo medio: ejercicios para darle forma a tu cadera",
+      "angle": "Anatomía simple, ejercicios y errores",
+      "intent": "informativa",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "gluteos"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    },
+    {
+      "id": "sentadilla-bulgara",
+      "order": 66,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "sentadilla bulgara",
+      "secondaryKeywords": [
+        "sentadilla bulgara gluteos",
+        "split squat",
+        "sentadilla bulgara tecnica"
+      ],
+      "title": "Sentadilla búlgara: técnica para glúteos más fuertes",
+      "angle": "Técnica, enfoque glúteo vs cuádriceps",
+      "intent": "informativa",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "gluteos",
+        "fuerza"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    },
+    {
+      "id": "peso-muerto-rumano",
+      "order": 67,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "peso muerto rumano",
+      "secondaryKeywords": [
+        "peso muerto rumano tecnica",
+        "rdl gluteos",
+        "peso muerto mujeres"
+      ],
+      "title": "Peso muerto rumano: guía para mujeres",
+      "angle": "Técnica, seguridad lumbar, glúteo e isquios",
+      "intent": "informativa",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "gluteos",
+        "fuerza"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    },
+    {
+      "id": "cuanto-tarda-en-crecer-el-gluteo",
+      "order": 68,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "cuanto tarda en crecer el gluteo",
+      "secondaryKeywords": [
+        "gluteos resultados tiempo",
+        "en cuanto tiempo crecen los gluteos",
+        "aumentar gluteos meses"
+      ],
+      "title": "¿Cuánto tarda en crecer el glúteo? Expectativas reales",
+      "angle": "Tiempos de hipertrofia, constancia, factores",
+      "intent": "informativa",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "gluteos"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    },
+    {
+      "id": "sobrecarga-progresiva",
+      "order": 69,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "sobrecarga progresiva",
+      "secondaryKeywords": [
+        "progresion de cargas",
+        "como progresar en el gym",
+        "aumentar peso entrenamiento"
+      ],
+      "title": "Sobrecarga progresiva: la clave para ver resultados",
+      "angle": "Qué es, cómo aplicarla, ejemplos",
+      "intent": "informativa",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "fuerza"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    },
+    {
+      "id": "suplementos-para-mujeres-que-entrenan",
+      "order": 70,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "suplementos para mujeres que entrenan",
+      "secondaryKeywords": [
+        "suplementos gym mujer",
+        "mejores suplementos mujeres",
+        "suplementos para ganar musculo"
+      ],
+      "title": "Suplementos para mujeres que entrenan: cuáles valen la pena",
+      "angle": "Creatina, proteína, vitamina D, etc. con nivel de evidencia",
+      "intent": "comercial",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "fuerza"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    },
+    {
+      "id": "suplementos-para-sop",
+      "order": 71,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "suplementos para sop",
+      "secondaryKeywords": [
+        "vitaminas para sop",
+        "suplementos ovario poliquistico",
+        "que tomar para sop"
+      ],
+      "title": "Suplementos para SOP: cuáles tienen evidencia",
+      "angle": "Inositol, vitamina D, omega 3, magnesio; tabla comparativa",
+      "intent": "comercial",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "sop",
+        "hormonas"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "inositol-y-vitamina-d",
+      "order": 72,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "inositol y vitamina d",
+      "secondaryKeywords": [
+        "vitamina d sop",
+        "inositol vitamina d juntos",
+        "deficiencia vitamina d sop"
+      ],
+      "title": "Inositol y vitamina D en el SOP: ¿se complementan?",
+      "angle": "Rol de cada uno y combinación",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "sop"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "sop-delgada",
+      "order": 73,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "sop delgada",
+      "secondaryKeywords": [
+        "sop lean",
+        "sop sin sobrepeso",
+        "ovario poliquistico delgadas"
+      ],
+      "title": "SOP en mujeres delgadas: sí existe y así se maneja",
+      "angle": "Fenotipos, insulina en mujeres delgadas",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "sop"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "tipos-de-sop",
+      "order": 74,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "tipos de sop",
+      "secondaryKeywords": [
+        "fenotipos sop",
+        "sop tipo",
+        "clasificacion sop"
+      ],
+      "title": "Tipos de SOP: fenotipos y por qué importan",
+      "angle": "Fenotipos A-D, abordaje diferenciado",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "sop"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "sop-y-tiroides",
+      "order": 75,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "sop y tiroides",
+      "secondaryKeywords": [
+        "hipotiroidismo sop",
+        "tiroides ovario poliquistico",
+        "tsh sop"
+      ],
+      "title": "SOP y tiroides: cómo se relacionan",
+      "angle": "Hipotiroidismo, síntomas que se confunden",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "sop",
+        "hormonas"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "sop-y-estres",
+      "order": 76,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "sop y estres",
+      "secondaryKeywords": [
+        "cortisol sop",
+        "estres hormonas mujer",
+        "sop ansiedad"
+      ],
+      "title": "SOP y estrés: cortisol, sueño y síntomas",
+      "angle": "Eje estrés-hormonas, hábitos de manejo",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "sop",
+        "bienestar"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "sop-y-anticonceptivos",
+      "order": 77,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "sop y anticonceptivos",
+      "secondaryKeywords": [
+        "pastillas anticonceptivas sop",
+        "anticonceptivos ovario poliquistico",
+        "dejar anticonceptivos sop"
+      ],
+      "title": "SOP y anticonceptivos: lo que debes saber",
+      "angle": "Para qué se usan, qué no resuelven, hablar con el médico",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "sop",
+        "hormonas"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "antojos-de-azucar",
+      "order": 78,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "antojos de azucar",
+      "secondaryKeywords": [
+        "ansiedad por dulce",
+        "controlar antojos",
+        "antojos ciclo menstrual"
+      ],
+      "title": "Antojos de azúcar: por qué aparecen y cómo controlarlos",
+      "angle": "Glucosa, insulina, ciclo, sueño",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "insulina",
+        "nutricion"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "indice-glucemico-alimentos",
+      "order": 79,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "indice glucemico alimentos",
+      "secondaryKeywords": [
+        "alimentos bajo indice glucemico",
+        "tabla indice glucemico",
+        "carga glucemica"
+      ],
+      "title": "Índice glucémico: guía de alimentos para equilibrar tu glucosa",
+      "angle": "Tabla de alimentos mexicanos, combinaciones",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "insulina",
+        "nutricion"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "desayunos-para-sop",
+      "order": 80,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "desayunos para sop",
+      "secondaryKeywords": [
+        "desayuno saludable sop",
+        "recetas sop",
+        "que desayunar con sop"
+      ],
+      "title": "Desayunos para SOP: 7 ideas fáciles y ricas",
+      "angle": "Ideas con proteína y fibra, recetas rápidas",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "sop",
+        "nutricion"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "menstruacion-abundante",
+      "order": 81,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "menstruacion abundante",
+      "secondaryKeywords": [
+        "sangrado abundante",
+        "regla abundante causas",
+        "menorragia"
+      ],
+      "title": "Menstruación abundante: causas y cuándo consultar",
+      "angle": "Causas, anemia, señales de alerta",
+      "intent": "informativa",
+      "product": "none",
+      "tags": [
+        "ciclo"
+      ],
+      "productUrl": null,
+      "generateImage": true
+    },
+    {
+      "id": "amenorrea",
+      "order": 82,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "amenorrea",
+      "secondaryKeywords": [
+        "no me baja la regla",
+        "ausencia de menstruacion",
+        "se me retiro el periodo"
+      ],
+      "title": "Amenorrea: por qué se retira la regla",
+      "angle": "Causas (SOP, estrés, peso, ejercicio), cuándo consultar",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "ciclo",
+        "sop"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "progesterona-baja-sintomas",
+      "order": 83,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "progesterona baja sintomas",
+      "secondaryKeywords": [
+        "sintomas progesterona baja",
+        "progesterona mujer",
+        "fase lutea corta"
+      ],
+      "title": "Progesterona baja: síntomas y causas",
+      "angle": "Señales, fase lútea, estudios",
+      "intent": "informativa",
+      "product": "none",
+      "tags": [
+        "hormonas",
+        "ciclo"
+      ],
+      "productUrl": null,
+      "generateImage": true
+    },
+    {
+      "id": "testosterona-alta-en-mujeres",
+      "order": 84,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "testosterona alta en mujeres",
+      "secondaryKeywords": [
+        "androgenos altos",
+        "testosterona mujer sintomas",
+        "hiperandrogenismo"
+      ],
+      "title": "Testosterona alta en mujeres: síntomas y causas",
+      "angle": "Andrógenos, SOP, estudios",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "sop",
+        "hormonas"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "inositol-vs-berberina",
+      "order": 85,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "inositol vs berberina",
+      "secondaryKeywords": [
+        "berberina sop",
+        "berberina o inositol",
+        "berberina beneficios"
+      ],
+      "title": "Inositol vs berberina: diferencias para el SOP",
+      "angle": "Comparativa en tabla: mecanismo, evidencia, tolerancia",
+      "intent": "comercial",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "sop",
+        "insulina"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "creatina-vs-proteina",
+      "order": 86,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "creatina vs proteina",
+      "secondaryKeywords": [
+        "creatina o proteina",
+        "diferencia creatina proteina",
+        "creatina y proteina juntas"
+      ],
+      "title": "Creatina vs proteína: ¿cuál necesitas?",
+      "angle": "Comparativa en tabla, para qué sirve cada una",
+      "intent": "comercial",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "fuerza"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    },
+    {
+      "id": "creatina-vs-colageno",
+      "order": 87,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "creatina vs colageno",
+      "secondaryKeywords": [
+        "colageno o creatina",
+        "diferencia colageno creatina",
+        "creatina colageno juntos"
+      ],
+      "title": "Creatina vs colágeno: diferencias y por qué combinarlos",
+      "angle": "Comparativa en tabla, beneficios complementarios",
+      "intent": "comercial",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "fuerza",
+        "colageno"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    },
+    {
+      "id": "creatina-mitos",
+      "order": 88,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "creatina mitos",
+      "secondaryKeywords": [
+        "creatina mentiras",
+        "creatina verdades",
+        "creatina miedos"
+      ],
+      "title": "8 mitos de la creatina en mujeres, desmentidos",
+      "angle": "Lista de mitos con respuesta factual",
+      "intent": "informativa",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "fuerza",
+        "mitos"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    },
+    {
+      "id": "inositol-mitos",
+      "order": 89,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "inositol mitos",
+      "secondaryKeywords": [
+        "inositol verdades",
+        "inositol funciona",
+        "inositol es seguro"
+      ],
+      "title": "Mitos sobre el inositol que debes dejar de creer",
+      "angle": "Lista de mitos con respuesta factual",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "sop",
+        "mitos"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "como-tomar-creatina-mujer",
+      "order": 90,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "como tomar creatina mujer",
+      "secondaryKeywords": [
+        "creatina como tomarla",
+        "preparar creatina",
+        "creatina con agua o jugo"
+      ],
+      "title": "Cómo tomar creatina siendo mujer: guía paso a paso",
+      "angle": "Dosis, con qué mezclarla, constancia, sabores",
+      "intent": "comercial",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "fuerza",
+        "gluteos"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    },
+    {
+      "id": "creatina-para-principiantes",
+      "order": 91,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "creatina para principiantes",
+      "secondaryKeywords": [
+        "empezar a tomar creatina",
+        "creatina primera vez",
+        "creatina novatas"
+      ],
+      "title": "Creatina para principiantes: todo lo que necesitas saber",
+      "angle": "Preguntas básicas de quien empieza en el gym",
+      "intent": "informativa",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "fuerza"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    },
+    {
+      "id": "creatina-y-alcohol",
+      "order": 92,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "creatina y alcohol",
+      "secondaryKeywords": [
+        "creatina despues de tomar alcohol",
+        "alcohol y musculo",
+        "creatina fiesta"
+      ],
+      "title": "Creatina y alcohol: ¿se pueden combinar?",
+      "angle": "Efecto en hidratación y recuperación",
+      "intent": "informativa",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "fuerza"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    },
+    {
+      "id": "dolor-de-ovarios",
+      "order": 93,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "dolor de ovarios",
+      "secondaryKeywords": [
+        "dolor ovario izquierdo",
+        "dolor ovario derecho",
+        "dolor pelvico"
+      ],
+      "title": "Dolor de ovarios: causas comunes y cuándo preocuparte",
+      "angle": "Ovulación, quistes, endometriosis, señales de alarma",
+      "intent": "informativa",
+      "product": "none",
+      "tags": [
+        "ciclo"
+      ],
+      "productUrl": null,
+      "generateImage": true
+    },
+    {
+      "id": "endometriosis-vs-sop",
+      "order": 94,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "endometriosis vs sop",
+      "secondaryKeywords": [
+        "diferencia endometriosis sop",
+        "endometriosis sintomas",
+        "sop o endometriosis"
+      ],
+      "title": "Endometriosis vs SOP: diferencias clave",
+      "angle": "Tabla comparativa de síntomas y diagnóstico",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "sop",
+        "hormonas"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "inositol-y-ciclo-menstrual",
+      "order": 95,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "inositol y ciclo menstrual",
+      "secondaryKeywords": [
+        "inositol regula la regla",
+        "inositol menstruacion",
+        "inositol periodo"
+      ],
+      "title": "Inositol y ciclo menstrual: ¿ayuda a regularlo?",
+      "angle": "Evidencia en regularidad del ciclo en SOP",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "ciclo",
+        "sop"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "inositol-para-hombres-y-mujeres",
+      "order": 96,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "inositol para hombres y mujeres",
+      "secondaryKeywords": [
+        "inositol mujeres",
+        "inositol beneficios",
+        "inositol hormonas"
+      ],
+      "title": "¿Por qué el inositol se recomienda tanto a mujeres?",
+      "angle": "Contexto de uso femenino y diferencias",
+      "intent": "informativa",
+      "product": "inositol",
+      "tags": [
+        "inositol",
+        "hormonas"
+      ],
+      "productUrl": "/products/inositol-en-polvo",
+      "generateImage": true
+    },
+    {
+      "id": "resultados-creatina-mujeres",
+      "order": 97,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "resultados creatina mujeres",
+      "secondaryKeywords": [
+        "creatina antes y despues",
+        "creatina cuanto tarda",
+        "creatina resultados"
+      ],
+      "title": "Resultados de la creatina en mujeres: qué esperar mes a mes",
+      "angle": "Línea de tiempo realista con entrenamiento",
+      "intent": "comercial",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "fuerza",
+        "gluteos"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    },
+    {
+      "id": "piernas-tonificadas",
+      "order": 98,
+      "publishOn": null,
+      "enabled": true,
+      "keyword": "piernas tonificadas",
+      "secondaryKeywords": [
+        "tonificar piernas",
+        "rutina piernas mujer",
+        "piernas firmes"
+      ],
+      "title": "Piernas tonificadas: plan de 4 semanas",
+      "angle": "Plan de entrenamiento y hábitos",
+      "intent": "informativa",
+      "product": "creatina",
+      "tags": [
+        "creatina",
+        "gluteos",
+        "fuerza"
+      ],
+      "productUrl": "/products/creatina-para-mujeres",
+      "generateImage": true
+    }
+  ]
+}
