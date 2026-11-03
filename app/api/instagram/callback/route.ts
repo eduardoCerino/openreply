@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/db/client";
-import { getBaseUrl } from "@/lib/env";
+import { getBaseUrl, isFacebookLoginMode } from "@/lib/env";
 import { canConnectInstagramAccount } from "@/lib/instagram-accounts";
 import { getLongLivedToken, getUserInfo, subscribeInstagramAccountToWebhooks } from "@/lib/meta/client";
 import {
   encryptToken,
+  exchangeCodeForPageAccounts,
   exchangeCodeForToken,
   verifyOAuthState,
 } from "@/lib/meta/oauth";
@@ -43,6 +44,76 @@ export async function GET(request: NextRequest) {
 
   try {
     const redirectUri = `${baseUrl}/api/instagram/callback`;
+
+    if (isFacebookLoginMode()) {
+      const pageAccounts = await exchangeCodeForPageAccounts(code, redirectUri);
+      if (pageAccounts.length === 0) {
+        throw new Error(
+          "No Facebook Page with a linked Instagram professional account was granted"
+        );
+      }
+
+      let connected = 0;
+      for (const account of pageAccounts) {
+        const connection = await canConnectInstagramAccount({
+          workspaceId: state.workspaceId,
+          instagramId: account.instagramId,
+        });
+        if (!connection.allowed) continue;
+
+        let webhookSubscribed = false;
+        try {
+          const subscription = await subscribeInstagramAccountToWebhooks(
+            account.instagramId,
+            account.pageAccessToken
+          );
+          webhookSubscribed = Boolean(subscription.success);
+        } catch (subscriptionError) {
+          console.warn(
+            "[Instagram Callback] Page webhook subscription failed:",
+            subscriptionError
+          );
+        }
+
+        // Page tokens do not expire, so there is no expiry for the refresh
+        // cron to act on.
+        const data = {
+          username: account.username,
+          name: account.name,
+          accessToken: encryptToken(account.pageAccessToken),
+          tokenExpiresAt: null,
+          webhookSubscribed,
+        };
+        const existing = await prisma.instagramAccount.findUnique({
+          where: { instagramId: account.instagramId },
+        });
+        if (existing) {
+          const updated = await prisma.instagramAccount.updateMany({
+            where: { id: existing.id, workspaceId: state.workspaceId, provider: "META" },
+            data,
+          });
+          if (!updated.count) continue;
+        } else {
+          await prisma.instagramAccount.create({
+            data: {
+              ...data,
+              workspaceId: state.workspaceId,
+              instagramId: account.instagramId,
+              provider: "META",
+            },
+          });
+        }
+        connected++;
+      }
+
+      if (connected === 0) {
+        return NextResponse.redirect(
+          `${baseUrl}/settings?instagram=already_connected`
+        );
+      }
+      return NextResponse.redirect(`${baseUrl}/dashboard?connected=true`);
+    }
+
     const { accessToken: shortLivedToken } = await exchangeCodeForToken(
       code,
       redirectUri

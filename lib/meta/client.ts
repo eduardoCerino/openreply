@@ -1,11 +1,64 @@
-import { getMetaGraphApiVersion, requireEnv } from "@/lib/env";
+import {
+  getMetaGraphApiVersion,
+  isFacebookLoginMode,
+  requireEnv,
+} from "@/lib/env";
 
+// In Facebook Login mode the stored token is a Page token, which only
+// graph.facebook.com accepts. The Instagram nodes (media, comments, IGSIDs)
+// are the same ids on both hosts.
 function instagramGraphBase() {
+  if (isFacebookLoginMode()) return facebookGraphBase();
   return `https://graph.instagram.com/${getMetaGraphApiVersion()}`;
 }
 
 function facebookGraphBase() {
   return `https://graph.facebook.com/${getMetaGraphApiVersion()}`;
+}
+
+// With a Page token, messages and conversations belong to the Page, which
+// `me` resolves to. With Instagram Login they hang off the account itself.
+function accountNode(instagramAccountId: string) {
+  return isFacebookLoginMode() ? "me" : instagramAccountId;
+}
+
+function messagesUrl(instagramAccountId: string) {
+  return `${instagramGraphBase()}/${accountNode(instagramAccountId)}/messages`;
+}
+
+const PAGE_INSTAGRAM_FIELDS =
+  "instagram_business_account{id,username,name,profile_picture_url,followers_count}";
+
+// Page token -> Instagram account it is linked to. `me` on a Page token is the
+// Page, so callers that only hold the token (media listing, profile) look the
+// Instagram account up once and reuse it.
+const pageInstagramUsers = new Map<string, Promise<InstagramUser>>();
+
+function getPageInstagramUser(accessToken: string): Promise<InstagramUser> {
+  let pending = pageInstagramUsers.get(accessToken);
+  if (!pending) {
+    pending = (async () => {
+      const url = new URL(`${facebookGraphBase()}/me`);
+      url.searchParams.set("fields", PAGE_INSTAGRAM_FIELDS);
+      url.searchParams.set("access_token", accessToken);
+      const page = await handleResponse<{
+        instagram_business_account?: InstagramUser;
+      }>(await fetch(url.toString()));
+      const account = page.instagram_business_account;
+      if (!account) {
+        throw new Error("This Facebook Page has no linked Instagram account");
+      }
+      return { ...account, user_id: account.id };
+    })();
+    pending.catch(() => pageInstagramUsers.delete(accessToken));
+    pageInstagramUsers.set(accessToken, pending);
+  }
+  return pending;
+}
+
+async function mediaOwnerNode(accessToken: string) {
+  if (!isFacebookLoginMode()) return "me";
+  return (await getPageInstagramUser(accessToken)).id;
 }
 
 export class MetaApiError extends Error {
@@ -168,7 +221,7 @@ export async function sendPrivateReply(
   message: string
 ): Promise<{ recipient_id: string; message_id: string }> {
   const response = await fetch(
-    `${instagramGraphBase()}/${instagramAccountId}/messages`,
+    messagesUrl(instagramAccountId),
     {
       method: "POST",
       headers: {
@@ -200,7 +253,7 @@ export async function sendPrivateReplyWithButton(
   payload: string
 ): Promise<{ recipient_id: string; message_id: string }> {
   const response = await fetch(
-    `${instagramGraphBase()}/${instagramAccountId}/messages`,
+    messagesUrl(instagramAccountId),
     {
       method: "POST",
       headers: {
@@ -243,7 +296,7 @@ export async function sendDirectMessageWithButton(
   payload: string
 ): Promise<{ recipient_id: string; message_id: string }> {
   const response = await fetch(
-    `${instagramGraphBase()}/${instagramAccountId}/messages`,
+    messagesUrl(instagramAccountId),
     {
       method: "POST",
       headers: {
@@ -359,7 +412,7 @@ export async function sendPrivateReplyWithLinkButton(
   buttons: LinkButton[]
 ): Promise<{ recipient_id: string; message_id: string }> {
   const response = await fetch(
-    `${instagramGraphBase()}/${instagramAccountId}/messages`,
+    messagesUrl(instagramAccountId),
     {
       method: "POST",
       headers: {
@@ -396,7 +449,7 @@ export async function sendDirectMessage(
   message: string
 ): Promise<{ recipient_id: string; message_id: string }> {
   const response = await fetch(
-    `${instagramGraphBase()}/${instagramAccountId}/messages`,
+    messagesUrl(instagramAccountId),
     {
       method: "POST",
       headers: {
@@ -425,7 +478,7 @@ export async function sendDirectMessageWithLinkButton(
   buttons: LinkButton[]
 ): Promise<{ recipient_id: string; message_id: string }> {
   const response = await fetch(
-    `${instagramGraphBase()}/${instagramAccountId}/messages`,
+    messagesUrl(instagramAccountId),
     {
       method: "POST",
       headers: {
@@ -583,7 +636,9 @@ export async function getConversations(
   async function readPage(limit: number, requestedFields: string): Promise<Page> {
     // Never follow Meta's next URL: rebuild on our trusted host and carry the
     // token separately. A messages.paging cursor must never advance this list.
-    const url = new URL(`${instagramGraphBase()}/${igUserId}/conversations`);
+    const url = new URL(
+      `${instagramGraphBase()}/${accountNode(igUserId)}/conversations`
+    );
     url.searchParams.set("platform", "instagram");
     url.searchParams.set("fields", requestedFields);
     url.searchParams.set("limit", String(limit));
@@ -665,6 +720,8 @@ export async function getConversationMessages(
 }
 
 export async function getUserInfo(accessToken: string): Promise<InstagramUser> {
+  if (isFacebookLoginMode()) return getPageInstagramUser(accessToken);
+
   const url = new URL(`${instagramGraphBase()}/me`);
   url.searchParams.set(
     "fields",
@@ -686,7 +743,9 @@ export async function getUserMedia(
   accessToken: string,
   limit = 25
 ): Promise<InstagramMedia[]> {
-  const url = new URL(`${instagramGraphBase()}/me/media`);
+  const url = new URL(
+    `${instagramGraphBase()}/${await mediaOwnerNode(accessToken)}/media`
+  );
   url.searchParams.set("fields", MEDIA_FIELDS);
   url.searchParams.set("limit", limit.toString());
   url.searchParams.set("access_token", accessToken);
@@ -708,7 +767,9 @@ export async function getAllUserMedia(
 ): Promise<InstagramMedia[]> {
   const results: InstagramMedia[] = [];
 
-  const first = new URL(`${instagramGraphBase()}/me/media`);
+  const first = new URL(
+    `${instagramGraphBase()}/${await mediaOwnerNode(accessToken)}/media`
+  );
   first.searchParams.set("fields", MEDIA_FIELDS);
   first.searchParams.set("limit", String(Math.min(MEDIA_PAGE_SIZE, max)));
   first.searchParams.set("access_token", accessToken);
@@ -830,6 +891,10 @@ export async function getFollowerCountSeries(
 export async function getLongLivedToken(
   shortLivedToken: string
 ): Promise<{ accessToken: string; expiresIn: number }> {
+  if (isFacebookLoginMode()) {
+    throw new Error("Facebook Login mode exchanges tokens in lib/meta/oauth.ts");
+  }
+
   const url = new URL(`${instagramGraphBase()}/access_token`);
   url.searchParams.set("grant_type", "ig_exchange_token");
   url.searchParams.set("client_secret", requireEnv("INSTAGRAM_APP_SECRET"));
@@ -847,6 +912,12 @@ export async function getLongLivedToken(
 export async function refreshLongLivedToken(
   longLivedToken: string
 ): Promise<{ accessToken: string; expiresIn: number }> {
+  // A Page token derived from a long-lived user token does not expire, and
+  // there is no refresh grant for it. Keep it and push the expiry forward.
+  if (isFacebookLoginMode()) {
+    return { accessToken: longLivedToken, expiresIn: 5184000 };
+  }
+
   const url = new URL(`${instagramGraphBase()}/refresh_access_token`);
   url.searchParams.set("grant_type", "ig_refresh_token");
   url.searchParams.set("access_token", longLivedToken);
@@ -864,6 +935,19 @@ export async function subscribeInstagramAccountToWebhooks(
   instagramAccountId: string,
   accessToken: string
 ): Promise<{ success: boolean }> {
+  // Instagram webhooks for a Page-linked account are only delivered once the
+  // app is installed on the Page. The Instagram fields themselves (comments,
+  // messages) are chosen in the app dashboard's webhook settings.
+  if (isFacebookLoginMode()) {
+    const url = new URL(`${facebookGraphBase()}/me/subscribed_apps`);
+    url.searchParams.set("subscribed_fields", "feed");
+    const response = await fetch(url.toString(), {
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    return handleResponse(response);
+  }
+
   const response = await fetch(
     `${instagramGraphBase()}/${instagramAccountId}/subscribed_apps`,
     {

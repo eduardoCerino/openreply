@@ -5,7 +5,12 @@ import {
   randomBytes,
   timingSafeEqual,
 } from "crypto";
-import { getEncryptionKeyHex, requireEnv } from "@/lib/env";
+import {
+  getEncryptionKeyHex,
+  getMetaGraphApiVersion,
+  isFacebookLoginMode,
+  requireEnv,
+} from "@/lib/env";
 
 // Instagram API with Instagram Login authorizes on www.instagram.com. The old
 // api.instagram.com/oauth/authorize host belonged to the retired Basic Display
@@ -87,7 +92,48 @@ export function verifyOAuthState(state: string | null): OAuthStatePayload | null
   }
 }
 
+// Classic Facebook Login permissions for the Instagram API with Facebook
+// Login. pages_manage_metadata installs the app on the Page so Instagram
+// webhooks are delivered.
+const FACEBOOK_LOGIN_SCOPES = [
+  "instagram_basic",
+  "instagram_manage_comments",
+  "instagram_manage_messages",
+  "instagram_manage_insights",
+  "pages_show_list",
+  "pages_read_engagement",
+  "pages_manage_metadata",
+  "business_management",
+].join(",");
+
+function facebookGraphBase() {
+  return `https://graph.facebook.com/${getMetaGraphApiVersion()}`;
+}
+
+function getFacebookAuthorizationUrl(redirectUri: string, state: string): string {
+  const params = new URLSearchParams({
+    client_id: requireEnv("FACEBOOK_APP_ID"),
+    redirect_uri: redirectUri,
+    response_type: "code",
+    state,
+  });
+  // Facebook Login for Business configurations replace scope with config_id.
+  const configId = process.env.FACEBOOK_LOGIN_CONFIG_ID;
+  if (configId) {
+    params.set("config_id", configId);
+    params.set("override_default_response_type", "true");
+  } else {
+    params.set("scope", FACEBOOK_LOGIN_SCOPES);
+  }
+
+  return `https://www.facebook.com/${getMetaGraphApiVersion()}/dialog/oauth?${params.toString()}`;
+}
+
 export function getAuthorizationUrl(redirectUri: string, state: string): string {
+  if (isFacebookLoginMode()) {
+    return getFacebookAuthorizationUrl(redirectUri, state);
+  }
+
   const params = new URLSearchParams({
     client_id: requireEnv("INSTAGRAM_APP_ID"),
     redirect_uri: redirectUri,
@@ -130,6 +176,89 @@ export async function exchangeCodeForToken(
     accessToken: data.access_token,
     userId: String(data.user_id),
   };
+}
+
+async function readGraphJson<T>(response: Response, action: string): Promise<T> {
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok || data?.error) {
+    throw new Error(
+      `${action} failed: ${data?.error?.message || JSON.stringify(data)}`
+    );
+  }
+  return data as T;
+}
+
+export interface FacebookPageInstagramAccount {
+  pageId: string;
+  pageName: string;
+  pageAccessToken: string;
+  instagramId: string;
+  username: string;
+  name?: string;
+}
+
+/**
+ * Facebook Login: code -> short-lived user token -> long-lived user token ->
+ * the Pages that user manages. A Page token read with a long-lived user token
+ * does not expire, so it is what gets stored for each linked Instagram account.
+ */
+export async function exchangeCodeForPageAccounts(
+  code: string,
+  redirectUri: string
+): Promise<FacebookPageInstagramAccount[]> {
+  const appId = requireEnv("FACEBOOK_APP_ID");
+  const appSecret = requireEnv("FACEBOOK_APP_SECRET");
+
+  const shortUrl = new URL(`${facebookGraphBase()}/oauth/access_token`);
+  shortUrl.searchParams.set("client_id", appId);
+  shortUrl.searchParams.set("client_secret", appSecret);
+  shortUrl.searchParams.set("redirect_uri", redirectUri);
+  shortUrl.searchParams.set("code", code);
+  const short = await readGraphJson<{ access_token: string }>(
+    await fetch(shortUrl.toString()),
+    "Token exchange"
+  );
+
+  const longUrl = new URL(`${facebookGraphBase()}/oauth/access_token`);
+  longUrl.searchParams.set("grant_type", "fb_exchange_token");
+  longUrl.searchParams.set("client_id", appId);
+  longUrl.searchParams.set("client_secret", appSecret);
+  longUrl.searchParams.set("fb_exchange_token", short.access_token);
+  const long = await readGraphJson<{ access_token: string }>(
+    await fetch(longUrl.toString()),
+    "Long-lived token exchange"
+  );
+
+  const pagesUrl = new URL(`${facebookGraphBase()}/me/accounts`);
+  pagesUrl.searchParams.set(
+    "fields",
+    "id,name,access_token,instagram_business_account{id,username,name}"
+  );
+  pagesUrl.searchParams.set("limit", "100");
+  pagesUrl.searchParams.set("access_token", long.access_token);
+  const pages = await readGraphJson<{
+    data?: Array<{
+      id: string;
+      name: string;
+      access_token?: string;
+      instagram_business_account?: { id: string; username: string; name?: string };
+    }>;
+  }>(await fetch(pagesUrl.toString()), "Listing Facebook Pages");
+
+  return (pages.data ?? []).flatMap((page) =>
+    page.access_token && page.instagram_business_account
+      ? [
+          {
+            pageId: page.id,
+            pageName: page.name,
+            pageAccessToken: page.access_token,
+            instagramId: page.instagram_business_account.id,
+            username: page.instagram_business_account.username,
+            name: page.instagram_business_account.name,
+          },
+        ]
+      : []
+  );
 }
 
 function getEncryptionKey(): Buffer {
