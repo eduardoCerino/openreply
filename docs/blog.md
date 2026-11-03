@@ -25,10 +25,29 @@ Hay dos modos, y los dos usan el mismo pipeline:
 1. **Generación (OpenAI, Responses API con Structured Outputs).** El modelo devuelve JSON con title tag (≤60), meta description (≤155), slug, respuesta directa, cuerpo HTML, FAQ, texto del CTA, tags, ALT y la escena para la portada. El prompt (`lib/blog/prompt.ts`) fija el español de México, el tono, las reglas de SEO on-page y GEO, los hechos permitidos de cada producto y la prohibición de inventar cifras, siglas o fuentes.
 2. **Ensamblado y revisión.** El HTML del modelo se limpia: solo se permiten etiquetas de texto, se quitan atributos y enlaces, y el H1 pasa a H2, porque el tema ya muestra el título como único H1. El sistema arma el artículo en este orden: respuesta directa, cuerpo, CTA suave al producto, de 2 a 3 artículos relacionados con el mismo tag (consultados en Shopify; si no hay, se omite la sección) y FAQ. Después corre las revisiones (palabras, keyword en H1, primer párrafo y H2, FAQ, longitudes). Si falla una revisión crítica, regenera una vez.
 3. **Tags.** El tag del producto (`inositol` o `creatina`) siempre va primero, porque el CTA dinámico del tema depende de él. Un artículo nunca lleva el tag del otro producto. Los artículos sin producto no llevan ninguno de los dos.
-4. **Imagen (opcional).** `gpt-image-2.5-flare` genera una escena editorial y cálida; `sharp` la recorta a 1200×630 en WebP (≈60–150 KB). Si la imagen falla, el artículo se publica sin portada.
+4. **Imagen (opcional).** `gpt-image-2.5-flare` genera una portada flat lay en 16:9 (1536×864) y `sharp` la reduce a 1200×675 en WebP (≈60–150 KB). El estilo se explica en [Estilo de las portadas](#estilo-de-las-portadas). Si la imagen falla, el artículo se publica sin portada.
 5. **Publicación (Shopify Admin GraphQL, `articleCreate`).** Se crea el artículo publicado con título, cuerpo, handle, tags, autor “Equipo editorial”, extracto, `global.title_tag`, `global.description_tag` y la portada con su ALT. Después se agrega al cuerpo el JSON-LD (`BlogPosting` + `FAQPage` + `BreadcrumbList`) con la URL, la fecha y la imagen reales.
 6. **Idempotencia.** `BlogQueueState` marca cada tema de la cola como `PUBLISHED` o `SKIPPED`. Antes de generar se revisa si ya existe un artículo con ese handle en Shopify: los 3 artículos que ya estaban publicados (SOMP, creatina, inositol) se marcan solos como omitidos. Un borrador solo puede pasar una vez de `READY` a `PUBLISHING`. El job automático no publica dos veces en 20 horas.
 7. **Errores y logs.** Las llamadas a OpenAI y Shopify se reintentan hasta 3 veces con backoff (errores de red, 429 y 5xx, respetando `Retry-After`). Cada ejecución queda en `BlogRun` (visible en el panel). Un tema que falla 3 veces se deja de intentar; la causa queda en `lastError`. Nada de esto detiene el worker de DMs.
+
+## Estilo de las portadas
+
+Todas las portadas se ven de la misma marca (flat lay editorial, femenino, premium), pero cada una tiene su propia superficie, props y ángulo. El prompt que recibe el modelo se arma en tres partes, en `lib/blog/image-style.ts`:
+
+1. **CONSTANTES** (`IMAGE_CONSTANTS`): la familia visual. Va siempre igual: fotografía editorial flat lay, paleta rosa, coral, durazno y crema, luz natural, espacio negativo, 16:9, sin personas, texto, logos ni nada clínico.
+2. **ESCENA**: la escribe la IA junto con el artículo (campo `imagePrompt`, reglas en `lib/blog/prompt.ts`). Es una oración con los objetos del flat lay según el tema: comparativas con varios botes y scoops alineados, temas de SOP e inositol con una escena sobria y calmada, entrenamiento con un shaker y una liga, etc.
+3. **VARIABLES**: cambian en cada portada.
+
+| Lista | Constante | Opciones |
+| --- | --- | --- |
+| Superficie/fondo | `IMAGE_SURFACES` | mármol claro con vetas rosas, lino beige, papel texturizado crema, superficie rosa durazno, madera clara, cerámica mate rosada, terracota suave |
+| Props (2–3 distintos cada vez) | `IMAGE_PROPS` | flores frescas, hojas verdes, vaso con bebida rosada, scoop con polvo, frutas (durazno, frambuesa, limón rosa), tela de lino arrugada, pétalos sueltos |
+| Ángulo/composición | `IMAGE_ANGLES` | cenital perfecto, ligeramente en diagonal, composición descentrada, close-up parcial |
+| Intensidad de color | `IMAGE_COLOR_INTENSITIES` | pastel y aireado / más saturado y cálido |
+
+Para agregar o quitar opciones, edita esas listas y vuelve a desplegar.
+
+**Regla anti-repetición.** La combinación elegida se guarda en `BlogPost.imageStyle`. Antes de cada portada, `lastImageStyle` (en `lib/blog/pipeline.ts`) lee la de la portada anterior, y `pickImageStyle` (en `lib/blog/image-style.ts`) descarta su superficie y su ángulo y evita repetir exactamente los mismos props. Si una portada falla, su combinación no cuenta. La combinación elegida aparece en la revisión del brief, junto a "Imagen de portada".
 
 ## Variables de entorno
 

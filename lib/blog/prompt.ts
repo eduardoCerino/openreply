@@ -77,7 +77,7 @@ export const ARTICLE_SCHEMA = {
     },
     imageAlt: str("Texto ALT de la imagen de portada, descriptivo y con el keyword principal, máximo 125 caracteres."),
     imagePrompt: str(
-      "Descripción en inglés de una escena editorial/lifestyle para la portada (sin texto, sin logos, sin frascos de producto)."
+      "ESCENA de la portada en español: una sola oración corta con los objetos principales de un flat lay relacionado con el tema. Sin superficie, ángulo ni estilo (los agrega el sistema). Sin personas, texto, logos ni nada clínico."
     ),
   },
 } as const;
@@ -130,7 +130,12 @@ PROHIBIDO
 - Atributos de estilo, clases, scripts, imágenes o emojis en el HTML.
 
 IMAGEN
-- imagePrompt: escena editorial/lifestyle cálida con mujeres mexicanas reales en su día a día (bienestar, movimiento, cocina, descanso), luz natural, paleta durazno/rosa suave sutil. Nada clínico, sin batas, sin pastillas, sin texto, sin logos, sin productos como protagonista.`;
+- imagePrompt es solo la ESCENA de un flat lay (objetos vistos desde arriba) que represente el tema, en una oración. El sistema le agrega el estilo de marca, la superficie, los props y el ángulo.
+- Top, comparativas o "mejor X": por ejemplo, "varios botes y scoops de suplementos en polvo rosados alineados como comparativa".
+- Salud y hormonas (SOP, SOMP, inositol, ciclo): escena sobria y calmada, por ejemplo "un bote de suplemento en polvo junto a una taza de té y flores", nunca nada clínico.
+- Entrenamiento, glúteos o creatina: por ejemplo, "un shaker con bebida rosada, un scoop de polvo y una liga de resistencia doblada".
+- Nutrición: ingredientes o un platillo sencillo vistos desde arriba.
+- Nunca personas, manos, texto, etiquetas legibles, logos, pastillas, jeringas ni batas.`;
 }
 
 export function buildInput(brief: ArticleBrief, feedback?: string): string {
@@ -155,10 +160,4 @@ export function buildInput(brief: ArticleBrief, feedback?: string): string {
     lines.push("", `Corrige estos problemas de la versión anterior: ${feedback}`);
   }
   return lines.filter((line) => line !== null).join("\n");
-}
-
-export function buildImagePrompt(scene: string): string {
-  return `${scene}
-
-Style: editorial lifestyle photography for a women's wellness blog cover, warm natural light, soft peach and blush tones used subtly, shallow depth of field, authentic and relaxed mood, wide 1.91:1 composition with breathing room. No text, no logos, no supplement bottles or pills, nothing clinical or medical.`;
 }

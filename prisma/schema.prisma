@@ -496,6 +496,9 @@ model BlogPost {
   faqs              Json?
   checks            Json?
   imageAlt          String?
+  // Surface, props, angle and color picked for the cover; read back to keep the
+  // next cover from repeating the same surface or angle.
+  imageStyle        Json?
   imageData         Bytes?
   imageMimeType     String?
   model             String?

@@ -8,6 +8,15 @@ import {
   truncateAtWord,
 } from "../lib/blog/html";
 import { buildArticleJsonLd, renderJsonLdScript } from "../lib/blog/json-ld";
+import {
+  IMAGE_ANGLES,
+  IMAGE_CONSTANTS,
+  IMAGE_PROPS,
+  IMAGE_SURFACES,
+  buildCoverPrompt,
+  isImageStyle,
+  pickImageStyle,
+} from "../lib/blog/image-style";
 import { loadBlogQueue, pendingQueueItems, todayInTimezone } from "../lib/blog/queue";
 import { resolveTags } from "../lib/blog/pipeline";
 
@@ -134,5 +143,39 @@ describe("blog queue", () => {
       todayInTimezone("America/Mexico_City")
     );
     expect(pending).toEqual([]);
+  });
+});
+
+describe("cover image style", () => {
+  it("builds CONSTANTES + ESCENA + VARIABLES", () => {
+    const style = pickImageStyle(null, () => 0);
+    const prompt = buildCoverPrompt("un bote de inositol junto a una taza de té.", style);
+    expect(prompt.startsWith(IMAGE_CONSTANTS)).toBe(true);
+    expect(prompt).toContain("Escena: un bote de inositol junto a una taza de té.");
+    expect(prompt).toContain(`Superficie: ${style.surface}.`);
+    expect(prompt).toContain(`Ángulo y composición: ${style.angle}.`);
+    expect(style.props.length).toBeGreaterThanOrEqual(2);
+    expect(style.props.length).toBeLessThanOrEqual(3);
+    expect(new Set(style.props).size).toBe(style.props.length);
+  });
+
+  it("never repeats the previous surface, angle or exact props", () => {
+    let previous = pickImageStyle(null);
+    for (let i = 0; i < 200; i++) {
+      const next = pickImageStyle(previous);
+      expect(next.surface).not.toBe(previous.surface);
+      expect(next.angle).not.toBe(previous.angle);
+      expect([...next.props].sort()).not.toEqual([...previous.props].sort());
+      previous = next;
+    }
+  });
+
+  it("only uses options from the documented lists", () => {
+    const style = pickImageStyle(null);
+    expect(IMAGE_SURFACES).toContain(style.surface);
+    expect(IMAGE_ANGLES).toContain(style.angle);
+    for (const prop of style.props) expect(IMAGE_PROPS).toContain(prop);
+    expect(isImageStyle(style)).toBe(true);
+    expect(isImageStyle({ surface: "x" })).toBe(false);
   });
 });

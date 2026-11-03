@@ -1,4 +1,4 @@
-import type { BlogPost, BlogRunTrigger } from "@/app/generated/prisma/client";
+import { Prisma, type BlogPost, type BlogRunTrigger } from "@/app/generated/prisma/client";
 import { prisma } from "@/lib/db/client";
 import { getBaseUrl } from "@/lib/env";
 import {
@@ -18,11 +18,11 @@ import {
   type QualityCheck,
   type RelatedLink,
 } from "@/lib/blog/html";
+import { buildCoverPrompt, isImageStyle, pickImageStyle, type ImageStyle } from "@/lib/blog/image-style";
 import { buildArticleJsonLd, renderJsonLdScript } from "@/lib/blog/json-ld";
 import { generateCoverImage, generateStructured } from "@/lib/blog/openai";
 import {
   ARTICLE_SCHEMA,
-  buildImagePrompt,
   buildInput,
   buildInstructions,
   type ArticleBrief,
@@ -110,6 +110,20 @@ async function relatedLinks(product: BlogProduct, tags: string[], excludeHandle?
     console.warn("[Blog] Related articles unavailable:", errorMessage(error));
     return [];
   }
+}
+
+/**
+ * Style of the most recent cover, for the anti-repetition rule: the next
+ * cover avoids its surface and angle. Discarded drafts still count, since
+ * they were the last thing seen.
+ */
+async function lastImageStyle(excludeId: string): Promise<ImageStyle | null> {
+  const previous = await prisma.blogPost.findFirst({
+    where: { id: { not: excludeId }, imageStyle: { not: Prisma.DbNull } },
+    orderBy: { createdAt: "desc" },
+    select: { imageStyle: true },
+  });
+  return isImageStyle(previous?.imageStyle) ? previous.imageStyle : null;
 }
 
 async function uniqueHandle(base: string, fixed: boolean): Promise<string> {
@@ -205,6 +219,7 @@ export async function generateDraft(postId: string): Promise<BlogPost> {
     });
 
     let image: { data: Buffer; mimeType: string } | null = null;
+    let imageStyle: ImageStyle | null = null;
     const allChecks: QualityCheck[] = [
       ...checks,
       {
@@ -216,10 +231,18 @@ export async function generateDraft(postId: string): Promise<BlogPost> {
     ];
     if (post.generateImage) {
       try {
-        image = await generateCoverImage(buildImagePrompt(article.imagePrompt));
-        allChecks.push({ id: "image", label: "Imagen de portada", ok: true, detail: `${Math.round(image.data.length / 1024)} KB` });
+        imageStyle = pickImageStyle(await lastImageStyle(post.id));
+        image = await generateCoverImage(buildCoverPrompt(article.imagePrompt, imageStyle));
+        allChecks.push({
+          id: "image",
+          label: "Imagen de portada",
+          ok: true,
+          detail: `${Math.round(image.data.length / 1024)} KB · ${imageStyle.surface}, ${imageStyle.angle}`,
+        });
       } catch (error) {
-        // Publish without a cover rather than lose the article.
+        // Publish without a cover rather than lose the article. The style was
+        // never seen, so it does not count for the anti-repetition rule.
+        imageStyle = null;
         allChecks.push({ id: "image", label: "Imagen de portada", ok: false, detail: errorMessage(error) });
       }
     }
@@ -238,6 +261,7 @@ export async function generateDraft(postId: string): Promise<BlogPost> {
         faqs: article.faqs,
         checks: allChecks as unknown as object,
         imageAlt: truncateAtWord(article.imageAlt, 125),
+        imageStyle: imageStyle ? (imageStyle as unknown as Prisma.InputJsonValue) : Prisma.DbNull,
         imageData: image ? new Uint8Array(image.data) : null,
         imageMimeType: image?.mimeType ?? null,
         model,

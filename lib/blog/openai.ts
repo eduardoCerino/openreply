@@ -89,11 +89,11 @@ export async function generateStructured<T>({
   return { value: JSON.parse(text) as T, model: textModel };
 }
 
-// The image model needs sides divisible by 16; 1536x800 is the closest ~1.91:1
-// it accepts, then sharp crops to the 1200x630 Open Graph size.
-const GENERATE_SIZE = "1536x800";
+// Covers are 16:9. The image model needs sides divisible by 16, so it renders
+// 1536x864 and sharp scales it down to a light 1200x675 WebP.
+const GENERATE_SIZE = "1536x864";
 export const COVER_WIDTH = 1200;
-export const COVER_HEIGHT = 630;
+export const COVER_HEIGHT = 675;
 
 export async function generateCoverImage(
   prompt: string

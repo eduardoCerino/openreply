@@ -205,8 +205,8 @@ export default function BlogBriefPage() {
               src={`/api/blog/images/${draft.id}?v=${encodeURIComponent(draft.updatedAt)}`}
               alt={draft.imageAlt ?? ""}
               width={1200}
-              height={630}
-              className="mb-6 aspect-[1200/630] w-full rounded object-cover"
+              height={675}
+              className="mb-6 aspect-video w-full rounded object-cover"
             />
           )}
           <h1 className="text-3xl font-bold leading-tight text-foreground">{draft.title}</h1>
