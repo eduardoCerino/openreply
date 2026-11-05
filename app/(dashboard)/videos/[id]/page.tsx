@@ -106,6 +106,33 @@ interface Project {
     error: string | null;
     updatedAt: string;
   }>;
+  render?: {
+    status: "PENDING" | "RENDERING" | "READY" | "FAILED";
+    videoUrl: string | null;
+    sizeBytes: number | null;
+    error: string | null;
+    updatedAt: string;
+  } | null;
+  publications?: Array<{
+    id: string;
+    platform: string;
+    status: "PENDING" | "PUBLISHING" | "PUBLISHED" | "FAILED";
+    caption: string;
+    instagramAccountId: string | null;
+    permalink: string | null;
+    error: string | null;
+    publishedAt: string | null;
+  }>;
+  instagramAccounts?: Array<{ id: string; username: string }>;
+}
+
+function defaultCaption(script: Script | null): string {
+  if (!script) return "";
+  const tags = (script.hashtags ?? [])
+    .map((tag) => tag.trim().replace(/^#+/, "").replace(/\s+/g, ""))
+    .filter(Boolean)
+    .map((tag) => `#${tag}`);
+  return [script.caption?.trim(), tags.join(" ")].filter(Boolean).join("\n\n");
 }
 
 const SECTION_LABEL: Record<Scene["section"], string> = {
@@ -233,8 +260,13 @@ export default function VideoScriptPage() {
         payload.data.status === "GENERATING_SCRIPT" &&
           Date.now() - Date.parse(payload.data.updatedAt) > STALE_SCRIPT_MS
       );
-      const framesBusy = [...(payload.data.frames ?? []), ...(payload.data.clips ?? [])].some(
-        (item: { status: string }) => item.status === "PENDING" || item.status === "GENERATING"
+      const framesBusy = [
+        ...(payload.data.frames ?? []),
+        ...(payload.data.clips ?? []),
+        ...(payload.data.render ? [payload.data.render] : []),
+        ...(payload.data.publications ?? []),
+      ].some((item: { status: string }) =>
+        ["PENDING", "GENERATING", "RENDERING", "PUBLISHING"].includes(item.status)
       );
       if (payload.data.status === "GENERATING_SCRIPT" || framesBusy) {
         timer = setTimeout(() => void poll(), 3000);
@@ -415,7 +447,7 @@ export default function VideoScriptPage() {
               ? clipsBusy
                 ? `Generando clips con P-Video (draft 720p): ${clipsReady} de ${sceneCount} listos…`
                 : clipsReady === sceneCount
-                  ? `Los ${sceneCount} clips están listos. Siguiente fase: unirlos en un solo video.`
+                  ? `Los ${sceneCount} clips están listos.`
                   : `Las ${sceneCount} imágenes están listas. Genera los ${sceneCount} clips (≈ $${(sceneCount * 5 * 0.005).toFixed(2)} USD en draft 720p).`
               : framesBusy
                 ? `Generando imágenes: ${framesReady} de ${script?.scenes.length ?? 0} listas…`
@@ -442,6 +474,14 @@ export default function VideoScriptPage() {
             </button>
           )}
         </div>
+      )}
+      {project.status === "SCRIPT_APPROVED" && sceneCount > 0 && clipsReady === sceneCount && (
+        <PublishPanel
+          key={project.publications?.find((item) => item.platform === "instagram")?.id ?? "new"}
+          project={project}
+          busy={busy}
+          act={act}
+        />
       )}
       {(project.error || actionError) && (
         <div className="rounded-lg border border-error/30 bg-error/10 p-4 text-sm text-foreground">
@@ -779,5 +819,143 @@ export default function VideoScriptPage() {
         </div>
       )}
     </div>
+  );
+}
+
+function PublishPanel({
+  project,
+  busy,
+  act,
+}: {
+  project: Project;
+  busy: boolean;
+  act: (path: string, init: RequestInit, onSuccess?: () => void) => Promise<void>;
+}) {
+  const render = project.render ?? null;
+  const publication = project.publications?.find((item) => item.platform === "instagram") ?? null;
+  const accounts = project.instagramAccounts ?? [];
+  const [caption, setCaption] = useState(publication?.caption ?? defaultCaption(project.script));
+  const [accountId, setAccountId] = useState(publication?.instagramAccountId ?? accounts[0]?.id ?? "");
+  const rendering = render?.status === "PENDING" || render?.status === "RENDERING";
+  const publishing = publication?.status === "PENDING" || publication?.status === "PUBLISHING";
+  const published = publication?.status === "PUBLISHED";
+  const hashtagCount = (caption.match(/#[^\s#]+/g) ?? []).length;
+
+  function renderVideo() {
+    void act(`/api/videos/${project.id}/render`, { method: "POST" });
+  }
+
+  function publish() {
+    const account = accounts.find((item) => item.id === accountId);
+    if (!account) return;
+    if (!window.confirm(`¿Publicar este Reel en @${account.username}? Se publica de inmediato y queda público.`)) return;
+    void act(`/api/videos/${project.id}/publish`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ caption, instagramAccountId: accountId }),
+    });
+  }
+
+  return (
+    <section className="panel space-y-4 rounded-lg p-4">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div>
+          <h2 className="text-base font-semibold text-foreground">Video final y publicación</h2>
+          <p className="text-xs text-muted">
+            {rendering
+              ? "Uniendo los clips en un solo video…"
+              : render?.status === "READY"
+                ? `Video listo${render.sizeBytes ? ` (${(render.sizeBytes / 1_000_000).toFixed(1)} MB)` : ""}.`
+                : render?.status === "FAILED"
+                  ? "No se pudo unir el video."
+                  : "Une los clips en un solo video de 9:16 para revisarlo y publicarlo."}
+          </p>
+        </div>
+        {!rendering && !publishing && !published && (
+          <button
+            type="button"
+            onClick={renderVideo}
+            disabled={busy}
+            className={render?.status === "READY" ? secondaryButton : primaryButton}
+          >
+            {render?.status === "READY" ? "Volver a unir" : "Unir video"}
+          </button>
+        )}
+      </div>
+      {render?.status === "FAILED" && render.error && (
+        <p className="rounded bg-error/10 p-2 text-xs text-foreground">{render.error}</p>
+      )}
+
+      {render?.status === "READY" && render.videoUrl && (
+        <div className="grid gap-4 md:grid-cols-[240px_minmax(0,1fr)]">
+          <video
+            src={render.videoUrl}
+            controls
+            playsInline
+            preload="metadata"
+            className="aspect-[9/16] w-full max-w-[240px] rounded bg-black"
+          />
+          <div className="min-w-0 space-y-3">
+            {published ? (
+              <div className="space-y-2 rounded-lg border border-success/30 bg-success/10 p-3 text-sm text-foreground">
+                <p>Publicado en Instagram Reels.</p>
+                {publication?.permalink && (
+                  <a href={publication.permalink} target="_blank" rel="noreferrer" className="text-accent hover:underline">
+                    Ver el Reel →
+                  </a>
+                )}
+              </div>
+            ) : accounts.length === 0 ? (
+              <p className="text-sm text-muted">
+                Conecta una cuenta de Instagram (directo con Meta) para publicar.
+              </p>
+            ) : (
+              <>
+                <label className="block space-y-1">
+                  <span className="text-xs font-semibold uppercase text-muted">Cuenta</span>
+                  <select
+                    value={accountId}
+                    onChange={(event) => setAccountId(event.target.value)}
+                    disabled={publishing}
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+                  >
+                    {accounts.map((account) => (
+                      <option key={account.id} value={account.id}>
+                        @{account.username}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <label className="block space-y-1">
+                  <span className="text-xs font-semibold uppercase text-muted">Caption</span>
+                  <textarea
+                    value={caption}
+                    onChange={(event) => setCaption(event.target.value)}
+                    disabled={publishing}
+                    rows={6}
+                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm text-foreground"
+                  />
+                  <span className={`text-xs ${caption.length > 2200 || hashtagCount > 30 ? "text-error" : "text-muted"}`}>
+                    {caption.length}/2200 caracteres · {hashtagCount}/30 hashtags
+                  </span>
+                </label>
+                {publication?.status === "FAILED" && publication.error && (
+                  <p className="rounded bg-error/10 p-2 text-xs text-foreground">{publication.error}</p>
+                )}
+                <button
+                  type="button"
+                  onClick={publish}
+                  disabled={busy || publishing || !caption.trim() || !accountId}
+                  className={primaryButton}
+                >
+                  {publishing ? "Publicando en Instagram…" : publication?.status === "FAILED" ? "Reintentar publicación" : "Publicar en Reels"}
+                </button>
+                <p className="text-xs text-muted">Facebook y TikTok vienen después.</p>
+              </>
+            )}
+          </div>
+        </div>
+      )}
+    </section>
   );
 }

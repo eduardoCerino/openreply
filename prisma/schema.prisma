@@ -588,6 +588,8 @@ model VideoProject {
   updatedAt   DateTime           @updatedAt
   frames      VideoFrame[]
   clips       VideoClip[]
+  render      VideoRender?
+  publications VideoPublication[]
 
   @@index([status, createdAt])
 }
@@ -660,4 +662,56 @@ model VideoClip {
 
   @@unique([projectId, sceneIndex])
   @@index([projectId])
+}
+
+enum VideoRenderStatus {
+  PENDING
+  RENDERING
+  READY
+  FAILED
+}
+
+// The final video: every scene clip joined by ffmpeg in the worker. It lives
+// in Vercel Blob (public URL), because Instagram only publishes Reels from a
+// public video_url and a Vercel function cannot serve a file over 4.5 MB.
+model VideoRender {
+  id              String            @id @default(cuid())
+  projectId       String            @unique
+  status          VideoRenderStatus @default(PENDING)
+  videoUrl        String?
+  sizeBytes       Int?
+  durationSeconds Float?
+  error           String?
+  createdAt       DateTime          @default(now())
+  updatedAt       DateTime          @updatedAt
+  project         VideoProject      @relation(fields: [projectId], references: [id], onDelete: Cascade)
+}
+
+enum VideoPublicationStatus {
+  PENDING
+  PUBLISHING
+  PUBLISHED
+  FAILED
+}
+
+// One post of the final video on one platform ("instagram" for now; Facebook
+// and TikTok later).
+model VideoPublication {
+  id                 String                 @id @default(cuid())
+  projectId          String
+  platform           String
+  status             VideoPublicationStatus @default(PENDING)
+  instagramAccountId String?
+  caption            String
+  containerId        String?
+  mediaId            String?
+  permalink          String?
+  error              String?
+  publishedAt        DateTime?
+  createdById        String?
+  createdAt          DateTime               @default(now())
+  updatedAt          DateTime               @updatedAt
+  project            VideoProject           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, platform])
 }

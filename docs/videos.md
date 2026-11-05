@@ -253,7 +253,26 @@ Cuando las 11 imágenes están listas, **Generar clips** anima cada escena con *
 - **Costo:** 11 clips × 5 s × $0.005 = **≈ $0.28 USD por video** (draft 720p).
 - **Variable nueva:** `PRUNA_API_KEY`, en **Vercel y en el worker de Railway**.
 
+## Fase 4: video final
+
+Cuando los 11 clips están listos aparece **Video final y publicación** → **Unir video** (`lib/video/render.ts`):
+- **Unión:** el worker junta los clips en orden con **ffmpeg** (instalado en la imagen de Docker). Los normaliza a 720×1280, 30 fps y audio de 48 kHz, y los recodifica al formato de Reels: H.264, AAC a 128 kbps y `faststart`.
+- **Almacenamiento:** el MP4 final se sube a **Vercel Blob** con una URL pública difícil de adivinar. Instagram solo publica Reels desde una URL pública, y una función de Vercel no puede servir archivos de más de 4.5 MB.
+- **Volver a unir:** si regeneras un clip, usa **Volver a unir**; el archivo anterior se borra del Blob.
+- **Variable nueva:** `BLOB_READ_WRITE_TOKEN`. En Vercel → *Storage* → *Create* → *Blob*, conecta el store al proyecto (Vercel agrega la variable sola) y **copia el mismo valor al worker de Railway**.
+
+## Fase 5: publicar en Instagram Reels
+
+Con el video listo, eliges la cuenta y revisas el **caption** (viene del guion más los hashtags; máximo 2200 caracteres y 30 hashtags). Luego **Publicar en Reels** (`lib/video/publish.ts`):
+- **Flujo:** el worker crea el contenedor de Reel con `video_url`, revisa su estado cada 15 s (hasta 10 min) y lo publica con `media_publish`. Al final guarda el link del Reel (`VideoPublication`).
+- **Comparte en el feed:** `share_to_feed: true`.
+- **Si falla:** el error aparece en el panel y puedes **Reintentar publicación**. Si el contenedor sigue vigente (24 h) y no cambiaste el caption ni la cuenta, se reutiliza.
+- **Permiso nuevo:** `instagram_business_content_publish`. Ya se pide al conectar, pero **la cuenta conectada antes no lo tiene**: hay que agregar el permiso en la app de Meta (*Instagram → Permisos*) y **desconectar y volver a conectar** la cuenta en OpenReply. En modo Facebook Login el permiso es `instagram_content_publish`.
+- **Límite de Instagram:** 50 publicaciones por API cada 24 horas por cuenta.
+- La palabra del CTA debe tener su **automatización de OpenReply** para ese Reel (o la regla general) para que el DM con el link salga solo.
+
 ## Pendiente (siguientes fases)
 
-1. Unir los 11 clips en un solo video de 55 s (ffmpeg en el worker) y agregar el texto en pantalla.
-2. Cron de publicación, igual que el blog.
+1. Texto en pantalla (`onScreenText`) quemado en el video.
+2. Publicar también en Facebook y TikTok (`VideoPublication.platform`).
+3. Cron de publicación, igual que el blog.

@@ -2,10 +2,13 @@ import { Queue, Worker, type Job } from "bullmq";
 import { getRedisConnection } from "@/lib/queue/client";
 import { generateClip, generatePendingClips } from "@/lib/video/clips";
 import { generateFrame, generatePendingFrames } from "@/lib/video/frames";
+import { publishToInstagram } from "@/lib/video/publish";
+import { renderVideo } from "@/lib/video/render";
 import { generateVideoScript } from "@/lib/video/script";
 
 // Video work runs in the worker like the blog: scripts (phase 1), scene start
-// frames (phase 2) and the P-Video clips (phase 3).
+// frames (phase 2), the P-Video clips (phase 3), the joined final video
+// (phase 4) and its Instagram Reel (phase 5).
 
 export const VIDEO_QUEUE_NAME = "video-generation";
 export const SCRIPT_JOB = "video-script";
@@ -13,13 +16,17 @@ export const FRAMES_JOB = "video-frames";
 export const FRAME_JOB = "video-frame";
 export const CLIPS_JOB = "video-clips";
 export const CLIP_JOB = "video-clip";
+export const RENDER_JOB = "video-render";
+export const PUBLISH_JOB = "video-publish";
 
 export type VideoJob =
   | { kind: typeof SCRIPT_JOB; projectId: string; revision: number }
   | { kind: typeof FRAMES_JOB; projectId: string }
   | { kind: typeof FRAME_JOB; frameId: string }
   | { kind: typeof CLIPS_JOB; projectId: string }
-  | { kind: typeof CLIP_JOB; clipId: string };
+  | { kind: typeof CLIP_JOB; clipId: string }
+  | { kind: typeof RENDER_JOB; projectId: string }
+  | { kind: typeof PUBLISH_JOB; publicationId: string };
 
 let videoQueue: Queue<VideoJob> | null = null;
 
@@ -65,6 +72,18 @@ export async function enqueueClipJob(clipId: string) {
   return getVideoQueue().add(CLIP_JOB, { kind: CLIP_JOB, clipId }, { jobId: `${CLIP_JOB}_${clipId}_${Date.now()}` });
 }
 
+export async function enqueueRenderJob(projectId: string) {
+  return getVideoQueue().add(RENDER_JOB, { kind: RENDER_JOB, projectId }, { jobId: `${RENDER_JOB}_${projectId}_${Date.now()}` });
+}
+
+export async function enqueuePublishJob(publicationId: string) {
+  return getVideoQueue().add(
+    PUBLISH_JOB,
+    { kind: PUBLISH_JOB, publicationId },
+    { jobId: `${PUBLISH_JOB}_${publicationId}_${Date.now()}` }
+  );
+}
+
 async function processVideoJob(job: Job<VideoJob>) {
   const startedAt = Date.now();
   console.log(`[Video Worker] ${job.name} ${job.id} started`);
@@ -101,6 +120,24 @@ async function processVideoJob(job: Job<VideoJob>) {
       const clip = await generateClip(job.data.clipId);
       console.log(`[Video Worker] ${job.name} ${job.id}: ${clip.status}${clip.error ? ` (${clip.error.slice(0, 300)})` : ""}`);
       return clip.status;
+    }
+    case RENDER_JOB: {
+      const render = await renderVideo(job.data.projectId);
+      console.log(
+        `[Video Worker] ${job.name} ${job.id} finished in ${Math.round((Date.now() - startedAt) / 1000)}s: ${render.status}${
+          render.error ? ` (${render.error.slice(0, 300)})` : ""
+        }`
+      );
+      return render.status;
+    }
+    case PUBLISH_JOB: {
+      const publication = await publishToInstagram(job.data.publicationId);
+      console.log(
+        `[Video Worker] ${job.name} ${job.id} finished in ${Math.round((Date.now() - startedAt) / 1000)}s: ${publication.status}${
+          publication.error ? ` (${publication.error.slice(0, 300)})` : publication.permalink ? ` ${publication.permalink}` : ""
+        }`
+      );
+      return publication.status;
     }
   }
 }

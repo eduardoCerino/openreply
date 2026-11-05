@@ -972,3 +972,52 @@ export async function debugToken(inputToken: string, accessToken: string) {
   const response = await fetch(url.toString());
   return handleResponse(response);
 }
+
+// ── Content publishing (Reels) ─────────────────────────────────────────────
+// Needs instagram_business_content_publish (Instagram Login) or
+// instagram_content_publish (Facebook Login). With Instagram Login the video
+// must be a public video_url: resumable binary upload is Facebook Login only.
+
+export type ContainerStatus = "IN_PROGRESS" | "FINISHED" | "ERROR" | "EXPIRED" | "PUBLISHED";
+
+export async function createReelContainer(
+  accessToken: string,
+  input: { videoUrl: string; caption: string; shareToFeed?: boolean }
+): Promise<string> {
+  const url = new URL(`${instagramGraphBase()}/${await mediaOwnerNode(accessToken)}/media`);
+  const body = new URLSearchParams({
+    media_type: "REELS",
+    video_url: input.videoUrl,
+    caption: input.caption,
+    share_to_feed: String(input.shareToFeed ?? true),
+    access_token: accessToken,
+  });
+  const data = await handleResponse<{ id: string }>(await fetch(url.toString(), { method: "POST", body }));
+  return data.id;
+}
+
+export async function getContainerStatus(
+  accessToken: string,
+  containerId: string
+): Promise<{ statusCode: ContainerStatus; status?: string }> {
+  const url = new URL(`${instagramGraphBase()}/${containerId}`);
+  url.searchParams.set("fields", "status_code,status");
+  url.searchParams.set("access_token", accessToken);
+  const data = await handleResponse<{ status_code: ContainerStatus; status?: string }>(await fetch(url.toString()));
+  return { statusCode: data.status_code, status: data.status };
+}
+
+export async function publishContainer(accessToken: string, containerId: string): Promise<string> {
+  const url = new URL(`${instagramGraphBase()}/${await mediaOwnerNode(accessToken)}/media_publish`);
+  const body = new URLSearchParams({ creation_id: containerId, access_token: accessToken });
+  const data = await handleResponse<{ id: string }>(await fetch(url.toString(), { method: "POST", body }));
+  return data.id;
+}
+
+export async function getMediaPermalink(accessToken: string, mediaId: string): Promise<string | null> {
+  const url = new URL(`${instagramGraphBase()}/${mediaId}`);
+  url.searchParams.set("fields", "permalink");
+  url.searchParams.set("access_token", accessToken);
+  const data = await handleResponse<{ permalink?: string }>(await fetch(url.toString()));
+  return data.permalink ?? null;
+}
