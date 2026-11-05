@@ -169,7 +169,9 @@ export default function VideosPage() {
               : `${VIDEO_FORMATS[format].description} ${VIDEO_FORMATS[format].production}`}
           </p>
         </div>
-        <div>
+        {/* Duration is a fixed standard now (51-56 s, 170-190 words); the
+            picker is gone and the API keeps its default for older clients. */}
+        <div hidden>
           <label htmlFor="video-duration" className="mb-1 block text-sm font-medium text-foreground">
             Duración
           </label>

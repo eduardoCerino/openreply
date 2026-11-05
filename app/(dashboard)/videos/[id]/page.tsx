@@ -26,6 +26,7 @@ interface Scene {
   voiceover: string;
   onScreenText: string;
   visual: string;
+  shots?: string[];
   productVisible: boolean;
   startFramePrompt: string;
   endFramePrompt: string;
@@ -454,6 +455,13 @@ export default function VideoScriptPage() {
                   </>
                 )}
                 <p className="mt-2 text-sm text-muted">{scene.visual}</p>
+                {scene.shots && scene.shots.length > 0 && (
+                  <ul className="mt-1 space-y-0.5 text-xs text-muted">
+                    {scene.shots.map((shot) => (
+                      <li key={shot}>🎥 {shot}</li>
+                    ))}
+                  </ul>
+                )}
                 {showPrompts && (
                   <div className="mt-3 space-y-2 rounded border border-border bg-background p-3">
                     <FramePrompt label="Imagen inicial" value={scene.startFramePrompt} />

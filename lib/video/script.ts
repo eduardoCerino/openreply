@@ -11,6 +11,8 @@ import {
   SERIES_PHRASES,
   CTA_FORBIDDEN_OFFERS,
   CTA_KEYWORD_PATTERN,
+  MIN_PAUSES,
+  MIN_SHOTS_PER_SCENE,
   VIDEO_FORMATS,
   VIDEO_FORMAT_IDS,
   durationBudget,
@@ -176,6 +178,10 @@ export function normalizeCtaKeyword(value: string): string {
   return value.trim().replace(/^#+/, "").trim().toUpperCase();
 }
 
+const PAUSE_IN_TEXT = /[[(]\s*pausa[^\])]*[\])]/gi;
+// Non-global twin for .test(): a global regex keeps lastIndex between calls.
+const HAS_PAUSE_IN_TEXT = /[[(]\s*pausa[^\])]*[\])]/i;
+
 // Hard cap so a runaway response cannot produce dozens of clips.
 const MAX_SCENES = 14;
 
@@ -219,13 +225,20 @@ export function normalizeScript(
     onScreenComment: format === "reaccion" ? toWritten((script.onScreenComment ?? "").trim()) : "",
     hashtags: script.hashtags.map((tag) => `#${toWritten(tag).replace(/^#+/, "").replace(/\s+/g, "")}`),
     scenes: scenes.map((scene, index) => {
-      const lines = (scene.lines ?? []).map((line) => ({
-        speaker: line.speaker.trim(),
-        text: toSpoken(line.text.trim()),
-        direction: line.direction.trim().replace(/^\[|\]$/g, ""),
-      }));
+      const lines = (scene.lines ?? []).map((line) => {
+        // A pause written into the spoken text would be read out by the TTS
+        // voice; it belongs in the direction.
+        const hadPause = HAS_PAUSE_IN_TEXT.test(line.text);
+        const direction = line.direction.trim().replace(/^\[|\]$/g, "");
+        return {
+          speaker: line.speaker.trim(),
+          text: toSpoken(line.text.replace(PAUSE_IN_TEXT, " ").replace(/\s+/g, " ").trim()),
+          direction: hadPause && !/\bpausa\b/i.test(direction) ? [direction, "pausa"].filter(Boolean).join(", ") : direction,
+        };
+      });
       return {
         ...scene,
+        shots: (scene.shots ?? []).map((shot) => toWritten(shot.trim())).filter(Boolean),
         onScreenText: toWritten(scene.onScreenText ?? ""),
         visual: toWritten(scene.visual ?? ""),
         lines,
@@ -298,6 +311,14 @@ export function runScriptChecks(
     .map((scene, index) => ({ index, count: words(scene.voiceover) }))
     .filter((scene) => scene.count > SCENE_WORDS_MAX);
   const totalWords = scenes.reduce((sum, scene) => sum + words(scene.voiceover), 0);
+  const thinScenes = scenes
+    .map((scene, index) => ({ index, count: scene.shots?.length ?? 0 }))
+    .filter((scene) => scene.count < MIN_SHOTS_PER_SCENE)
+    .map((scene) => scene.index);
+  // Pauses are marked in the directions ("pausa breve…").
+  const pauses = scenes
+    .flatMap((scene) => scene.lines ?? [])
+    .filter((line) => /\bpausa\b/i.test(line.direction ?? "")).length;
   const voice = scenes.map((scene) => normalizeText(`${scene.voiceover} ${scene.onScreenText}`));
   // The reveal belongs to the lesson (part 3): insights and the felt line live
   // there, and the context must not give them away early.
@@ -500,9 +521,9 @@ export function runScriptChecks(
       : []),
     {
       id: "ctaOffer",
-      label: "El CTA promete una micro-solución, no un link ni el producto",
+      label: "El CTA ofrece el link de forma natural, sin venta dura",
       ok: !badOffer,
-      detail: badOffer ? `«${badOffer}»: promete un consejo que resuelva el dolor del gancho` : undefined,
+      detail: badOffer ? `«${badOffer}»: dilo como recomendación («te paso el link de la que tomo»)` : undefined,
       hard: Boolean(badOffer),
     },
     {
@@ -578,6 +599,18 @@ export function runScriptChecks(
       ok: catalogHits.length === 0,
       detail: catalogHits.length ? `«${catalogHits[0]}»` : undefined,
       hard: catalogHits.length > 0,
+    },
+    {
+      id: "shots",
+      label: `Cambio de cámara cada 2-3 s (${MIN_SHOTS_PER_SCENE} planos por escena)`,
+      ok: thinScenes.length === 0,
+      detail: thinScenes.length ? `escena ${thinScenes.map((index) => index + 1).join(", ")}` : undefined,
+    },
+    {
+      id: "pauses",
+      label: `Al menos ${MIN_PAUSES} pausas estratégicas`,
+      ok: pauses >= MIN_PAUSES,
+      detail: `${pauses} pausa(s)`,
     },
     {
       id: "pace",

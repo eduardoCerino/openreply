@@ -127,9 +127,8 @@ export const FORMAT_SELECTION: Array<{ idea: string; formats: VideoFormat[] }> =
 ];
 
 // ─── Duration ───────────────────────────────────────────────────────────────
-// Requested duration: "estandar" is each format's default range, "corto" drops
-// any format to 25-30 s, and "auto" uses the default but lets the model fall
-// back to corto when it has no second real insight (never inflate to fill).
+// Requested duration, kept for older projects: every value now maps to the
+// single standard below.
 export type VideoDuration = "auto" | "estandar" | "corto";
 export type DurationTier = "estandar" | "corto";
 
@@ -142,26 +141,35 @@ export interface DurationBudget {
   insights: 1 | 2;
 }
 
-const SHORT_SINGLE_VOICE: DurationBudget = { seconds: [25, 30], words: [65, 75], insights: 1 };
-const SHORT_DIALOGUE: DurationBudget = { seconds: [25, 30], words: [50, 60], insights: 1 };
+// One standard for every format and every requested duration: 51-56 s and
+// 170-190 spoken words. With 5-second clips, 11 scenes (55 s) is the only
+// length inside that window.
+export const VIDEO_STANDARD: DurationBudget = { seconds: [51, 56], words: [170, 190], insights: 2 };
+export const STANDARD_SCENES = 11;
+
+const STANDARD_TIERS: Record<DurationTier, DurationBudget> = { estandar: VIDEO_STANDARD, corto: VIDEO_STANDARD };
 
 export const VIDEO_DURATIONS: Record<VideoFormat, Record<DurationTier, DurationBudget>> = {
-  hac: { estandar: { seconds: [45, 55], words: [125, 155], insights: 2 }, corto: SHORT_SINGLE_VOICE },
-  vof: { estandar: { seconds: [45, 55], words: [130, 160], insights: 2 }, corto: SHORT_SINGLE_VOICE },
-  dinamico: { estandar: { seconds: [45, 55], words: [120, 150], insights: 2 }, corto: SHORT_SINGLE_VOICE },
-  vlog: { estandar: { seconds: [40, 50], words: [105, 135], insights: 2 }, corto: SHORT_SINGLE_VOICE },
-  // Dialogue falls apart when stretched, and nobody sits through a minute of
-  // answer after reading the comment, so these stay shorter.
-  pov: { estandar: { seconds: [30, 40], words: [70, 95], insights: 1 }, corto: SHORT_DIALOGUE },
-  personaje: { estandar: { seconds: [30, 40], words: [65, 90], insights: 1 }, corto: SHORT_DIALOGUE },
-  reaccion: { estandar: { seconds: [30, 40], words: [70, 90], insights: 1 }, corto: SHORT_SINGLE_VOICE },
+  hac: STANDARD_TIERS,
+  vof: STANDARD_TIERS,
+  dinamico: STANDARD_TIERS,
+  vlog: STANDARD_TIERS,
+  pov: STANDARD_TIERS,
+  personaje: STANDARD_TIERS,
+  reaccion: STANDARD_TIERS,
 };
 
 export function durationBudget(format: VideoFormat, tier: DurationTier): DurationBudget {
   return VIDEO_DURATIONS[format][tier];
 }
 
-export const SCENE_WORDS_MAX = 18;
+// ~16 words per 5-second scene on average; a scene may run a little over.
+export const SCENE_WORDS_MAX = 22;
+
+// Camera changes every 2-3 seconds: each 5-second scene holds at least two
+// shots, and the script marks at least this many strategic pauses.
+export const MIN_SHOTS_PER_SCENE = 2;
+export const MIN_PAUSES = 3;
 
 // ─── Voiceover spelling ─────────────────────────────────────────────────────
 // The voiceover is read by a TTS voice, so English words are written the way
@@ -198,34 +206,33 @@ export const BROCHURE_VERBS = [
 // she gets for it. The keyword is what an OpenReply comment-to-DM campaign
 // listens for (matching ignores case and accents), so every new keyword needs
 // its campaign. The reviewer can pin the keyword per video.
-// The CTA opens with "Si [the video's pain]…" and trades the comment for a
-// micro-solution to the hook's pain: advice, never a link or the product.
+// The CTA opens with "Si [the video's pain]…" and offers the link to the
+// product she uses, said like a recommendation to a friend: the automated
+// comment-to-DM campaign sends that link. Never hard-sell language.
 export const CTA_EXAMPLES: Record<VideoProduct, string[]> = {
   creatina: [
-    "Si quieres empezar, escríbeme GLÚTEOS aquí abajo y te digo cómo.",
-    "Si la dejaste por lo mismo, escríbeme CREATINA y te digo cómo tomarla bien.",
+    "Si te comparas con tu amiga, escríbeme PROGRESO y te paso el link de la que tomo.",
+    "Si la dejaste por lo mismo, escríbeme CREATINA y te mando cuál es la mía.",
   ],
   inositol: [
-    "Si te pasa igual, escríbeme INOSITOL y te digo en qué momento tomarlo.",
-    "Si sientes eso, escríbeme DULCE y te explico por qué no es falta de voluntad.",
+    "Si te pasa igual, escríbeme INOSITOL y te paso el link del que uso.",
+    "Si sientes eso, escríbeme DULCE y te mando dónde consigo el mío.",
   ],
 };
 
-// What the micro-solution may be: one concrete piece of advice the DM can give.
+// How the offer may be phrased: the product she uses, as a recommendation.
 export const CTA_OFFERS = [
-  "cómo empezar",
-  "cómo tomarlo bien",
-  "en qué momento tomarlo",
-  "por qué le pasa lo que el video describe",
-  "el error que lo está frenando",
+  "te paso el link de la que tomo",
+  "te mando cuál es la mía",
+  "te paso dónde la consigo",
 ];
 
-// Never a link, generic info or the product itself, and nothing the brand
-// does not make (discounts, gifts, downloads).
+// Hard-sell or empty offers, and things the brand does not make.
 export const CTA_FORBIDDEN_OFFERS = [
-  "link", "liga", "info", "informacion", "precio", "el producto",
+  "info", "informacion", "precio", "compra", "compralo", "comprala", "compralos",
+  "oferta", "promocion", "promo", "aprovecha", "ultimas piezas", "solo hoy",
   "descuento", "cupon", "codigo de descuento", "regalo", "gratis", "envio gratis",
-  "sorteo", "pdf", "ebook", "e book", "guia gratis", "muestra",
+  "sorteo", "pdf", "ebook", "e book", "guia", "muestra",
 ];
 
 /** One word, letters only, 3-14 characters: easy to type in a comment. */

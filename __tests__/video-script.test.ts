@@ -23,6 +23,7 @@ function scene(section: Section, text: string | string[], productVisible = false
     voiceover: "",
     onScreenText: "",
     visual: "",
+    shots: ["0-2.5 s: plano medio a cámara", "2.5-5 s: close-up"],
     productVisible,
     startFramePrompt: "",
     endFramePrompt: "",
@@ -79,8 +80,12 @@ const run = (value: VideoScript, product: "creatina" | "inositol" = "inositol", 
   runScriptChecks(normalizeScript(value), product, channel);
 const check = (checks: ReturnType<typeof runScriptChecks>, id: string) => checks.find((c) => c.id === id);
 
-/** The brief's 55-second HAC example (acné de la mandíbula), split into 11 clips. */
+/** The 55-second standard example (acné de la mandíbula): 11 clips, 182 words. */
 function acneExample(): VideoScript {
+  const paused = (section: Section, text: string, productVisible = false) => ({
+    ...scene(section, text, productVisible),
+    lines: [{ speaker: "Ella", text, direction: "pausa breve, mira a cámara" }],
+  });
   return {
     ...script(),
     durationTier: "estandar",
@@ -90,25 +95,31 @@ function acneExample(): VideoScript {
     secondInsight: "Eso no es un patrón de limpieza, es un patrón hormonal",
     feltLine: "Y mientras tanto te sentiste sucia o descuidada por algo que nunca fue tu culpa.",
     bridgeLine: "Si viene de adentro, ahí es donde hay que trabajar. No en la cara.",
-    productLine: "Yo ahora tomo el inositol de Peach Perfect cada mañana, y mi mandíbula por fin está tranquila.",
+    productLine: "Yo ahora tomo el inositol de Peach Perfect cada mañana, y mi mandíbula por fin dejó de brotar cada mes.",
     ctaKeyword: "MANDÍBULA",
-    cta: "Si te pasa, escríbeme MANDÍBULA y te digo dónde buscar.",
-    caption: "Si te pasa, escríbeme MANDÍBULA y te digo dónde buscar.",
+    cta: "Si te pasa, escríbeme MANDÍBULA y te paso el link del que tomo.",
+    caption: "Si te pasa, escríbeme MANDÍBULA y te paso el link del que tomo.",
     scenes: [
       scene("gancho", "Dos años cambiando de skincare por un acné que no está en tu piel. Nadie te dijo dónde."),
-      scene("contexto", "Y ya probaste todo. Ácido salicílico, niacinamida, la rutina coreana de diez pasos,"),
-      scene("contexto", "Te mejora un poco"),
-      scene("contexto", "y a las dos semanas vuelve. Siempre vuelve. Pero fíjate dónde."),
-      scene("contexto", "Mandíbula y barbilla. Siempre ahí, y casi siempre la misma semana del mes. Eso no es"),
-      scene("contexto", "un patrón de limpieza, es un patrón hormonal, y por eso ningún producto que se queda"),
-      scene("contexto", "en la superficie lo va a tocar. Lo estabas atacando en el lugar equivocado."),
-      scene("contexto", "Y mientras tanto te sentiste sucia o descuidada por algo que nunca fue tu culpa."),
+      scene("contexto", "Y ya probaste todo. Ácido salicílico, niacinamida, la rutina coreana de diez pasos."),
+      scene("contexto", "Te mejora un poco, te ilusionas, le dices a tu amiga que por fin encontraste la buena…"),
+      scene("contexto", "y a las dos semanas vuelve. Siempre vuelve. No es la crema. No es que te laves mal."),
+      paused("contexto", "Pero fíjate dónde sale. Mandíbula y barbilla. Siempre ahí, y casi siempre la misma semana del mes."),
+      scene("contexto", "Eso no es un patrón de limpieza, es un patrón hormonal, y por eso ningún producto que se queda"),
+      scene("contexto", "en la superficie lo va a tocar. Lo estabas atacando en el lugar equivocado, una y otra vez."),
+      paused("contexto", "Y mientras tanto te sentiste sucia o descuidada por algo que nunca fue tu culpa. Dos años así."),
       scene("solucion", "Si viene de adentro, ahí es donde hay que trabajar. No en la cara."),
-      scene("solucion", "Yo ahora tomo el inositol de Peach Perfect cada mañana, y mi mandíbula por fin está tranquila.", true),
-      scene("cta", "Si te pasa, escríbeme MANDÍBULA y te digo dónde buscar."),
+      paused("solucion", "Yo ahora tomo el inositol de Peach Perfect cada mañana, y mi mandíbula por fin dejó de brotar cada mes.", true),
+      scene("cta", "Si te pasa, escríbeme MANDÍBULA y te paso el link del que tomo."),
     ],
   };
 }
+
+// The short fixture is for rule-by-rule tests; length checks belong to the
+// standard and are exercised with acneExample.
+const LENGTH_CHECKS = new Set(["duration", "words", "secondInsight", "pauses"]);
+const failingRules = (checks: ReturnType<typeof runScriptChecks>) =>
+  checks.filter((c) => !c.ok && !LENGTH_CHECKS.has(c.id));
 
 describe("normalizeScript", () => {
   it("forces 5-second consecutive timings and clean hashtags", () => {
@@ -127,8 +138,8 @@ describe("normalizeScript", () => {
 });
 
 describe("base rules", () => {
-  it("passes a short script that follows the method", () => {
-    expect(run(script()).filter((c) => !c.ok)).toEqual([]);
+  it("passes a short script on every rule except the length standard", () => {
+    expect(failingRules(run(script()))).toEqual([]);
   });
 
   it("flags the brand in the hook and the product before the solution", () => {
@@ -361,8 +372,8 @@ describe("video formats", () => {
   });
 });
 
-describe("duration ranges", () => {
-  it("passes the 55-second acne example from the brief on every check", () => {
+describe("duration standard", () => {
+  it("passes the 55-second, 182-word example on every check", () => {
     const normalized = normalizeScript(acneExample(), "hac", "estandar", "1");
     expect(normalized.targetSeconds).toBe(55);
     expect(normalized.scenes[9].voiceover).toContain("el inositol de pich pérfect cada mañana");
@@ -370,24 +381,35 @@ describe("duration ranges", () => {
     expect(failing).toEqual([]);
   });
 
-  it("requires a second insight in the long ranges", () => {
-    const missing = normalizeScript({ ...acneExample(), secondInsight: "" }, "hac", "estandar");
-    expect(check(runScriptChecks(missing, "inositol", "organico"), "secondInsight")?.ok).toBe(false);
-    expect(check(run(script()), "secondInsight")).toBeUndefined();
+  it("applies 51-56 s and 170-190 words to every format and tier", () => {
+    for (const format of ["hac", "vof", "pov", "personaje", "vlog", "dinamico", "reaccion"] as const) {
+      expect(VIDEO_DURATIONS[format].estandar).toEqual({ seconds: [51, 56], words: [170, 190], insights: 2 });
+      expect(VIDEO_DURATIONS[format].corto).toEqual(VIDEO_DURATIONS[format].estandar);
+    }
   });
 
-  it("checks seconds and words against the format and tier", () => {
-    const long = runScriptChecks(normalizeScript(script(), "hac", "estandar"), "inositol", "organico");
-    expect(check(long, "duration")?.ok).toBe(false);
-    expect(check(long, "words")?.ok).toBe(false);
-    const short = runScriptChecks(normalizeScript(script(), "hac", "corto"), "inositol", "organico");
-    expect(check(short, "duration")?.ok).toBe(true);
-    expect(check(short, "words")?.ok).toBe(true);
+  it("rejects a short script on seconds and words, and always asks for a second insight", () => {
+    const checks = run(script());
+    expect(check(checks, "duration")?.hard).toBe(true);
+    expect(check(checks, "words")?.hard).toBe(true);
+    expect(check(checks, "secondInsight")?.ok).toBe(false);
   });
 
-  it("uses shorter ranges for dialogue", () => {
-    expect(VIDEO_DURATIONS.pov.estandar.seconds).toEqual([30, 40]);
-    expect(VIDEO_DURATIONS.personaje.corto.words).toEqual([50, 60]);
+  it("warns about scenes with a single shot and missing pauses", () => {
+    const value = acneExample();
+    value.scenes[2] = { ...value.scenes[2], shots: ["0-5 s: plano medio"] };
+    value.scenes = value.scenes.map((s) => ({ ...s, lines: s.lines.map((l) => ({ ...l, direction: "" })) }));
+    const checks = runScriptChecks(normalizeScript(value), "inositol", "organico");
+    expect(check(checks, "shots")?.detail).toBe("escena 3");
+    expect(check(checks, "pauses")?.ok).toBe(false);
+  });
+
+  it("moves a pause written into the spoken text to the direction", () => {
+    const value = script();
+    value.scenes[1] = scene("contexto", "No era la crema. [pausa] Era otra cosa.");
+    const normalized = normalizeScript(value);
+    expect(normalized.scenes[1].lines[0].text).toBe("No era la crema. Era otra cosa.");
+    expect(normalized.scenes[1].lines[0].direction).toBe("pausa");
   });
 });
 
@@ -420,7 +442,7 @@ describe("script prompt", () => {
       previousFormat: "hac",
     });
     expect(input).toContain("Nivel de conciencia: 0");
-    expect(input).toContain("30-40 s y 70-95 palabras");
+    expect(input).toContain("170-190 palabras");
     expect(input).toContain("IDEA VALIDADA");
     expect(input).toContain("usa un formato distinto a hac");
     expect(buildScriptInput({ idea: "x", product: "inositol", channel: "pagado" })).toContain(
@@ -441,7 +463,7 @@ describe("dynamic CTA", () => {
 
   it("accepts a keyword tied to the video", () => {
     const checks = run(withCta("MANDÍBULA", "Si te pasa, escríbeme MANDÍBULA y te digo por qué."));
-    expect(checks.filter((c) => !c.ok)).toEqual([]);
+    expect(failingRules(checks)).toEqual([]);
   });
 
   it("requires the keyword to be said in the CTA scene", () => {
@@ -508,8 +530,20 @@ describe("story hook", () => {
 });
 
 describe("CTA micro-solution and product as experience", () => {
-  it("rejects a CTA that offers the link or info", () => {
-    for (const line of ["Comenta SOP y te mando el link.", "Si te pasa, comenta SOP y te mando info."]) {
+  it("accepts the product link offered as a recommendation", () => {
+    const line = "Si te comparas con tu amiga, escríbeme SOP y te paso el link de la que tomo.";
+    const value = script({ cta: line, caption: line });
+    value.scenes[5] = scene("cta", line);
+    const checks = run(value);
+    expect(check(checks, "ctaOffer")?.ok).toBe(true);
+    expect(check(checks, "ctaOpening")?.ok).toBe(true);
+  });
+
+  it("rejects empty offers and hard-sell language", () => {
+    for (const line of [
+      "Si te pasa, comenta SOP y te mando info.",
+      "Si te pasa, escríbeme SOP y aprovecha la promo para comprar la tuya.",
+    ]) {
       const value = script({ cta: line, caption: line });
       value.scenes[5] = scene("cta", line);
       expect(check(run(value), "ctaOffer")?.ok).toBe(false);

@@ -9,10 +9,13 @@ import {
   SCENE_WORDS_MAX,
   CTA_EXAMPLES,
   CTA_OFFERS,
-  VIDEO_DURATIONS,
   VIDEO_FORMATS,
   VIDEO_FORMAT_IDS,
   HOOK_VOICES,
+  MIN_PAUSES,
+  MIN_SHOTS_PER_SCENE,
+  STANDARD_SCENES,
+  VIDEO_STANDARD,
   type AwarenessLevel,
   type AwarenessParam,
   type HookVoiceParam,
@@ -45,6 +48,8 @@ export interface VideoScene {
   voiceover: string;
   onScreenText: string;
   visual: string;
+  /** Camera changes inside the 5-second scene, one every 2-3 seconds. */
+  shots: string[];
   productVisible: boolean;
   startFramePrompt: string;
   endFramePrompt: string;
@@ -67,7 +72,7 @@ export interface VideoScript {
   hook: string;
   symptom: string;
   newInsight: string;
-  /** Second new insight, required in the long (40 s or more) ranges; "" otherwise. */
+  /** Second new insight, always required by the standard. */
   secondInsight: string;
   feltLine: string;
   /** The comment keyword of this video's CTA, uppercase, one word. */
@@ -129,7 +134,7 @@ export const SCRIPT_SCHEMA = {
     durationTier: {
       type: "string",
       enum: ["estandar", "corto"],
-      description: "Rango de duración usado: estandar (el del formato) o corto (25-30 s).",
+      description: "Siempre estandar (el estándar único).",
     },
     targetSeconds: {
       type: "integer",
@@ -154,7 +159,7 @@ export const SCRIPT_SCHEMA = {
       "Copia EXACTA de la frase del CONTEXTO con el primer dato que ella NO sabía: un mecanismo, una señal concreta o un dato de tiempo."
     ),
     secondInsight: str(
-      "Copia EXACTA de la frase del CONTEXTO con el SEGUNDO dato nuevo, distinto del primero. Obligatorio en los rangos de 40 s o más; cadena vacía en los de 30-40 s y en corto."
+      "Copia EXACTA de la frase del CONTEXTO con el SEGUNDO dato nuevo, distinto del primero. Siempre obligatorio."
     ),
     feltLine: str(
       "Copia EXACTA de la frase del CONTEXTO que nombra lo que ella SINTIÓ (no lo que le pasó)."
@@ -188,6 +193,7 @@ export const SCRIPT_SCHEMA = {
           "lines",
           "onScreenText",
           "visual",
+          "shots",
           "productVisible",
           "startFramePrompt",
           "endFramePrompt",
@@ -213,6 +219,11 @@ export const SCRIPT_SCHEMA = {
           },
           onScreenText: str("TEXTO EN PANTALLA: corto, no se dice en voz alta, en grafía correcta (Peach Perfect, scoop). Cadena vacía si no hay."),
           visual: str("Qué se ve en la escena, en español."),
+          shots: {
+            type: "array",
+            items: { type: "string" },
+            description: `Los planos de la escena, uno por cambio de cámara cada 2-3 s (mínimo ${MIN_SHOTS_PER_SCENE}), con su segundo dentro de la escena: "0-2.5 s: plano medio a cámara".`,
+          },
           productVisible: { type: "boolean", description: "true solo si el bote aparece en esta escena." },
           startFramePrompt: str(
             "Prompt en inglés para la imagen del PRIMER fotograma de la escena (vertical 9:16, fotorrealista). Repite la descripción de la protagonista."
@@ -244,34 +255,27 @@ function formatCatalog(): string {
   }).join("\n");
 }
 
-function durationTable(): string {
-  return VIDEO_FORMAT_IDS.map((id) => {
-    const { estandar, corto } = VIDEO_DURATIONS[id];
-    return `- ${id}: estandar ${estandar.seconds[0]}-${estandar.seconds[1]} s, ${estandar.words[0]}-${estandar.words[1]} palabras, ${estandar.insights} dato(s) nuevo(s) · corto ${corto.seconds[0]}-${corto.seconds[1]} s, ${corto.words[0]}-${corto.words[1]} palabras, 1 dato nuevo`;
-  }).join("\n");
-}
-
 function selectionTable(): string {
   return FORMAT_SELECTION.map((row) => `- ${row.idea} → ${row.formats.join(" · ")}`).join("\n");
 }
 
 // Few-shot of a long single-voice script that meets every rule, from the
 // method brief.
-const FEW_SHOT = `EJEMPLO (few-shot) · idea "el acné de la mandíbula" · formato hac · estandar · 55 s · 11 escenas · nivel 1 · checklist 6/8
+const FEW_SHOT = `EJEMPLO (few-shot) · idea "el acné de la mandíbula" · formato hac · 55 s · 11 escenas · nivel 1
 [1 · GANCHO]
 Dos años cambiando de skincare por un acné que no está en tu piel. Nadie te dijo dónde.
 [2 · CONTEXTO — una sola historia: descarta lo obvio y revela]
-Y ya probaste todo. Ácido salicílico, niacinamida, la rutina coreana de diez pasos. Te mejora un poco y a las dos semanas vuelve. Siempre vuelve. Pero fíjate dónde.
-Mandíbula y barbilla. Siempre ahí, y casi siempre la misma semana del mes. Eso no es un patrón de limpieza, es un patrón hormonal, y por eso ningún producto que se queda en la superficie lo va a tocar. Lo estabas atacando en el lugar equivocado.
-Y mientras tanto te sentiste sucia o descuidada por algo que nunca fue tu culpa.
+Y ya probaste todo. Ácido salicílico, niacinamida, la rutina coreana de diez pasos. [pausa] Te mejora un poco, te ilusionas, le dices a tu amiga que por fin encontraste la buena… y a las dos semanas vuelve. Siempre vuelve. No es la crema. No es que te laves mal. Pero fíjate dónde sale. [pausa] Mandíbula y barbilla. Siempre ahí, y casi siempre la misma semana del mes. Eso no es un patrón de limpieza, es un patrón hormonal, y por eso ningún producto que se queda en la superficie lo va a tocar. Lo estabas atacando en el lugar equivocado, una y otra vez, durante dos años. Y mientras tanto te sentiste sucia o descuidada por algo que nunca fue tu culpa.
 [3a · PUENTE]
 Si viene de adentro, ahí es donde hay que trabajar. No en la cara.
 [3b · PRODUCTO]
-Yo ahora tomo el inositol de pich pérfect cada mañana, y mi mandíbula por fin está tranquila.
+Yo ahora tomo el inositol de pich pérfect cada mañana, y mi mandíbula por fin dejó de brotar cada mes. [pausa]
 [4 · CTA]
-Si te pasa, escríbeme MANDÍBULA y te digo dónde buscar.
+Si te pasa, escríbeme MANDÍBULA y te paso el link del que tomo.
+Las [pausa] del ejemplo van en direction ("pausa breve, mira a cámara"), nunca dentro del texto hablado.
+PLANOS (2 por escena, corte cada 2-3 s), por ejemplo escena 1: "0-2.5 s: close-up de su mandíbula frente al espejo" / "2.5-5 s: plano medio, gira a cámara".
 TEXTO EN PANTALLA: Peach Perfect · Inositol limonada rosa
-Por qué funciona: el gancho va en segunda persona y nombra el problema como afirmación, con una segunda oración corta que abre la curiosidad; el contexto es una sola historia: primero descarta lo obvio (ya probó todo y siempre vuelve) y en el mismo hilo revela los dos datos nuevos (mandíbula y barbilla la misma semana del mes = patrón hormonal; lo que se queda en la superficie no lo toca) y la emoción ("te sentiste sucia o descuidada"); la frase puente sigue siendo verdadera sin el producto; el producto se nombra sin efecto atribuido.`;
+Por qué funciona: ~175 palabras habladas en 55 s; el gancho nombra el problema como afirmación; el contexto es una sola historia que descarta lo obvio ("No es la crema. No es que te laves mal.") y revela los dos datos nuevos (mandíbula y barbilla la misma semana del mes = patrón hormonal; lo que se queda en la superficie no lo toca) y la emoción; las pausas caen antes de la revelación y después del testimonio; la frase puente es verdadera sin el producto; el testimonio trae un resultado visible.`;
 
 export function buildScriptInstructions(brandContext: string): string {
   return `Eres guionista de videos cortos verticales (Reels/TikTok) para Peach Perfect. Sigue al pie de la letra el documento de marca y método que va abajo: es la única fuente de datos sobre la marca, los productos y la estructura. No inventes nada que no esté ahí (fórmulas, sabores, presentaciones, certificaciones, precios, testimonios).
@@ -281,11 +285,15 @@ FORMATO TÉCNICO
 - Número de escenas = targetSeconds / ${CLIP_SECONDS} (50 s = 10 escenas, 35 s = 7). startSecond/endSecond consecutivos desde 0.
 - Máximo ${SCENE_WORDS_MAX} palabras habladas por escena.
 
-DURACIÓN Y PALABRAS (por formato)
-La duración es un rango por formato, no un número fijo. Base: ~2.8 palabras por segundo en español conversacional. Solo cuentan las palabras habladas: no el texto en pantalla, ni las acotaciones (direction), ni las etiquetas de personaje.
-${durationTable()}
-- Los formatos de diálogo (pov, personaje) y reaccion son más cortos a propósito: el diálogo actuado a 55 segundos se siente eterno y falso, y después de leer el comentario nadie aguanta un minuto de respuesta.
+DURACIÓN Y PALABRAS (estándar único, para todos los formatos)
+- Todos los videos duran entre ${VIDEO_STANDARD.seconds[0]} y ${VIDEO_STANDARD.seconds[1]} segundos: ${STANDARD_SCENES} escenas de ${CLIP_SECONDS} s (${STANDARD_SCENES * CLIP_SECONDS} s), targetSeconds=${STANDARD_SCENES * CLIP_SECONDS}, durationTier=estandar. Sin excepciones por formato.
+- Entre ${VIDEO_STANDARD.words[0]} y ${VIDEO_STANDARD.words[1]} palabras habladas en total, en cualquier formato (también pov, personaje y reaccion). Solo cuentan las palabras habladas: no el texto en pantalla, ni las acotaciones (direction), ni las etiquetas de personaje.
+- Dos datos nuevos en el contexto (newInsight y secondInsight).
 - El conteo se CUMPLE: si te quedas corta o te pasas, el guion se rechaza y se reescribe.
+
+RITMO VISUAL Y PAUSAS
+- Cambio de cámara cada 2-3 segundos: cada escena de ${CLIP_SECONDS} s lleva al menos ${MIN_SHOTS_PER_SCENE} planos en shots, con su segundo dentro de la escena (por ejemplo "0-2.5 s: plano medio a cámara" y "2.5-5 s: close-up de las manos"). Varía tamaño de plano, ángulo o sujeto en cada corte.
+- Pausas estratégicas: al menos ${MIN_PAUSES} en el guion, marcadas en direction como "pausa" (por ejemplo "pausa breve, mira a cámara"). Van justo antes de la revelación del contexto, después del dato que pega y antes del CTA. La pausa no se cuenta como palabra.
 
 FORMATO DE VIDEO (la puesta en escena)
 Regla madre: el formato se elige por cuál comunica mejor la idea, NUNCA por cuál parece más viral.
@@ -309,7 +317,6 @@ Tiempos para un video de ~55 s:
    3a · frase puente (0:40-0:46): conecta lo explicado con el producto. Habla del PROBLEMA y de DÓNDE hay que atacarlo, nunca de lo que el producto hace. Es consecuencia lógica de lo ya explicado, no una promesa nueva. No nombra el producto.
    3b · el producto (0:46-0:50): en primera persona, como testimonio del resultado que ella vivió y que conecta con el dolor del gancho (ver EL PRODUCTO abajo). El producto es el medio, no el mensaje.
 4. cta (0:50-0:55, la última escena): el CTA de este video (ver CTA abajo).
-En los rangos de 30-40 s y en corto las 4 partes se mantienen: el contexto se acorta y lleva un solo dato nuevo más la emoción, y la frase puente es media frase ("eso se trabaja por dentro").
 
 EL CONTEXTO: UNA SOLA HISTORIA QUE ENGANCHA
 - El contexto es lo que sostiene el video: tiene que sonar a alguien contando algo que por fin entendió, con energía, no a una clase ni a una conversación plana.
@@ -343,10 +350,11 @@ EL GANCHO: SEGUNDA PERSONA POR DEFECTO, NUNCA PREGUNTA
 - En anuncio pagado no uses segunda persona sobre la condición de salud (SOP, acné, ciclo, hormonas): usa primera persona o tercera ("hay mujeres que…").
 
 CTA (parte 4): dinámico, uno a la medida de cada video
-- Empieza con una frase de entrada natural, "Si [contexto del dolor del video]", para conectar con quien llegó hasta ahí, y después la instrucción: "Si [contexto], escríbeme [PALABRA] y te digo [micro-solución]".
-- Promete una MICRO-SOLUCIÓN útil que resuelva exactamente el dolor que abrió el gancho (por ejemplo: ${CTA_OFFERS.join(", ")}). Nunca un link, nunca "info", nunca el producto directamente. Tiene que sonar a consejo, no a venta.
+- Quien llega al final es la más interesada: el CTA la lleva al producto. Al comentar la palabra clave, un DM automático le manda el link del producto. Escríbelo para eso.
+- Empieza con una frase de entrada natural, "Si [contexto del dolor del video]", para conectar con quien llegó hasta ahí, y después la instrucción: "Si [contexto], escríbeme [PALABRA] y [te paso el link / te mando cuál es]".
+- Ofrece el link del producto que ella usa, dicho como una recomendación a una amiga, no como venta (por ejemplo: ${CTA_OFFERS.map((offer) => `"${offer}"`).join(", ")}). Nunca lenguaje de venta dura: "compra", "oferta", "promoción", "aprovecha", "precio", "solo hoy". Nunca "info", guías ni consejos: lo que se manda es el link.
 - La palabra clave (ctaKeyword) es específica al tema del video: una palabra que ella reconozca del guion, en MAYÚSCULAS, de 3 a 14 letras, sin espacios ni números (por ejemplo GLÚTEOS, CREATINA, INOSITOL, DULCE). Fácil de escribir en un comentario.
-- Mal: "Comenta X y te mando el link", "Comenta X y te mando info".
+- Mal: "Comenta X y te mando info" (vacío), "Aprovecha la promo, compra la tuya en el link" (venta dura), "Comenta X y te mando el link" (sin la entrada que conecta con su dolor).
 - Bien (patrón, no los copies): ${[...CTA_EXAMPLES.creatina, ...CTA_EXAMPLES.inositol].map((line) => `"${line}"`).join(", ")}.
 - La línea del CTA (campo cta) se dice tal cual en la escena cta, y el caption la repite. Prohibido "sígueme para más".
 - El documento de marca habla de un CTA fijo: en este sistema cada video tiene el suyo; lo que no cambia es que siempre hay uno, concreto, al final.
@@ -398,11 +406,11 @@ Un video largo con un contexto flojo retiene PEOR que uno corto, porque la gente
 - en diálogo: una réplica más del personaje que no sabe.
 - en el contexto: descartar lo obvio con más precisión (lo que ya probó, por qué no funcionó), sin revelar.
 Nunca con más vueltas a lo ya dicho, muletillas, adjetivos decorativos, introducciones ("hoy te voy a contar") ni recapitulaciones.
-Si al expandir no encuentras un segundo dato real que aportar, NO infles el guion: cuando la duración pedida sea auto, baja al rango corto (durationTier=corto) y entrega un video de 25-30 s sólido. Es mejor que uno de 55 con relleno.
+Si te faltan palabras para llegar a ${VIDEO_STANDARD.words[0]}, NO rellenes: agrega un segundo mecanismo, una objeción resuelta o una consecuencia práctica.
 
 TRES REGLAS DE ESCRITURA (no negociables)
 1. Prohibido el verbo de folleto: nunca "requiere", "produce", "actúa", "acompaña", "apoya", "contribuye a", "contiene" (en ninguna conjugación). Si una frase podría estar impresa en la caja del producto, no va en el guion. Habla como una amiga que sabe del tema, no como una etiqueta.
-2. El contexto le dice algo que ella NO sabía: un mecanismo, una señal concreta o un dato de tiempo. Dos datos distintos en los rangos de 40 s o más (newInsight y secondInsight), uno en los de 30-40 s y en corto. Sin dato nuevo el video es un recordatorio, y los recordatorios no se comparten ni se guardan. Cada dato tiene que ser real y verificable: si no estás segura, no lo uses.
+2. El contexto le dice algo que ella NO sabía: un mecanismo, una señal concreta o un dato de tiempo. Siempre dos datos distintos (newInsight y secondInsight). Sin dato nuevo el video es un recordatorio, y los recordatorios no se comparten ni se guardan. Cada dato tiene que ser real y verificable: si no estás segura, no lo uses.
 3. Nombra lo que ella SINTIÓ, no solo lo que le pasó: "te sentiste sucia", "pensaste que a ti no te funciona", "hasta te sentiste mal contigo". Va en el contexto, después del dato: ahí se gana la retención. Cópiala tal cual en feltLine.
 
 ${FEW_SHOT}
@@ -488,23 +496,8 @@ function validatedIdeaInstruction(brief: ScriptBrief): string | null {
   }cambia el ejemplo o la situación concreta. No es repetirse: nadie recuerda qué vio hace cinco videos.`;
 }
 
-function durationInstruction(brief: ScriptBrief): string {
-  const duration = brief.duration ?? "auto";
-  const fixedFormat = brief.format && brief.format !== "auto" ? brief.format : null;
-  const range = (tier: DurationTier) => {
-    if (!fixedFormat) {
-      return tier === "corto" ? "el rango corto (25-30 s)" : "el rango estandar del formato que elijas";
-    }
-    const budget = VIDEO_DURATIONS[fixedFormat][tier];
-    return `${budget.seconds[0]}-${budget.seconds[1]} s y ${budget.words[0]}-${budget.words[1]} palabras habladas`;
-  };
-  if (duration === "corto") {
-    return `Duración: corto (pedida por la revisora). Usa ${range("corto")}; durationTier=corto.`;
-  }
-  if (duration === "estandar") {
-    return `Duración: estandar (pedida por la revisora). Usa ${range("estandar")}; durationTier=estandar. No bajes a corto.`;
-  }
-  return `Duración: auto. Usa ${range("estandar")} (durationTier=estandar). Si no tienes un segundo dato real para llenar ese rango con sustancia, baja a ${range("corto")} (durationTier=corto) en vez de inflar.`;
+function durationInstruction(): string {
+  return `Duración: estándar fijo de ${STANDARD_SCENES} escenas (${STANDARD_SCENES * CLIP_SECONDS} s) y ${VIDEO_STANDARD.words[0]}-${VIDEO_STANDARD.words[1]} palabras habladas, con planos cada 2-3 s y al menos ${MIN_PAUSES} pausas.`;
 }
 
 export function buildScriptInput(
@@ -530,7 +523,7 @@ export function buildScriptInput(
     brief.format && brief.format !== "auto"
       ? `Formato: ${brief.format} (${VIDEO_FORMATS[brief.format].label}), elegido por la revisora. Úsalo y explica en formatReason cómo lo aprovechas para esta idea.`
       : "Formato: auto. Elige con la tabla de selección el que mejor comunique esta idea y explica por qué en formatReason.",
-    durationInstruction(brief),
+    durationInstruction(),
     awarenessInstruction(brief),
     hookVoiceInstruction(brief),
     validatedIdeaInstruction(brief),
