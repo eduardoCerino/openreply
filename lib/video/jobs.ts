@@ -26,19 +26,31 @@ export function getVideoQueue(): Queue<VideoJob> {
   return videoQueue;
 }
 
-export async function enqueueScriptJob(projectId: string, revision: number) {
+export async function enqueueScriptJob(
+  projectId: string,
+  revision: number,
+  { retry = false }: { retry?: boolean } = {}
+) {
   // One job per revision, so "pedir cambios" twice queues two distinct runs.
-  return getVideoQueue().add(
-    SCRIPT_JOB,
-    { kind: SCRIPT_JOB, projectId, revision },
-    { jobId: `${SCRIPT_JOB}_${projectId}_${revision}` }
-  );
+  // A retry needs its own id: BullMQ silently ignores an add whose id is
+  // still held by a failed or stalled job.
+  const jobId = `${SCRIPT_JOB}_${projectId}_${revision}${retry ? `_retry_${Date.now()}` : ""}`;
+  return getVideoQueue().add(SCRIPT_JOB, { kind: SCRIPT_JOB, projectId, revision }, { jobId });
 }
 
 async function processVideoJob(job: Job<VideoJob>) {
+  const startedAt = Date.now();
+  console.log(`[Video Worker] ${job.name} ${job.id} started`);
   switch (job.data.kind) {
-    case SCRIPT_JOB:
-      return generateVideoScript(job.data.projectId);
+    case SCRIPT_JOB: {
+      const project = await generateVideoScript(job.data.projectId);
+      console.log(
+        `[Video Worker] ${job.name} ${job.id} finished in ${Math.round((Date.now() - startedAt) / 1000)}s: ${project.status}${
+          project.error ? ` (${project.error.slice(0, 300)})` : ""
+        }`
+      );
+      return project.status;
+    }
   }
 }
 
@@ -49,7 +61,10 @@ export function startVideoWorker(): Worker<VideoJob> {
     lockDuration: 5 * 60_000,
   });
   worker.on("failed", (job, error) => {
-    console.error(`[Video Worker] Job ${job?.name} failed:`, error.message);
+    console.error(`[Video Worker] Job ${job?.name} ${job?.id} failed:`, error.message);
+  });
+  worker.on("stalled", (jobId) => {
+    console.warn(`[Video Worker] Job ${jobId} stalled (worker restarted mid-run); BullMQ will retry it`);
   });
   console.log("[Video Worker] Started");
   return worker;

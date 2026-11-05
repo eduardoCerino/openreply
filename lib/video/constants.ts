@@ -12,6 +12,10 @@ export const SCENE_COUNT = 5;
 export const CLIP_SECONDS = 5;
 export const MAX_VIDEO_SECONDS = SCENE_COUNT * CLIP_SECONDS;
 
+// A script normally takes under a minute. After this long in "writing" it is
+// treated as lost (usually a worker restart) and can be retried from the panel.
+export const STALE_SCRIPT_MS = 4 * 60_000;
+
 // ─── Video formats ──────────────────────────────────────────────────────────
 // The format is chosen by which one communicates the idea best, never by which
 // looks more viral. It changes the staging; the word budget below is shared.

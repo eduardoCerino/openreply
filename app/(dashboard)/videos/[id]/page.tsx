@@ -10,6 +10,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   SCENE_COUNT,
+  STALE_SCRIPT_MS,
   VIDEO_CTA,
   VIDEO_FORMATS,
   type VideoFormat,
@@ -60,6 +61,7 @@ interface Project {
   checks: Array<{ id: string; label: string; ok: boolean; detail?: string }> | null;
   revision: number;
   error: string | null;
+  updatedAt: string;
 }
 
 const SECTION_LABEL: Record<Scene["section"], string> = {
@@ -100,6 +102,9 @@ export default function VideoScriptPage() {
   const [feedback, setFeedback] = useState("");
   const [showPrompts, setShowPrompts] = useState(false);
   const [refreshKey, setRefreshKey] = useState(0);
+  // Writing for longer than STALE_SCRIPT_MS means the run was lost (usually a
+  // worker restart); the retry button appears then.
+  const [stale, setStale] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -113,6 +118,10 @@ export default function VideoScriptPage() {
         return;
       }
       setProject(payload.data);
+      setStale(
+        payload.data.status === "GENERATING_SCRIPT" &&
+          Date.now() - Date.parse(payload.data.updatedAt) > STALE_SCRIPT_MS
+      );
       if (payload.data.status === "GENERATING_SCRIPT") {
         timer = setTimeout(() => void poll(), 3000);
       }
@@ -151,6 +160,16 @@ export default function VideoScriptPage() {
     );
   }
 
+  function retry() {
+    void act(`/api/videos/${params.id}/retry`, { method: "POST" }, () => setStale(false));
+  }
+
+  const retryButton = (
+    <button type="button" onClick={retry} disabled={busy} className={primaryButton}>
+      Reintentar
+    </button>
+  );
+
   function discard() {
     if (!window.confirm("¿Descartar este guion?")) return;
     void act(`/api/videos/${params.id}`, { method: "DELETE" }, () => router.push("/videos"));
@@ -174,8 +193,16 @@ export default function VideoScriptPage() {
       <div className="mx-auto max-w-3xl space-y-4">
         <Link href="/videos" className="text-sm text-muted hover:text-foreground">← Videos</Link>
         <div className="panel rounded p-8 text-center">
-          <p className="text-base font-semibold text-foreground">Escribiendo el guion…</p>
-          <p className="mt-2 text-sm text-muted">“{project.idea}”. Esta pantalla se actualiza sola.</p>
+          <p className="text-base font-semibold text-foreground">
+            {stale ? "Este guion se quedó atascado" : "Escribiendo el guion…"}
+          </p>
+          <p className="mt-2 text-sm text-muted">
+            {stale
+              ? "Lleva varios minutos sin terminar; casi siempre es porque el worker se reinició a la mitad (un deploy)."
+              : `“${project.idea}”. Esta pantalla se actualiza sola.`}
+          </p>
+          {stale && <div className="mt-4">{retryButton}</div>}
+          {actionError && <p className="mt-3 text-sm text-error">{actionError}</p>}
         </div>
       </div>
     );
@@ -214,8 +241,15 @@ export default function VideoScriptPage() {
       </div>
 
       {generating && (
-        <div className="rounded-lg border border-accent/30 bg-accent/10 p-4 text-sm text-foreground">
-          Reescribiendo el guion con tus cambios…
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-accent/30 bg-accent/10 p-4 text-sm text-foreground">
+          <span>{stale ? "La reescritura se quedó atascada." : "Reescribiendo el guion con tus cambios…"}</span>
+          {stale && retryButton}
+        </div>
+      )}
+      {project.status === "FAILED" && (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-error/30 bg-error/10 p-4 text-sm text-foreground">
+          <span>No se pudo escribir el guion.</span>
+          {retryButton}
         </div>
       )}
       {project.status === "SCRIPT_APPROVED" && (
