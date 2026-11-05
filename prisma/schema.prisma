@@ -538,3 +538,37 @@ model BlogRun {
 
   @@index([startedAt])
 }
+
+// ─── Video generator ────────────────────────────────────────────────────────
+// Store-wide like the blog. Phase 1 is the script; frames (12 images) and the
+// 6 video clips will hang off the approved script in later phases.
+
+enum VideoProjectStatus {
+  GENERATING_SCRIPT
+  SCRIPT_READY
+  SCRIPT_APPROVED
+  DISCARDED
+  FAILED
+}
+
+model VideoProject {
+  id          String             @id @default(cuid())
+  status      VideoProjectStatus @default(GENERATING_SCRIPT)
+  idea        String
+  product     String
+  channel     String
+  hookMold    String?
+  // Free-text change request for the next regeneration, cleared once used.
+  feedback    String?
+  script      Json?
+  checks      Json?
+  revision    Int                @default(0)
+  model       String?
+  error       String?
+  approvedAt  DateTime?
+  createdById String?
+  createdAt   DateTime           @default(now())
+  updatedAt   DateTime           @updatedAt
+
+  @@index([status, createdAt])
+}

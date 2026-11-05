@@ -46,6 +46,7 @@ OpenReply is built around Meta's official Instagram private replies. It does not
 - English, Traditional Chinese, Brazilian Portuguese and Russian interface, with a saved language preference. See [interface languages](docs/localization.md).
 - Read-only API and MCP for campaign settings, destination links and aggregate stats, with workspace-scoped revocable keys (30/60/90 days). See [integrations](docs/integrations.md).
 - Shopify blog autopublisher: daily articles from an editable queue plus a reviewed manual panel, with SEO/GEO structure and JSON-LD. See [blog](docs/blog.md).
+- Short-form video script generator (phase 1 of a video pipeline) following the brand content method. See [videos](docs/videos.md).
 - Inbox. Read your Instagram DM conversations and reply from the dashboard, inside Meta's 24-hour messaging window. Cached so it loads instantly on repeat visits.
 - DM logs. Every send, skip, and failure is logged with a reason.
 - Self-comment filtering. Your own comments never trigger a reply, since Meta rejects DMing yourself anyway.

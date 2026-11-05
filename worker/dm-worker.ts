@@ -3,6 +3,7 @@ import { recordWorkerHeartbeat } from "@/lib/ops/worker-health";
 import { reconcileComments } from "@/lib/polling/comment-reconciler";
 import { attachPendingNextReels } from "@/lib/automation/attach-next-reel";
 import { startBlogWorker } from "@/lib/blog/jobs";
+import { startVideoWorker } from "@/lib/video/jobs";
 import os from "node:os";
 
 const worker = createDMWorker();
@@ -25,6 +26,16 @@ const blogWorkerPromise = startBlogWorker().catch((error) => {
   );
   return null;
 });
+
+let videoWorker: ReturnType<typeof startVideoWorker> | null = null;
+try {
+  videoWorker = startVideoWorker();
+} catch (error) {
+  console.error(
+    "[Video Worker] Failed to start:",
+    error instanceof Error ? error.message : error
+  );
+}
 
 async function heartbeat() {
   try {
@@ -65,6 +76,7 @@ async function shutdown(signal: string) {
   clearInterval(pollTimer);
   await worker.close();
   await (await blogWorkerPromise)?.close();
+  await videoWorker?.close();
   process.exit(0);
 }
 

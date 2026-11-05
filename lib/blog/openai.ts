@@ -56,7 +56,7 @@ export async function generateStructured<T>({
 }): Promise<{ value: T; model: string }> {
   const { textModel } = getBlogConfig();
   const data = await withRetry(
-    "OpenAI article",
+    `OpenAI ${name}`,
     () =>
       openaiPost<ResponsesOutput>(
         "/responses",
