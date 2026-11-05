@@ -65,11 +65,11 @@ const SCRIPT_FORBIDDEN: Array<{ term: string; why: string }> = [
 
 // The product is named, never credited with an effect.
 // Effects claimed for the product itself, said to her ("te ayuda", "regula").
-// Her own first-person result ("mis glúteos por fin responden") is a
+// Her own first-person result ("mis glúteos por fin crecieron") is a
 // testimonial and allowed.
 const PRODUCT_EFFECT = /\b(ayuda|ayudan|ayudar|ayudarte|mejora|mejoran|mejorar|regula|equilibra|equilibrar|regulariza|reduce|reducir|aumenta|aumentar|hace que|te da|te dara|te devuelve)\b/;
 
-// Part 4b is lived experience, not a spec sheet.
+// Part 3b is lived experience, not a spec sheet.
 const PRODUCT_SPECS = /\b(\d+ ?(g|gr|mg|mcg)|gramos?|miligramos?|monohidratada|80 1|myo|d chiro|dim|zinc|magnesio|bcaa|bcaas|colageno|nsf|gmp|certificad[ao]s?)\b/;
 
 
@@ -105,15 +105,23 @@ const FIRST_PERSON = /\b(yo|me|mi|mis|tome|deje|llevo|llevaba|estaba|pense|empec
 // Second person: talks to her about her problem ("haces", "tus glúteos").
 const SECOND_PERSON = /\b(tu|tus|te|ti|contigo|haces|llevas|llevabas|tienes|sientes|estas|eres|quieres|tomas|tomaste|dejaste|probaste|entrenas|comes|gastaste|cambiaste|hiciste|sigues|buscas)\b/;
 
+// "Show the scene": a number (how many times, how long) is the quickest
+// marker of a concrete, visual hook.
+// "Un"/"una" count only as a quantity of time ("un mes", "una vez").
+const CONCRETE_NUMBER =
+  /\b(\d+|dos|tres|cuatro|cinco|seis|siete|ocho|nueve|diez|once|doce|quince|veinte|treinta|cien|mil|media|medio)\b|\buna? (vez|mes|ano|semana|dia|hora)\b/;
+
 // A hook's second sentence must announce a concrete missing piece; these
 // stock phrases tease nothing and do not stop the scroll.
 const VAGUE_HOOK = /\b(el problema (era|es|podria ser|puede ser) otro|es otra cosa|era otra cosa|no es lo que (crees|piensas|imaginas)|hay algo mas|la respuesta te va a sorprender)\b/;
 
 // The testimonial must carry a physical result: a body area or outcome plus a
-// change ("mis glúteos por fin empezaron a responder"). A change of mind alone
+// change ("mis glúteos por fin empezaron a crecer"). A change of mind alone
 // ("dejé de pensar que…") is not a result.
 const BODY_OUTCOME = /\b(gluteos?|musculos?|fuerza|serie|series|piernas?|piel|acne|granos|mandibula|barbilla|ciclo|regla|periodo|antojos?|hambre|energia|cansancio|cuerpo|cadera|abdomen|hinchazon|cabello|vello)\b/;
-const CHANGE_MARKER = /\b(por fin|empez\w*|ya no|ya se|ahora|cambi\w*|respond\w*|crec\w*|not\w*|se ve\w*|se siente\w*|dejo de|dejaron de|mas (fuerte|firmes?|tranquila|estable|redond\w*))\b/;
+const CHANGE_MARKER = /\b(por fin|empez\w*|ya no|ya se|ahora|cambi\w*|crec\w*|not\w*|se ve\w*|se siente\w*|dejo de|dejaron de|mas (fuerte|firmes?|tranquila|estable|redond\w*))\b/;
+// Results that say nothing about what changed: "¿responder cómo?".
+const VAGUE_RESULT = /\b(respond\w*|mejor\w*|vi cambios|note cambios|notar cambios|cambios|funciono|funciona|me sirvio|resultados)\b/;
 
 // Talking to the 3-4 awareness levels (brand vs brand, certifications).
 const LEVEL_34 = /\b(vs|versus|otras marcas|otra marca|la competencia|certificad[ao]s?|nsf|gmp)\b/;
@@ -261,7 +269,6 @@ export function runScriptChecks(
       .filter((scene) => scene.section === section)
       .map((scene) => normalizeText(scene.voiceover))
       .join(" ");
-  const contextText = textOf("contexto");
   const solutionText = textOf("solucion");
   const contains = (haystack: string, line: string) =>
     Boolean(normalizeText(line)) && haystack.includes(normalizeText(line));
@@ -294,9 +301,9 @@ export function runScriptChecks(
   const voice = scenes.map((scene) => normalizeText(`${scene.voiceover} ${scene.onScreenText}`));
   // The reveal belongs to the lesson (part 3): insights and the felt line live
   // there, and the context must not give them away early.
-  const lesson = textOf("moraleja");
+  // One narrative context carries the intrigue and the reveal.
+  const lesson = textOf("contexto");
   const inBody = (line: string) => contains(lesson, line);
-  const revealedEarly = [script.newInsight, script.secondInsight].filter((line) => contains(contextText, line));
   const series = SERIES_PHRASES.filter((phrase) => fullText.includes(phrase));
   const hookLine = script.format === "reaccion" ? "" : script.hook ?? "";
   const hookNormalized = normalizeText(hookLine);
@@ -343,7 +350,7 @@ export function runScriptChecks(
     },
     {
       id: "structure",
-      label: "5 partes en orden: gancho → contexto → moraleja → solución → CTA",
+      label: "4 partes en orden: gancho → contexto → solución → CTA",
       ok: first?.section === "gancho" && last?.section === "cta" && ordered && missingParts.length === 0,
       detail: missingParts.length ? `falta: ${missingParts.join(", ")}` : ordered ? undefined : "partes fuera de orden",
       hard: !(first?.section === "gancho" && last?.section === "cta" && ordered && missingParts.length === 0),
@@ -379,6 +386,14 @@ export function runScriptChecks(
             hard: VAGUE_HOOK.test(hookNormalized),
           } satisfies QualityCheck,
           {
+            id: "hookScene",
+            label: "Gancho que muestra la escena (números y detalles concretos)",
+            ok: CONCRETE_NUMBER.test(hookNormalized),
+            detail: CONCRETE_NUMBER.test(hookNormalized)
+              ? undefined
+              : "agrega cuántas veces, cuánto tiempo o qué se ve",
+          } satisfies QualityCheck,
+          {
             id: "hookCuriosity",
             label: "Segunda oración corta que genera curiosidad",
             ok: hookSentences.length >= 2 && words(hookSentences[hookSentences.length - 1]) <= 14,
@@ -386,15 +401,8 @@ export function runScriptChecks(
           } satisfies QualityCheck,
         ]),
     {
-      id: "intrigue",
-      label: "El contexto genera intriga sin revelar el dato",
-      ok: revealedEarly.length === 0,
-      detail: revealedEarly.length ? "el dato nuevo aparece en el contexto; va en la moraleja" : undefined,
-      hard: revealedEarly.length > 0,
-    },
-    {
       id: "bridge",
-      label: "Solución con frase puente (4a) antes del producto (4b)",
+      label: "Solución con frase puente (3a) antes del producto (3b)",
       ok:
         contains(solutionText, script.bridgeLine) &&
         contains(solutionText, script.productLine) &&
@@ -521,6 +529,15 @@ export function runScriptChecks(
       hard: !(BODY_OUTCOME.test(productLine) && CHANGE_MARKER.test(productLine)),
     },
     {
+      id: "productConcrete",
+      label: "Resultado concreto y visible, no vago",
+      ok: !VAGUE_RESULT.test(productLine),
+      detail: VAGUE_RESULT.test(productLine)
+        ? `«${productLine.match(VAGUE_RESULT)?.[0]}» es vago: di qué cambió y cómo se nota`
+        : undefined,
+      hard: VAGUE_RESULT.test(productLine),
+    },
+    {
       id: "productVoice",
       label: "El producto como testimonio en primera persona",
       ok: FIRST_PERSON.test(productLine) || /\b(tomo|uso|preparo|meto|llevo)\b/.test(productLine),
@@ -581,7 +598,7 @@ export function runScriptChecks(
     },
     {
       id: "insight",
-      label: "La moraleja dice algo que ella no sabía",
+      label: "El contexto dice algo que ella no sabía",
       ok: inBody(script.newInsight),
       detail: script.newInsight ? undefined : "falta el dato nuevo",
       hard: !inBody(script.newInsight),

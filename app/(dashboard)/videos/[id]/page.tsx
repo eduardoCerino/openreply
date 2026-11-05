@@ -93,10 +93,11 @@ interface Project {
 
 const SECTION_LABEL: Record<Scene["section"], string> = {
   gancho: "1 · Gancho",
-  contexto: "2 · Contexto (intriga)",
-  moraleja: "3 · Moraleja",
-  solucion: "4 · Solución",
-  cta: "5 · CTA",
+  contexto: "2 · Contexto",
+  // Scripts written before context and lesson were merged.
+  moraleja: "Contexto (revelación)",
+  solucion: "3 · Solución",
+  cta: "4 · CTA",
   aterrizaje: "Aterrizaje",
   cierre: "Cierre / CTA",
 };
@@ -125,8 +126,8 @@ function normalized(value: string | undefined): string {
 function partTag(script: Script, text: string): string | null {
   const line = normalized(text);
   if (!line) return null;
-  if (script.bridgeLine && normalized(script.bridgeLine).includes(line)) return "4a puente";
-  if (script.productLine && normalized(script.productLine).includes(line)) return "4b producto";
+  if (script.bridgeLine && normalized(script.bridgeLine).includes(line)) return "3a puente";
+  if (script.productLine && normalized(script.productLine).includes(line)) return "3b producto";
   return null;
 }
 
@@ -515,12 +516,12 @@ export default function VideoScriptPage() {
                 <div>
                   <p className="text-xs font-semibold uppercase text-muted">Solución</p>
                   <p className="mt-1 text-foreground">
-                    <span className="text-xs font-semibold text-success">4a · </span>
+                    <span className="text-xs font-semibold text-success">3a · </span>
                     {script.bridgeLine}
                   </p>
                   {script.productLine && (
                     <p className="mt-1 text-foreground">
-                      <span className="text-xs font-semibold text-success">4b · </span>
+                      <span className="text-xs font-semibold text-success">3b · </span>
                       {script.productLine}
                     </p>
                   )}

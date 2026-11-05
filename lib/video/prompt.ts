@@ -23,10 +23,10 @@ import {
   type VideoProduct,
 } from "@/lib/video/constants";
 
-// The five parts of the method: hook, context (intrigue, no answer yet),
-// lesson (the reveal), solution (4a bridge + 4b product) and CTA.
-export type SceneSection = "gancho" | "contexto" | "moraleja" | "solucion" | "cta";
-export const SCENE_SECTIONS: SceneSection[] = ["gancho", "contexto", "moraleja", "solucion", "cta"];
+// The four parts of the method: hook, context (one narrative that builds
+// intrigue and reveals the why), solution (bridge + product) and CTA.
+export type SceneSection = "gancho" | "contexto" | "solucion" | "cta";
+export const SCENE_SECTIONS: SceneSection[] = ["gancho", "contexto", "solucion", "cta"];
 
 /** One spoken line. Single-voice formats use one speaker throughout. */
 export interface VideoLine {
@@ -72,9 +72,9 @@ export interface VideoScript {
   feltLine: string;
   /** The comment keyword of this video's CTA, uppercase, one word. */
   ctaKeyword: string;
-  /** Part 4a, verbatim: connects the lesson to the product without crediting it. */
+  /** Part 3a, verbatim: connects the context to the product without crediting it. */
   bridgeLine: string;
-  /** Part 4b, verbatim: product name, relevant ingredient, flavor. */
+  /** Part 3b, verbatim: first-person testimonial tied to the hook. */
   productLine: string;
   /** Why the bridge stays true with the product deleted from the script. */
   bridgeTest: string;
@@ -151,22 +151,22 @@ export const SCRIPT_SCHEMA = {
     ),
     symptom: str("El síntoma cotidiano del que parte el video, con las palabras de ella."),
     newInsight: str(
-      "Copia EXACTA de la frase de la MORALEJA con el primer dato que ella NO sabía: un mecanismo, una señal concreta o un dato de tiempo."
+      "Copia EXACTA de la frase del CONTEXTO con el primer dato que ella NO sabía: un mecanismo, una señal concreta o un dato de tiempo."
     ),
     secondInsight: str(
-      "Copia EXACTA de la frase de la MORALEJA con el SEGUNDO dato nuevo, distinto del primero. Obligatorio en los rangos de 40 s o más; cadena vacía en los de 30-40 s y en corto."
+      "Copia EXACTA de la frase del CONTEXTO con el SEGUNDO dato nuevo, distinto del primero. Obligatorio en los rangos de 40 s o más; cadena vacía en los de 30-40 s y en corto."
     ),
     feltLine: str(
-      "Copia EXACTA de la frase de la MORALEJA que nombra lo que ella SINTIÓ (no lo que le pasó)."
+      "Copia EXACTA de la frase del CONTEXTO que nombra lo que ella SINTIÓ (no lo que le pasó)."
     ),
     ctaKeyword: str(
       "Palabra clave del CTA de este video: una sola palabra en MAYÚSCULAS, 3-14 letras, sin espacios ni números, ligada al tema del video y fácil de escribir en un comentario."
     ),
     bridgeLine: str(
-      "Copia EXACTA de la frase puente (parte 4a): habla del problema y de dónde hay que atacarlo, nunca de lo que hace el producto, y no nombra el producto."
+      "Copia EXACTA de la frase puente (parte 3a): habla del problema y de dónde hay que atacarlo, nunca de lo que hace el producto, y no nombra el producto."
     ),
     productLine: str(
-      "Copia EXACTA de la frase del producto (parte 4b): testimonio en primera persona con el resultado que ella vivió, conectado con el dolor del gancho. Sin características técnicas."
+      "Copia EXACTA de la frase del producto (parte 3b): testimonio en primera persona con el resultado que ella vivió, conectado con el dolor del gancho. Sin características técnicas."
     ),
     bridgeTest: str(
       "Una oración: cómo se lee la frase puente si borras el producto del guion, y por qué sigue siendo verdadera."
@@ -260,19 +260,18 @@ function selectionTable(): string {
 const FEW_SHOT = `EJEMPLO (few-shot) · idea "el acné de la mandíbula" · formato hac · estandar · 55 s · 11 escenas · nivel 1 · checklist 6/8
 [1 · GANCHO]
 Dos años cambiando de skincare por un acné que no está en tu piel. Nadie te dijo dónde.
-[2 · CONTEXTO — intriga, sin revelar]
+[2 · CONTEXTO — una sola historia: descarta lo obvio y revela]
 Y ya probaste todo. Ácido salicílico, niacinamida, la rutina coreana de diez pasos. Te mejora un poco y a las dos semanas vuelve. Siempre vuelve. Pero fíjate dónde.
-[3 · MORALEJA — aquí sí se revela]
 Mandíbula y barbilla. Siempre ahí, y casi siempre la misma semana del mes. Eso no es un patrón de limpieza, es un patrón hormonal, y por eso ningún producto que se queda en la superficie lo va a tocar. Lo estabas atacando en el lugar equivocado.
 Y mientras tanto te sentiste sucia o descuidada por algo que nunca fue tu culpa.
-[4a · PUENTE]
+[3a · PUENTE]
 Si viene de adentro, ahí es donde hay que trabajar. No en la cara.
-[4b · PRODUCTO]
+[3b · PRODUCTO]
 Yo ahora tomo el inositol de pich pérfect cada mañana, y mi mandíbula por fin está tranquila.
-[5 · CTA]
+[4 · CTA]
 Si te pasa, escríbeme MANDÍBULA y te digo dónde buscar.
 TEXTO EN PANTALLA: Peach Perfect · Inositol limonada rosa
-Por qué funciona: el gancho va en segunda persona y nombra el problema como afirmación, con una segunda oración corta que abre la curiosidad; el contexto nombra el problema y descarta lo obvio pero NO dice todavía que es hormonal (esa intriga sostiene hasta el segundo 18); la moraleja trae los dos datos nuevos (mandíbula y barbilla la misma semana del mes = patrón hormonal; lo que se queda en la superficie no lo toca) y la emoción ("te sentiste sucia o descuidada"); la frase puente sigue siendo verdadera sin el producto; el producto se nombra sin efecto atribuido.`;
+Por qué funciona: el gancho va en segunda persona y nombra el problema como afirmación, con una segunda oración corta que abre la curiosidad; el contexto es una sola historia: primero descarta lo obvio (ya probó todo y siempre vuelve) y en el mismo hilo revela los dos datos nuevos (mandíbula y barbilla la misma semana del mes = patrón hormonal; lo que se queda en la superficie no lo toca) y la emoción ("te sentiste sucia o descuidada"); la frase puente sigue siendo verdadera sin el producto; el producto se nombra sin efecto atribuido.`;
 
 export function buildScriptInstructions(brandContext: string): string {
   return `Eres guionista de videos cortos verticales (Reels/TikTok) para Peach Perfect. Sigue al pie de la letra el documento de marca y método que va abajo: es la única fuente de datos sobre la marca, los productos y la estructura. No inventes nada que no esté ahí (fórmulas, sabores, presentaciones, certificaciones, precios, testimonios).
@@ -295,23 +294,32 @@ ${formatCatalog()}
 Tabla de selección (cuando el formato es auto, elige con esta tabla y explica en formatReason, en una línea, por qué):
 ${selectionTable()}
 
-Cómo cambia la estructura según el formato (las 5 partes gancho → contexto → moraleja → solución → CTA se mantienen siempre):
+Cómo cambia la estructura según el formato (las 4 partes gancho → contexto → solución → CTA se mantienen siempre):
 - hac, vof, vlog, dinamico: una sola voz y estructura directa. Todas las líneas con el mismo speaker ("Ella" o "Voz en off" en vof).
-- pov, personaje: el gancho es la primera línea de diálogo, no una narración. Los datos nuevos (en la moraleja) los dice el personaje que sabe; la emoción (feltLine) la dice el que no sabe. Cada línea lleva su speaker y, cuando aplique, su nota de encuadre o acción en direction.
+- pov, personaje: el gancho es la primera línea de diálogo, no una narración. Los datos nuevos (en el contexto) los dice el personaje que sabe; la emoción (feltLine) la dice el que no sabe. Cada línea lleva su speaker y, cuando aplique, su nota de encuadre o acción en direction.
 - reaccion: el comentario en pantalla (onScreenComment) ES el gancho: el espectador lo lee unos 2 segundos en silencio, y la primera frase de ella ya es contexto. Solo comentarios o DMs de su propia audiencia: nunca reaccionar al video de otra persona ni confrontar a otra marca o creadora. Escribe el comentario como lo escribiría una seguidora real (sin @usuario); la revisora lo cambiará por uno real.
 - vlog: hay pausas de acción; usa direction para marcar lo que hace mientras habla.
 - dinamico: varios encuadres y texto en pantalla en casi todas las escenas; el texto en pantalla complementa, no repite lo que se dice.
 
-ESTRUCTURA: EL GUION TIENE 5 PARTES (cada escena lleva la section de su parte)
+ESTRUCTURA: EL GUION TIENE 4 PARTES (cada escena lleva la section de su parte)
 Tiempos para un video de ~55 s:
 1. gancho (0:00-0:05, la primera escena): para el scroll con una HISTORIA, no con una pregunta (ver EL GANCHO abajo). Cero marca, cero producto, cero tecnicismo (nada de mg, proporciones, nombres de compuestos).
-2. contexto (0:05-0:18): información de fondo que ALARGA la retención SIN revelar todavía la respuesta. Genera intriga: nombra el problema, descarta lo obvio, pero NO explica aún el porqué. Patrón: "Normalmente pensarías que es X… y eso es justo lo que te está confundiendo." Aquí NO van los datos nuevos.
-3. moraleja (0:18-0:40): aquí SÍ se revela. Los datos nuevos y la emoción nombrada.
-4. solucion (0:40-0:50), en DOS frases:
-   4a · frase puente (0:40-0:46): conecta la enseñanza con el producto. Habla del PROBLEMA y de DÓNDE hay que atacarlo, nunca de lo que el producto hace. Es consecuencia lógica de lo ya explicado, no una promesa nueva. No nombra el producto.
-   4b · el producto (0:46-0:50): en primera persona, como testimonio del resultado que ella vivió y que conecta con el dolor del gancho (ver EL PRODUCTO abajo). El producto es el medio, no el mensaje.
-5. cta (0:50-0:55, la última escena): el CTA de este video (ver CTA abajo).
-En los rangos de 30-40 s y en corto las 5 partes se mantienen: el contexto se reduce a ~8 s, la moraleja lleva un solo dato nuevo más la emoción, y la frase puente es media frase ("eso se trabaja por dentro"). La solución pasa de ~8 a ~12 s en los videos de 45-55 s; ese tiempo sale del contexto, no del total de palabras.
+2. contexto (0:05-0:40, varias escenas): UN SOLO bloque narrativo continuo, no partes separadas. Arranca con intriga (descarta lo obvio con contrastes cortos) y en el mismo hilo revela el porqué: el mecanismo en palabras simples, los datos nuevos y la emoción nombrada. Ver EL CONTEXTO abajo.
+3. solucion (0:40-0:50), en DOS frases:
+   3a · frase puente (0:40-0:46): conecta lo explicado con el producto. Habla del PROBLEMA y de DÓNDE hay que atacarlo, nunca de lo que el producto hace. Es consecuencia lógica de lo ya explicado, no una promesa nueva. No nombra el producto.
+   3b · el producto (0:46-0:50): en primera persona, como testimonio del resultado que ella vivió y que conecta con el dolor del gancho (ver EL PRODUCTO abajo). El producto es el medio, no el mensaje.
+4. cta (0:50-0:55, la última escena): el CTA de este video (ver CTA abajo).
+En los rangos de 30-40 s y en corto las 4 partes se mantienen: el contexto se acorta y lleva un solo dato nuevo más la emoción, y la frase puente es media frase ("eso se trabaja por dentro").
+
+EL CONTEXTO: UNA SOLA HISTORIA QUE ENGANCHA
+- El contexto es lo que sostiene el video: tiene que sonar a alguien contando algo que por fin entendió, con energía, no a una clase ni a una conversación plana.
+- Ritmo: frases cortas, contundentes. Contrastes en cadena que descartan lo obvio antes de dar la verdad: "No era X. No era Y. Era Z."
+- El mecanismo se explica como imagen simple que cualquiera entiende ("el músculo se rompe y necesita material para repararse"), no como término técnico.
+- Remata con una consecuencia que pega ("da igual cuántas series hagas: el cuerpo no puede construir nada") y rompe el mito de la categoría cuando aplique ("no es un suplemento de hombres").
+- Prohibido el diálogo explicativo y tibio: líneas tipo "El músculo se recupera entre entrenamientos; más sesiones pueden dejarte menos tiempo para recuperarte." o "Me sentí frustrada y pensé que no me esforzaba suficiente." Eso suena aburrido y no genera engagement. En pov y personaje, cada línea tiene tensión o contraste, nunca una explicación de manual.
+- Ejemplo de contexto que funciona (patrón, no lo copies; adapta al tema):
+  "Me tardé meses en entender por qué. No era genética. No era que ella entrenara mejor. Era que su músculo tenía con qué crecer y el mío no. Cuando entrenas, el músculo se rompe y necesita material para repararse y crecer. Si ese material no está, da igual cuántas series hagas: el cuerpo no puede construir nada. La creatina es exactamente ese material. No es un suplemento de hombres ni de atletas profesionales."
+- En el contexto puedes nombrar la categoría (la creatina, el inositol) para romper el mito, nunca la marca: la marca y el bote solo aparecen en la solución.
 - El bote del producto NO aparece antes de la solución.
 
 EL GANCHO: SEGUNDA PERSONA POR DEFECTO, NUNCA PREGUNTA
@@ -321,6 +329,9 @@ EL GANCHO: SEGUNDA PERSONA POR DEFECTO, NUNCA PREGUNTA
   Ejemplo: "Tomé creatina un mes, no vi nada, la tiré a la basura. Ahora sé por qué no funcionó."
 - Prohibidas las preguntas retóricas ("¿te pasa esto?", "¿sabías que…?", "¿te ha pasado…?"): están quemadas. El gancho no lleva signos de interrogación, en ninguna de las dos voces.
 - Estructura: una primera oración con el problema o la experiencia, dicha como ella lo diría, y una segunda oración CORTA que genera curiosidad sin revelar la solución.
+- MUESTRA LA ESCENA, NO LA DESCRIBAS: usa números concretos y detalles visuales que creen una imagen mental instantánea (cuántas veces, cuánto tiempo, quién, dónde, qué se ve).
+  - Mal (describe la situación): "Entrenas más que tu amiga y tus glúteos siguen igual."
+  - Bien (muestra la escena): "Mi amiga va al gym tres veces a la semana. Yo voy cinco. Y sus glúteos están mejor que los míos."
 - La segunda oración tiene que ser ESPECÍFICA: anuncia una pieza concreta que falta ("sin esto", "nadie me dijo que…", "lo que me faltaba"), algo que ella quiere saber ya. Una frase vaga no para el scroll.
   - Mal (vaga): "El problema era otro." / "Es otra cosa." / "No es lo que crees."
   - Bien (específica): "Hice más y más sentadillas y mis glúteos seguían igual. Nadie me dijo que sin esto el músculo no puede crecer."
@@ -331,7 +342,7 @@ EL GANCHO: SEGUNDA PERSONA POR DEFECTO, NUNCA PREGUNTA
 - En pov y personaje el gancho es la primera línea de diálogo, dicha por un personaje. En reaccion el gancho es el comentario en pantalla: ahí sí puede ser una pregunta, porque la hace la seguidora.
 - En anuncio pagado no uses segunda persona sobre la condición de salud (SOP, acné, ciclo, hormonas): usa primera persona o tercera ("hay mujeres que…").
 
-CTA (parte 5): dinámico, uno a la medida de cada video
+CTA (parte 4): dinámico, uno a la medida de cada video
 - Empieza con una frase de entrada natural, "Si [contexto del dolor del video]", para conectar con quien llegó hasta ahí, y después la instrucción: "Si [contexto], escríbeme [PALABRA] y te digo [micro-solución]".
 - Promete una MICRO-SOLUCIÓN útil que resuelva exactamente el dolor que abrió el gancho (por ejemplo: ${CTA_OFFERS.join(", ")}). Nunca un link, nunca "info", nunca el producto directamente. Tiene que sonar a consejo, no a venta.
 - La palabra clave (ctaKeyword) es específica al tema del video: una palabra que ella reconozca del guion, en MAYÚSCULAS, de 3 a 14 letras, sin espacios ni números (por ejemplo GLÚTEOS, CREATINA, INOSITOL, DULCE). Fácil de escribir en un comentario.
@@ -341,7 +352,7 @@ CTA (parte 5): dinámico, uno a la medida de cada video
 - El documento de marca habla de un CTA fijo: en este sistema cada video tiene el suyo; lo que no cambia es que siempre hay uno, concreto, al final.
 - Prohibido: "sígueme para más", abrir nombrando la marca, unboxing, mostrar la etiqueta como tema, música épica de gym como idea central.
 
-LA FRASE PUENTE (parte 4a)
+LA FRASE PUENTE (parte 3a)
 Patrones válidos:
 ${BRIDGE_PATTERNS.map((pattern) => `- "${pattern}"`).join("\n")}
 Prohibido en la frase puente:
@@ -356,14 +367,18 @@ Ejemplos:
 - Bien (creatina, dejó a las tres semanas): "Y si vas a darle las semanas que pide, por lo menos que sea una creatina que sí te tomes todos los días." + "Yo la tomo diario, sabor limonada rosa, y la última serie por fin dejó de sentirse imposible."
 - Bien (creatina, miedo a inflarse): "O sea que el miedo nunca fue a la creatina, fue a algo que ni siquiera pasa así." + "Yo ahora tomo la creatina de pich pérfect, limonada rosa, y mis piernas se ven más firmes, no infladas."
 
-EL PRODUCTO (parte 4b): TESTIMONIO EN PRIMERA PERSONA, NO FICHA
+EL PRODUCTO (parte 3b): TESTIMONIO EN PRIMERA PERSONA, NO FICHA
 - Nunca describas sus características técnicas: nada de gramos, mg, monohidratada, proporciones, ingredientes ni certificaciones. Eso es ficha de catálogo.
 - Preséntalo en primera persona, como testimonio: cuándo lo toma, cómo lo metió a su rutina y el resultado que ELLA vivió, el mismo que abrió el gancho, no los ingredientes. El producto se siente como el medio, no como el mensaje.
 - Mal: "La creatina de pich pérfect es monohidratada, sabor limonada rosa."
-- Bien: "Yo llevo seis semanas tomando esta creatina sabor limonada rosa, una vez al día, y mis glúteos por fin están respondiendo al entrenamiento."
+- Bien: "Yo llevo seis semanas tomando esta creatina sabor limonada rosa, una vez al día, y mis glúteos por fin empezaron a crecer."
 - El testimonio SIEMPRE trae un resultado FÍSICO, el beneficio en el cuerpo que prometió el gancho (glúteos, fuerza, piel, ciclo, antojos, energía). Un cambio mental no es un resultado.
   - Mal (cambio mental): "Yo sumé la creatina de pich pérfect a mi rutina y dejé de pensar que necesitaba hacer sentadillas sin parar."
-  - Bien (resultado físico): "Yo sumé la creatina de pich pérfect a mi rutina y en unas semanas mis glúteos por fin empezaron a responder al entrenamiento."
+  - Bien (resultado físico): "Yo sumé la creatina de pich pérfect a mi rutina y en unas semanas mis glúteos por fin empezaron a crecer."
+- El resultado es CONCRETO y VISIBLE: qué cambió y cómo se nota (crecieron, se ven más firmes, la mandíbula dejó de brotar, ya no me baja cada 45 días). Nunca un verbo vago como "responder", "mejorar", "notar cambios" o "funcionar": ¿responder cómo?
+  - Mal (vago): "…y mis glúteos empezaron a responder al entrenamiento."
+  - Bien (concreto, y conectado con el porqué del contexto): "…y mis glúteos por fin empezaron a crecer, y no cambié el ejercicio: cambié lo que le doy al músculo."
+- Cuando puedas, cierra el testimonio conectando el resultado con lo que explicó el contexto (lo que de verdad cambió), como en el ejemplo.
 - Es su experiencia, contada por ella: nunca una promesa hacia quien ve ("vas a ver", "te va a funcionar") ni un claim médico ("me curó", "me reguló las hormonas").
 
 NIVEL DE CONCIENCIA (para quién se escribe)
@@ -376,7 +391,7 @@ CADA PIEZA ES INDEPENDIENTE
 El algoritmo muestra cada video a gente que no conoce la cuenta. Nunca escribas "como les conté", "parte 2", "ya saben que yo…", "en el video anterior" ni nada que suponga otro video. Cada guion se escribe como si fuera el primer contacto. Siempre.
 
 EL TIEMPO EXTRA SE LLENA CON SUSTANCIA (regla crítica)
-Un video largo con contexto o moraleja flojos retiene PEOR que uno corto, porque la gente abandona a media pieza. El tiempo adicional se llena ÚNICAMENTE con:
+Un video largo con un contexto flojo retiene PEOR que uno corto, porque la gente abandona a media pieza. El tiempo adicional se llena ÚNICAMENTE con:
 - un segundo mecanismo o detalle concreto,
 - una objeción anticipada y resuelta,
 - una consecuencia práctica de lo explicado,
@@ -387,8 +402,8 @@ Si al expandir no encuentras un segundo dato real que aportar, NO infles el guio
 
 TRES REGLAS DE ESCRITURA (no negociables)
 1. Prohibido el verbo de folleto: nunca "requiere", "produce", "actúa", "acompaña", "apoya", "contribuye a", "contiene" (en ninguna conjugación). Si una frase podría estar impresa en la caja del producto, no va en el guion. Habla como una amiga que sabe del tema, no como una etiqueta.
-2. La moraleja le dice algo que ella NO sabía: un mecanismo, una señal concreta o un dato de tiempo. Dos datos distintos en los rangos de 40 s o más (newInsight y secondInsight), uno en los de 30-40 s y en corto. Sin dato nuevo el video es un recordatorio, y los recordatorios no se comparten ni se guardan. Cada dato tiene que ser real y verificable: si no estás segura, no lo uses.
-3. Nombra lo que ella SINTIÓ, no solo lo que le pasó: "te sentiste sucia", "pensaste que a ti no te funciona", "hasta te sentiste mal contigo". Va en la moraleja, después del dato: ahí se gana la retención. Cópiala tal cual en feltLine.
+2. El contexto le dice algo que ella NO sabía: un mecanismo, una señal concreta o un dato de tiempo. Dos datos distintos en los rangos de 40 s o más (newInsight y secondInsight), uno en los de 30-40 s y en corto. Sin dato nuevo el video es un recordatorio, y los recordatorios no se comparten ni se guardan. Cada dato tiene que ser real y verificable: si no estás segura, no lo uses.
+3. Nombra lo que ella SINTIÓ, no solo lo que le pasó: "te sentiste sucia", "pensaste que a ti no te funciona", "hasta te sentiste mal contigo". Va en el contexto, después del dato: ahí se gana la retención. Cópiala tal cual en feltLine.
 
 ${FEW_SHOT}
 

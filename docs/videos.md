@@ -1,11 +1,11 @@
 # Generador de videos (fase 1: guion)
 
-Crea guiones de Reels/TikTok para Peach Perfect con el método de `content/peach-perfect-contexto-contenido.md`: checklist de idea, y guion en 5 partes (gancho, contexto, moraleja, solución y un CTA a la medida de cada video). Por ahora genera y revisa el **guion**. Las imágenes, los clips y la publicación automática son las fases siguientes.
+Crea guiones de Reels/TikTok para Peach Perfect con el método de `content/peach-perfect-contexto-contenido.md`: checklist de idea, y guion en 4 partes (gancho, contexto, solución y un CTA a la medida de cada video). Por ahora genera y revisa el **guion**. Las imágenes, los clips y la publicación automática son las fases siguientes.
 
 ## Formato y duración
 
 - Video vertical 9:16 en **escenas de 5 segundos**: cada escena es un clip. Un guion de 50 s tiene 10 escenas, es decir 20 imágenes (inicial y final de cada escena) y 10 clips, que luego se unen en un solo video.
-- Cada escena pertenece a una de las **5 partes** del guion (ver abajo), en orden.
+- Cada escena pertenece a una de las **4 partes** del guion (ver abajo), en orden.
 - Cada escena trae su locución, el texto en pantalla, lo que se ve y tres prompts para las fases siguientes: **imagen inicial**, **imagen final** y **movimiento**.
 - El guion también define personajes y un estilo visual fijos, para que todas las imágenes se vean del mismo video.
 
@@ -46,6 +46,7 @@ Los guiones que se quedaron detenidos con la versión anterior (cuando la checkl
 - **Segunda persona (por defecto):** le habla directo a quien ve y nombra su problema como afirmación, para que se identifique y para atacar el problema. Ejemplo: "Haces más y más sentadillas y tus glúteos siguen igual. Nadie te dijo que sin esto el músculo no puede crecer."
 - **Primera persona (solo cuando conviene):** cuando el ángulo es una experiencia que ella vivió y ya resolvió, contada como historia. Ejemplo: "Tomé creatina un mes, no vi nada, la tiré a la basura. Ahora sé por qué no funcionó."
 - **Estructura (en las dos voces):** una oración con el problema o la experiencia, más una segunda oración corta que abre la curiosidad sin revelar la solución.
+- **Muestra la escena, no la describe:** números concretos y detalles visuales que crean una imagen mental instantánea. ❌ "Entrenas más que tu amiga y tus glúteos siguen igual" · ✅ "Mi amiga va al gym tres veces a la semana. Yo voy cinco. Y sus glúteos están mejor que los míos." La revisión avisa si el gancho no trae un número o una cantidad de tiempo (`CONCRETE_NUMBER`).
 - **La segunda oración es específica:** anuncia una pieza concreta que falta ("Nadie me dijo que sin esto el músculo no puede crecer"). Las frases vagas como "El problema era otro", "Es otra cosa" o "No es lo que crees" se rechazan (`VAGUE_HOOK` en `lib/video/script.ts`).
 - **Voz del gancho (formulario):**
   - **Auto** (por defecto): segunda persona, o primera si el ángulo es una experiencia resuelta.
@@ -61,23 +62,26 @@ Los guiones que se quedaron detenidos con la versión anterior (cuando la checkl
   - En Reacción, el gancho es el comentario de la seguidora, y ese sí puede ser pregunta.
   - En anuncios pagados no se usa segunda persona sobre la condición de salud: se usa primera o tercera persona.
 
-## Las 5 partes del guion
+## Las 4 partes del guion
 
 | # | Parte (`section`) | ~55 s | Qué hace |
 | --- | --- | --- | --- |
-| 1 | Gancho (`gancho`) | 0:00-0:05 | Para el scroll: pregunta, dato curioso o afirmación contracorriente. |
-| 2 | Contexto (`contexto`) | 0:05-0:18 | Alarga la retención **sin revelar la respuesta**: nombra el problema y descarta lo obvio. |
-| 3 | Moraleja (`moraleja`) | 0:18-0:40 | Aquí sí se revela: los datos nuevos y la emoción nombrada. |
-| 4 | Solución (`solucion`) | 0:40-0:50 | **4a · frase puente** (0:40-0:46) + **4b · producto** (0:46-0:50). |
-| 5 | CTA (`cta`) | 0:50-0:55 | Palabra clave fija. |
+| 1 | Gancho (`gancho`) | 0:00-0:05 | Para el scroll con el problema o la experiencia, nunca con una pregunta. |
+| 2 | Contexto (`contexto`) | 0:05-0:40 | **Una sola historia**, que puede ocupar varias escenas: abre descartando lo obvio con contrastes cortos ("No era X. No era Y. Era Z.") y en el mismo hilo revela el porqué, los datos nuevos y la emoción. |
+| 3 | Solución (`solucion`) | 0:40-0:50 | **3a · frase puente** + **3b · producto**. |
+| 4 | CTA (`cta`) | 0:50-0:55 | Palabra clave y micro-solución. |
 
-En los rangos de 30-40 s y en corto se mantienen las 5 partes: el contexto se reduce a unos 8 s, la moraleja lleva un solo dato y la frase puente es media frase ("eso se trabaja por dentro").
+**El contexto tiene que enganchar.**
+- **Cómo se escribe:** frases cortas y contundentes. El mecanismo va explicado como una imagen simple ("el músculo se rompe y necesita material para repararse"), cierra con una consecuencia que pega y, cuando aplica, rompe el mito de la categoría.
+- **Qué evita:** el diálogo explicativo y tibio. El prompt lo marca como ejemplo de lo que no se debe hacer.
+- **Ejemplo de referencia:** el prompt usa el de la creatina ("Me tardé meses en entender por qué. No era genética…").
+- **Qué se puede nombrar:** la categoría (la creatina, el inositol) sí; la marca y el bote solo en la solución.
 
-**Frase puente (4a).** Conecta la enseñanza con el producto: habla del problema y de dónde atacarlo, nunca de lo que hace el producto.
+**Frase puente (3a).** Conecta la enseñanza con el producto: habla del problema y de dónde atacarlo, nunca de lo que hace el producto.
 - **Patrones:** están en `BRIDGE_PATTERNS`. Por ejemplo, "Si el problema es [X], ahí es donde hay que trabajar."
 - **Prohibido:** verbos de efecto (regula, equilibra, corrige, mejora, controla, normaliza), promesas y verbos de folleto.
 - **El test:** tiene que seguir siendo verdadera aunque borres el producto. El modelo lo explica en `bridgeTest`, y si la frase nombra el producto o el bote se rechaza como claim disfrazado.
-- **4b:** el producto en primera persona, como experiencia vivida (ver más abajo).
+- **3b:** el producto en primera persona, como experiencia vivida (ver más abajo).
 
 ## Nivel de conciencia
 
@@ -96,7 +100,7 @@ Marca **Idea ya validada** y elige en qué formato se publicó. El guion conserv
 
 Nunca "como les conté", "parte 2", "ya saben que yo…" ni "en el video anterior". Cada guion se escribe como primer contacto, y estas frases son una falla crítica (`SERIES_PHRASES`).
 
-**El tiempo extra se llena con sustancia:** un segundo mecanismo o detalle concreto, una objeción resuelta, una consecuencia práctica o, en diálogo, una réplica más del personaje que no sabe. Nunca con repeticiones, muletillas, adjetivos decorativos, introducciones ni recapitulaciones. El prompt incluye como ejemplo de referencia el guion completo del "acné de la mandíbula" (HAC, 55 s, nivel 1, idea 6/8), con sus 5 partes y la frase puente. Su gancho va en segunda persona, la voz por defecto.
+**El tiempo extra se llena con sustancia:** un segundo mecanismo o detalle concreto, una objeción resuelta, una consecuencia práctica o, en diálogo, una réplica más del personaje que no sabe. Nunca con repeticiones, muletillas, adjetivos decorativos, introducciones ni recapitulaciones. El prompt incluye como ejemplo de referencia el guion completo del "acné de la mandíbula" (HAC, 55 s, nivel 1, idea 6/8), con sus 4 partes y la frase puente. Su gancho va en segunda persona, la voz por defecto.
 
 Los rangos viven en `VIDEO_DURATIONS` (`lib/video/constants.ts`). La revisión muestra un resumen como `HAC 45-55s · 55s · rango 125-155 · 148 palabras ✓ · nivel 1 · idea 6/8`.
 
@@ -182,12 +186,12 @@ La tabla está en `PHONETIC_SPELLINGS` (`lib/video/constants.ts`). Al modelo se 
 - **Duración:** los segundos (escenas × 5) dentro del rango del formato y la duración elegidos.
 - **Extensión:** las palabras de locución dentro del rango de la tabla y máximo 18 por escena. Es una regla que se cumple, no un dato informativo: si el guion queda corto o largo, se reescribe con la instrucción exacta ("faltan 12 palabras; agrégalas con un segundo mecanismo, una objeción resuelta o una consecuencia práctica, nunca con relleno").
 - **Segundo dato nuevo:** obligatorio en los rangos de 40 s o más (`secondInsight`), distinto del primero.
-- **5 partes en orden** y **contexto sin revelar el dato:** el dato nuevo aparece en el contexto en vez de la moraleja. Ambas son críticas.
+- **4 partes en orden** (crítica).
 - **Frase puente:** presente antes del producto, sin efecto ni promesa, y verdadera sin el producto. Las tres son críticas.
 - **Pieza independiente** (crítica), **nivel de conciencia 3-4** (aviso) y, en ideas validadas, **formato distinto al anterior** (crítica).
 - **Nombre del producto:** sin "Pink Lemonade" ni "México" en la locución y sin frases de ficha de catálogo.
 - **Sin verbos de folleto:** ni "requiere", "produce", "actúa", "acompaña", "apoya", "contribuye a" o "contiene", en ninguna conjugación. Si una frase podría ir impresa en la caja, no va en el guion.
-- **Dato nuevo:** al menos una frase de la moraleja (dos en los videos largos) dice algo que ella no sabía (un mecanismo, una señal concreta o un dato de tiempo). Se guarda en `newInsight` y tiene que aparecer tal cual en el cuerpo.
+- **Dato nuevo:** al menos una frase del contexto (dos en los videos largos) dice algo que ella no sabía (un mecanismo, una señal concreta o un dato de tiempo). Se guarda en `newInsight` y tiene que aparecer tal cual en el cuerpo.
 - **Emoción:** el cuerpo nombra lo que ella sintió ("pensaste que a ti no te funciona"), no solo lo que le pasó. Se guarda en `feltLine` y tiene que aparecer tal cual en el cuerpo.
 - **El producto solo se nombra:** desde el aterrizaje, sin atribuirle efectos (ayuda, mejora, regula, equilibra, reduce…). Se permiten los datos exactos de la ficha, como la proporción 80:1.
 - **Sin claims médicos** (cura, trata, regulariza, previene, elimina) ni promesas de resultados con plazo ("en 8 semanas vas a ver"). Los datos de tiempo que explican ("la semana antes de que te baje") sí se permiten.
@@ -204,8 +208,9 @@ Todas estas reglas, salvo el número de palabras por escena y la segunda persona
 - **Validaciones críticas:** la palabra clave se dice en la última escena, el CTA abre con «Si…», la palabra tiene formato válido y coincide con la que fijaste, y la oferta no es link, info ni producto.
 - **Antes de publicar:** en **Campaigns** necesitas una campaña con esa palabra clave cuyo DM entregue de verdad la micro-solución prometida (el consejo, y después, si quieres, el link). OpenReply compara sin importar mayúsculas ni tildes.
 
-**El producto (4b) como testimonio.** En primera persona y conectado con el dolor del gancho: cuándo lo toma, cómo lo metió a su rutina y el resultado que ella vivió, plazo incluido. Por ejemplo: "Yo llevo seis semanas tomando esta creatina sabor limonada rosa, una vez al día, y mis glúteos por fin están respondiendo al entrenamiento". El producto es el medio, no el mensaje.
+**El producto (3b) como testimonio.** En primera persona y conectado con el dolor del gancho: cuándo lo toma, cómo lo metió a su rutina y el resultado que ella vivió, plazo incluido. Por ejemplo: "Yo llevo seis semanas tomando esta creatina sabor limonada rosa, una vez al día, y mis glúteos por fin empezaron a crecer". El producto es el medio, no el mensaje.
 - **Nunca características técnicas:** gramos, mg, monohidratada, proporciones, ingredientes o certificaciones. Es una regla crítica.
+- **Resultado concreto y visible:** qué cambió y cómo se nota ("empezaron a crecer", "la mandíbula dejó de brotar"). Los verbos vagos como "responder", "mejorar", "vi cambios" o "funcionó" se rechazan (`VAGUE_RESULT`). Cuando se puede, el testimonio cierra conectando el resultado con el porqué del contexto ("no cambié el ejercicio: cambié lo que le doy al músculo").
 - **Siempre un resultado físico:** el beneficio en el cuerpo que prometió el gancho (glúteos, fuerza, piel, ciclo, antojos…). Un cambio mental ("dejé de pensar que necesitaba más sentadillas") no es un resultado y se rechaza. La línea tiene que nombrar una parte del cuerpo o un resultado y un cambio (`BODY_OUTCOME` y `CHANGE_MARKER` en `lib/video/script.ts`).
 - **Se siguen rechazando:**
   - Los efectos prometidos a quien ve ("te ayuda a…", "regula…").

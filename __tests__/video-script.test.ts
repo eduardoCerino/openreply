@@ -62,8 +62,8 @@ function script(overrides: Partial<VideoScript> = {}): VideoScript {
     scenes: [
       scene("gancho", "Cambié de crema tres veces y el acné de la mandíbula volvió. Siempre ahí."),
       scene("contexto", "No era la crema."),
-      scene("moraleja", INSIGHT),
-      scene("moraleja", FELT),
+      scene("contexto", INSIGHT),
+      scene("contexto", FELT),
       scene("solucion", [BRIDGE, PRODUCT], true),
       scene("cta", CTA),
     ],
@@ -99,10 +99,10 @@ function acneExample(): VideoScript {
       scene("contexto", "Y ya probaste todo. Ácido salicílico, niacinamida, la rutina coreana de diez pasos,"),
       scene("contexto", "Te mejora un poco"),
       scene("contexto", "y a las dos semanas vuelve. Siempre vuelve. Pero fíjate dónde."),
-      scene("moraleja", "Mandíbula y barbilla. Siempre ahí, y casi siempre la misma semana del mes. Eso no es"),
-      scene("moraleja", "un patrón de limpieza, es un patrón hormonal, y por eso ningún producto que se queda"),
-      scene("moraleja", "en la superficie lo va a tocar. Lo estabas atacando en el lugar equivocado."),
-      scene("moraleja", "Y mientras tanto te sentiste sucia o descuidada por algo que nunca fue tu culpa."),
+      scene("contexto", "Mandíbula y barbilla. Siempre ahí, y casi siempre la misma semana del mes. Eso no es"),
+      scene("contexto", "un patrón de limpieza, es un patrón hormonal, y por eso ningún producto que se queda"),
+      scene("contexto", "en la superficie lo va a tocar. Lo estabas atacando en el lugar equivocado."),
+      scene("contexto", "Y mientras tanto te sentiste sucia o descuidada por algo que nunca fue tu culpa."),
       scene("solucion", "Si viene de adentro, ahí es donde hay que trabajar. No en la cara."),
       scene("solucion", "Yo ahora tomo el inositol de Peach Perfect cada mañana, y mi mandíbula por fin está tranquila.", true),
       scene("cta", "Si te pasa, escríbeme MANDÍBULA y te digo dónde buscar."),
@@ -173,24 +173,25 @@ describe("base rules", () => {
   });
 });
 
-describe("five-part structure", () => {
+describe("four-part structure", () => {
   it("requires every part in order", () => {
     const missing = script();
-    missing.scenes[1] = scene("moraleja", "Y no era la crema.");
+    missing.scenes = missing.scenes.filter((s) => s.section !== "contexto");
     expect(check(run(missing), "structure")?.ok).toBe(false);
 
     const shuffled = script();
-    shuffled.scenes = [shuffled.scenes[0], shuffled.scenes[2], shuffled.scenes[1], ...shuffled.scenes.slice(3)];
+    const [hook, c1, c2, c3, solution, cta] = shuffled.scenes;
+    shuffled.scenes = [hook, solution, c1, c2, c3, cta];
     expect(check(run(shuffled), "structure")?.hard).toBe(true);
   });
 
-  it("keeps the reveal out of the context", () => {
-    const early = script();
-    early.scenes[1] = scene("contexto", INSIGHT);
-    early.scenes[2] = scene("moraleja", "Y no era la crema.");
-    const checks = run(early);
-    expect(check(checks, "intrigue")?.ok).toBe(false);
-    expect(check(checks, "insight")?.ok).toBe(false);
+  it("treats the context as one narrative: intrigue and reveal anywhere in it", () => {
+    const value = script();
+    value.scenes[1] = scene("contexto", INSIGHT);
+    value.scenes[2] = scene("contexto", "No era la crema.");
+    const checks = run(value);
+    expect(check(checks, "insight")?.ok).toBe(true);
+    expect(check(checks, "intrigue")).toBeUndefined();
   });
 
   it("requires the insight and the felt line inside the lesson", () => {
@@ -345,8 +346,8 @@ describe("video formats", () => {
     expect(check(runFormatChecks(normalizeScript(script(), "personaje")), "dialogue")?.ok).toBe(false);
     const duo = script({ format: "personaje", hook: "Me compré otra crema." });
     duo.scenes[0] = scene("gancho", "Me compré otra crema. Ya van tres este mes.", false, "Amiga");
-    duo.scenes[2] = scene("moraleja", INSIGHT, false, "La que sabe");
-    duo.scenes[3] = scene("moraleja", FELT, false, "Amiga");
+    duo.scenes[2] = scene("contexto", INSIGHT, false, "La que sabe");
+    duo.scenes[3] = scene("contexto", FELT, false, "Amiga");
     const checks = runFormatChecks(normalizeScript(duo));
     expect(check(checks, "dialogue")?.ok).toBe(true);
     expect(check(checks, "dialogueHook")?.ok).toBe(true);
@@ -393,10 +394,12 @@ describe("duration ranges", () => {
 describe("script prompt", () => {
   const instructions = buildScriptInstructions(getBrandContext());
 
-  it("embeds the brand document, the five parts, the bridge and the new few-shot", () => {
+  it("embeds the brand document, the four parts, the bridge and the new few-shot", () => {
     expect(instructions).toContain("Peach Perfect MX — Contexto de marca");
-    expect(instructions).toContain("EL GUION TIENE 5 PARTES");
-    expect(instructions).toContain("LA FRASE PUENTE (parte 4a)");
+    expect(instructions).toContain("EL GUION TIENE 4 PARTES");
+    expect(instructions).toContain("EL CONTEXTO: UNA SOLA HISTORIA QUE ENGANCHA");
+    expect(instructions).toContain("MUESTRA LA ESCENA, NO LA DESCRIBAS");
+    expect(instructions).toContain("LA FRASE PUENTE (parte 3a)");
     expect(instructions).toContain("Si el problema es [X], ahí es donde hay que trabajar.");
     expect(instructions).toContain("CADA PIEZA ES INDEPENDIENTE");
     expect(instructions).toContain("NIVEL DE CONCIENCIA");
@@ -542,7 +545,7 @@ describe("CTA micro-solution and product as experience", () => {
 
   it("accepts a first-person testimonial with her result and time frame", () => {
     for (const line of [
-      "Yo llevo seis semanas tomando esta creatina y mis glúteos por fin están respondiendo.",
+      "Yo llevo seis semanas tomando esta creatina y mis glúteos por fin empezaron a crecer.",
       "Llevo tres semanas tomándola, limonada rosa, y se me quitó el acné.",
     ]) {
       const value = script({ productLine: line });
@@ -621,7 +624,7 @@ describe("review of a generated sentadillas script", () => {
   it("passes both checks with the corrections", () => {
     const corrected = sentadillas(
       "Hice más y más sentadillas y mis glúteos seguían igual. Nadie me dijo que sin esto el músculo no puede crecer.",
-      "Yo sumé la creatina de Peach Perfect a mi rutina y en unas semanas mis glúteos por fin empezaron a responder."
+      "Mis glúteos por fin empezaron a crecer, y no cambié el ejercicio: cambié lo que le doy al músculo."
     );
     const checks = run(corrected, "creatina");
     expect(check(checks, "hookSpecific")?.ok).toBe(true);
@@ -651,6 +654,48 @@ describe("hook voice parameter", () => {
     expect(paid).toContain("Voz del gancho: segunda persona (elegida por la revisora)");
     expect(paid).toContain("no nombres la condición de salud");
     expect(buildScriptInput({ idea: "x", product: "inositol", channel: "organico" })).toContain("Voz del gancho: auto");
+  });
+});
+
+describe("hook shows the scene", () => {
+  it("warns when the hook describes instead of showing", () => {
+    const value = script({ hookVoice: "segunda", hook: "Entrenas más que tu amiga y tus glúteos siguen igual. Nadie te dijo por qué." });
+    expect(check(run(value), "hookScene")?.ok).toBe(false);
+  });
+
+  it("accepts a hook with concrete numbers and a visual scene", () => {
+    const value = script({
+      hookVoice: "primera",
+      hook: "Mi amiga va al gym tres veces a la semana. Yo voy cinco. Y sus glúteos están mejor que los míos.",
+    });
+    const checks = run(value);
+    expect(check(checks, "hookScene")?.ok).toBe(true);
+    expect(check(checks, "hookStory")?.ok).toBe(true);
+  });
+});
+
+describe("concrete product result", () => {
+  const withProduct = (line: string) => {
+    const value = script({ productLine: line });
+    value.scenes[4] = scene("solucion", [BRIDGE, line], true);
+    return run(value, "creatina");
+  };
+
+  it("rejects vague results", () => {
+    for (const line of [
+      "Yo la tomo diario y mis glúteos empezaron a responder al entrenamiento.",
+      "Yo la tomo diario y por fin vi cambios en mis glúteos.",
+    ]) {
+      expect(check(withProduct(line), "productConcrete")?.hard).toBe(true);
+    }
+  });
+
+  it("accepts the brief's concrete result", () => {
+    const checks = withProduct(
+      "Yo la tomo diario y mis glúteos por fin empezaron a crecer, y no cambié el ejercicio: cambié lo que le doy al músculo."
+    );
+    expect(check(checks, "productConcrete")?.ok).toBe(true);
+    expect(check(checks, "productResult")?.ok).toBe(true);
   });
 });
 
