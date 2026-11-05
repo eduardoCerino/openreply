@@ -9,7 +9,14 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { HOOK_MOLDS, MAX_VIDEO_SECONDS, SCENE_COUNT } from "@/lib/video/constants";
+import {
+  HOOK_MOLDS,
+  MAX_VIDEO_SECONDS,
+  SCENE_COUNT,
+  VIDEO_FORMATS,
+  VIDEO_FORMAT_IDS,
+  type VideoFormat,
+} from "@/lib/video/constants";
 
 const inputClass =
   "w-full rounded-lg border border-border bg-surface px-3 py-2 text-sm text-foreground placeholder:text-zinc-500 focus:border-accent/40 focus:outline-none";
@@ -23,6 +30,7 @@ interface ProjectRow {
   product: string;
   channel: string;
   title: string | null;
+  chosenFormat: VideoFormat | null;
   createdAt: string;
 }
 
@@ -45,6 +53,7 @@ export default function VideosPage() {
   const [product, setProduct] = useState<"creatina" | "inositol">("creatina");
   const [channel, setChannel] = useState<"organico" | "pagado">("organico");
   const [hookMold, setHookMold] = useState("");
+  const [format, setFormat] = useState<VideoFormat | "auto">("auto");
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [projects, setProjects] = useState<ProjectRow[]>([]);
@@ -69,7 +78,7 @@ export default function VideosPage() {
     const response = await fetch("/api/videos", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ idea, product, channel, hookMold: hookMold || undefined }),
+      body: JSON.stringify({ idea, product, channel, format, hookMold: hookMold || undefined }),
     });
     const payload = await response.json();
     if (!payload.success) {
@@ -107,6 +116,29 @@ export default function VideosPage() {
             className={`${inputClass} resize-none`}
           />
           <p className="mt-1 text-xs text-muted">Escríbela desde el síntoma que ella vive, no desde el producto.</p>
+        </div>
+        <div>
+          <label htmlFor="video-format" className="mb-1 block text-sm font-medium text-foreground">
+            Formato
+          </label>
+          <select
+            id="video-format"
+            value={format}
+            onChange={(event) => setFormat(event.target.value as typeof format)}
+            className={inputClass}
+          >
+            <option value="auto">Auto: que la IA elija el que mejor comunique la idea</option>
+            {VIDEO_FORMAT_IDS.map((id) => (
+              <option key={id} value={id}>
+                {VIDEO_FORMATS[id].label}: {VIDEO_FORMATS[id].bestFor}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-muted">
+            {format === "auto"
+              ? "Se elige por cuál comunica mejor la idea, nunca por cuál parece más viral."
+              : `${VIDEO_FORMATS[format].description} ${VIDEO_FORMATS[format].production}`}
+          </p>
         </div>
         <div className="grid gap-4 sm:grid-cols-3">
           <div>
@@ -180,7 +212,8 @@ export default function VideosPage() {
                   <span className="min-w-0 flex-1">
                     <span className="block truncate text-sm text-foreground">{project.title ?? project.idea}</span>
                     <span className="text-xs text-muted">
-                      {project.product} · {project.channel === "pagado" ? "anuncio" : "orgánico"} ·{" "}
+                      {project.product} · {project.channel === "pagado" ? "anuncio" : "orgánico"}
+                      {project.chosenFormat ? ` · ${VIDEO_FORMATS[project.chosenFormat]?.label ?? project.chosenFormat}` : ""} ·{" "}
                       {new Date(project.createdAt).toLocaleString("es-MX", { dateStyle: "medium", timeStyle: "short" })}
                     </span>
                   </span>

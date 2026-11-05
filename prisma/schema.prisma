@@ -557,6 +557,8 @@ model VideoProject {
   idea        String
   product     String
   channel     String
+  // One of lib/video/constants VIDEO_FORMAT_IDS, or "auto" to let the model pick.
+  format      String?
   hookMold    String?
   // Free-text change request for the next regeneration, cleared once used.
   feedback    String?

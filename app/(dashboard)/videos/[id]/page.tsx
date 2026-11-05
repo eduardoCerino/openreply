@@ -8,12 +8,19 @@
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { SCENE_COUNT, VIDEO_CTA, type VideoProduct } from "@/lib/video/constants";
+import {
+  SCENE_COUNT,
+  VIDEO_CTA,
+  VIDEO_FORMATS,
+  type VideoFormat,
+  type VideoProduct,
+} from "@/lib/video/constants";
 
 interface Scene {
   section: "gancho" | "contexto" | "aterrizaje" | "cierre";
   startSecond: number;
   endSecond: number;
+  lines?: Array<{ speaker: string; text: string; direction: string }>;
   voiceover: string;
   onScreenText: string;
   visual: string;
@@ -25,9 +32,14 @@ interface Scene {
 
 interface Script {
   title: string;
+  format?: VideoFormat;
+  formatReason?: string;
+  onScreenComment?: string;
   hookMold: string;
   hook: string;
   symptom: string;
+  newInsight?: string;
+  feltLine?: string;
   character: string;
   visualStyle: string;
   scenes: Scene[];
@@ -43,6 +55,7 @@ interface Project {
   idea: string;
   product: VideoProduct;
   channel: "organico" | "pagado";
+  format: VideoFormat | "auto" | null;
   script: Script | null;
   checks: Array<{ id: string; label: string; ok: boolean; detail?: string }> | null;
   revision: number;
@@ -175,7 +188,9 @@ export default function VideoScriptPage() {
           <Link href="/videos" className="text-sm text-muted hover:text-foreground">← Videos</Link>
           <h1 className="mt-2 text-2xl font-bold text-foreground">{script?.title ?? "Guion"}</h1>
           <p className="mt-1 text-sm text-muted">
-            {project.product} · {project.channel === "pagado" ? "anuncio pagado" : "orgánico"} · versión{" "}
+            {project.product} · {project.channel === "pagado" ? "anuncio pagado" : "orgánico"}
+            {script?.format ? ` · ${VIDEO_FORMATS[script.format]?.label ?? script.format}` : ""}
+            {project.format === "auto" ? " (elegido por la IA)" : ""} · versión{" "}
             {project.revision} · idea: {project.idea}
           </p>
         </div>
@@ -243,7 +258,27 @@ export default function VideoScriptPage() {
                     </span>
                   )}
                 </div>
-                <p className="mt-3 text-base text-foreground">“{scene.voiceover}”</p>
+                {index === 0 && script.onScreenComment && (
+                  <div className="mt-3 max-w-sm rounded-2xl border border-border bg-background px-3 py-2 text-sm text-foreground">
+                    <p className="text-[11px] font-semibold uppercase text-muted">Comentario en pantalla (usa uno real)</p>
+                    <p className="mt-0.5">{script.onScreenComment}</p>
+                  </div>
+                )}
+                {scene.lines && scene.lines.length > 0 ? (
+                  <div className="mt-3 space-y-1.5">
+                    {scene.lines.map((line, lineIndex) => (
+                      <p key={lineIndex} className="text-base text-foreground">
+                        {(VIDEO_FORMATS[script.format ?? "hac"]?.dialogue || line.speaker === "Voz en off") && (
+                          <span className="mr-1.5 text-xs font-semibold uppercase text-accent">{line.speaker}:</span>
+                        )}
+                        {line.direction && <span className="mr-1.5 text-sm text-muted">[{line.direction}]</span>}
+                        “{line.text}”
+                      </p>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="mt-3 text-base text-foreground">“{scene.voiceover}”</p>
+                )}
                 {scene.onScreenText && (
                   <p className="mt-2 inline-block rounded bg-foreground px-2 py-1 text-xs font-semibold text-background">
                     {scene.onScreenText}
@@ -263,6 +298,14 @@ export default function VideoScriptPage() {
 
           <aside className="space-y-4">
             <div className="panel space-y-3 rounded p-4 text-sm">
+              {script.format && (
+                <div>
+                  <p className="text-xs font-semibold uppercase text-muted">Formato</p>
+                  <p className="mt-1 font-medium text-foreground">{VIDEO_FORMATS[script.format]?.label ?? script.format}</p>
+                  {script.formatReason && <p className="mt-1 text-xs text-muted">{script.formatReason}</p>}
+                  <p className="mt-1 text-xs text-muted">{VIDEO_FORMATS[script.format]?.production}</p>
+                </div>
+              )}
               <div>
                 <p className="text-xs font-semibold uppercase text-muted">Gancho</p>
                 <p className="mt-1 font-medium text-foreground">{script.hook}</p>
@@ -272,6 +315,18 @@ export default function VideoScriptPage() {
                 <p className="text-xs font-semibold uppercase text-muted">Síntoma</p>
                 <p className="mt-1 text-foreground">{script.symptom}</p>
               </div>
+              {script.newInsight && (
+                <div>
+                  <p className="text-xs font-semibold uppercase text-muted">Lo que ella no sabía</p>
+                  <p className="mt-1 text-foreground">{script.newInsight}</p>
+                </div>
+              )}
+              {script.feltLine && (
+                <div>
+                  <p className="text-xs font-semibold uppercase text-muted">Lo que ella sintió</p>
+                  <p className="mt-1 text-foreground">{script.feltLine}</p>
+                </div>
+              )}
               <div>
                 <p className="text-xs font-semibold uppercase text-muted">CTA</p>
                 <p className="mt-1 text-foreground">{script.cta}</p>
@@ -298,7 +353,7 @@ export default function VideoScriptPage() {
               {showPrompts && (
                 <>
                   <div>
-                    <p className="text-xs font-semibold uppercase text-muted">Protagonista</p>
+                    <p className="text-xs font-semibold uppercase text-muted">Personajes</p>
                     <p className="mt-1 text-xs text-foreground">{script.character}</p>
                   </div>
                   <div>

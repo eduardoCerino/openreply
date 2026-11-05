@@ -3,11 +3,18 @@ import { prisma } from "@/lib/db/client";
 import { normalizeText, type QualityCheck } from "@/lib/blog/html";
 import { generateStructured } from "@/lib/blog/openai";
 import {
+  BROCHURE_VERBS,
   CLIP_SECONDS,
   SCENE_COUNT,
+  SCENE_WORDS_MAX,
+  SCRIPT_WORDS_MAX,
+  SCRIPT_WORDS_MIN,
   VIDEO_CTA,
+  VIDEO_FORMATS,
+  VIDEO_FORMAT_IDS,
   getBrandContext,
   type VideoChannel,
+  type VideoFormat,
   type VideoProduct,
 } from "@/lib/video/config";
 import {
@@ -20,8 +27,6 @@ import {
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
-
-const MAX_WORDS_PER_SCENE = Math.round(CLIP_SECONDS * 2.6);
 
 // Terms the method keeps out of the first 3 seconds: brand and technical
 // vocabulary (method sections 4 and 5).
@@ -45,19 +50,59 @@ const SCRIPT_FORBIDDEN: Array<{ term: string; why: string }> = [
   { term: "antes y despues", why: "nada de antes/después" },
 ];
 
+// The product is named, never credited with an effect.
+const PRODUCT_EFFECT = /\b(ayuda|ayudan|ayudar|ayudarte|mejora|mejoran|mejorar|regula|equilibra|equilibrar|regulariza|reduce|reducir|aumenta|aumentar|hace que|te da|te dara|te devuelve)\b/;
+
+// No medical claims anywhere in the script ("se trata de" is ordinary speech,
+// so only "trata/tratar + object" counts).
+const MEDICAL_CLAIM = /\b(cura|curar|regulariza|regularizar|previene|prevenir|elimina|eliminar|tratar? (el|la|los|las|tu|tus))\b/;
+
+// No results promised in a time frame ("en 8 semanas vas a ver"). A time
+// reference alone is fine — rule 2 asks for time data ("la semana antes de que
+// te baje") — so it only counts next to a result promise in the same sentence.
+const TIME_FRAME = /\b(en|a las|despues de) (\d+|un|una|dos|tres|cuatro|seis|ocho|doce) (dia|dias|semana|semanas|mes|meses)\b/;
+const RESULT_PROMISE = /\b(vas a ver|veras|vas a notar|notaras|resultados|cambios|funciona|funcionara)\b/;
+
+function timePromise(texts: string[]): string | null {
+  for (const sentence of texts.join(". ").split(/[.?!]+/)) {
+    const normalized = normalizeText(sentence);
+    if (TIME_FRAME.test(normalized) && RESULT_PROMISE.test(normalized)) return sentence.trim();
+  }
+  return null;
+}
+
+const BROCHURE = new RegExp(`\\b(${BROCHURE_VERBS.join("|")})\\b`);
+
 // Second-person talk about the condition gets paid ads rejected (section 11).
 const PAID_SECOND_PERSON = /\b(tienes|tu|tú|te)\b[^.?!]{0,40}\b(sop|somp|ovario|acne|acné|hormonas?|periodo|regla|ciclo)\b/i;
 
-/** Timings come from the template, not the model: 0-5, 5-10, ... 20-25. */
-export function normalizeScript(script: VideoScript): VideoScript {
+/**
+ * Timings come from the template, not the model: 0-5, 5-10, ... 20-25. The
+ * spoken text of each scene is joined from its lines, and a format the
+ * reviewer chose wins over whatever the model reports.
+ */
+export function normalizeScript(script: VideoScript, requiredFormat?: VideoFormat): VideoScript {
+  const format =
+    requiredFormat ?? (VIDEO_FORMAT_IDS.includes(script.format) ? script.format : "hac");
   return {
     ...script,
+    format,
+    onScreenComment: format === "reaccion" ? (script.onScreenComment ?? "").trim() : "",
     hashtags: script.hashtags.map((tag) => `#${tag.replace(/^#+/, "").replace(/\s+/g, "")}`),
-    scenes: script.scenes.slice(0, SCENE_COUNT).map((scene, index) => ({
-      ...scene,
-      startSecond: index * CLIP_SECONDS,
-      endSecond: (index + 1) * CLIP_SECONDS,
-    })),
+    scenes: script.scenes.slice(0, SCENE_COUNT).map((scene, index) => {
+      const lines = (scene.lines ?? []).map((line) => ({
+        speaker: line.speaker.trim(),
+        text: line.text.trim(),
+        direction: line.direction.trim().replace(/^\[|\]$/g, ""),
+      }));
+      return {
+        ...scene,
+        lines,
+        voiceover: lines.length ? lines.map((line) => line.text).join(" ") : scene.voiceover ?? "",
+        startSecond: index * CLIP_SECONDS,
+        endSecond: (index + 1) * CLIP_SECONDS,
+      };
+    }),
   };
 }
 
@@ -86,7 +131,27 @@ export function runScriptChecks(
   const cta = VIDEO_CTA[product];
   const longScenes = scenes
     .map((scene, index) => ({ index, count: words(scene.voiceover) }))
-    .filter((scene) => scene.count > MAX_WORDS_PER_SCENE);
+    .filter((scene) => scene.count > SCENE_WORDS_MAX);
+  const totalWords = scenes.reduce((sum, scene) => sum + words(scene.voiceover), 0);
+  const voice = scenes.map((scene) => normalizeText(`${scene.voiceover} ${scene.onScreenText}`));
+  // In a reaction the comment on screen is the hook, so her first words are body.
+  const bodyScenes = scenes.filter(
+    (scene, index) => scene.section === "contexto" || (script.format === "reaccion" && index === 0)
+  );
+  const body = bodyScenes.map((scene) => normalizeText(scene.voiceover)).join(" ");
+  const inBody = (line: string) => Boolean(normalizeText(line)) && body.includes(normalizeText(line));
+  const brochureHits = voice
+    .map((text, index) => ({ index, match: text.match(BROCHURE)?.[1] }))
+    .filter((hit) => hit.match);
+  const productScenes = scenes
+    .map((scene, index) => ({ index, text: normalizeText(scene.voiceover) }))
+    .filter(({ index }) => index >= Math.max(landingIndex, 0) && landingIndex !== -1);
+  const effectHits = productScenes.filter(({ text }) => PRODUCT_EFFECT.test(text));
+  const promise = timePromise([
+    script.caption,
+    script.cta,
+    ...scenes.flatMap((scene) => [scene.voiceover, scene.onScreenText]),
+  ]);
   const forbidden = SCRIPT_FORBIDDEN.filter(({ term }) => fullText.includes(term));
   const earlyProduct = scenes
     .map((scene, index) => ({ scene, index }))
@@ -126,12 +191,56 @@ export function runScriptChecks(
       hard: true,
     },
     {
+      id: "words",
+      label: `${SCRIPT_WORDS_MIN}-${SCRIPT_WORDS_MAX} palabras de voz en total`,
+      ok: totalWords >= SCRIPT_WORDS_MIN && totalWords <= SCRIPT_WORDS_MAX,
+      detail: `${totalWords} palabras`,
+      hard: totalWords < SCRIPT_WORDS_MIN - 15,
+    },
+    {
       id: "pace",
-      label: `Máximo ${MAX_WORDS_PER_SCENE} palabras de voz por escena`,
+      label: `Máximo ${SCENE_WORDS_MAX} palabras por escena`,
       ok: longScenes.length === 0,
       detail: longScenes.length
         ? longScenes.map((scene) => `escena ${scene.index + 1}: ${scene.count}`).join(", ")
         : undefined,
+    },
+    {
+      id: "brochure",
+      label: "Sin verbos de folleto (requiere, produce, actúa, apoya…)",
+      ok: brochureHits.length === 0,
+      detail: brochureHits.length
+        ? brochureHits.map((hit) => `escena ${hit.index + 1}: «${hit.match}»`).join(", ")
+        : undefined,
+      hard: brochureHits.length > 0,
+    },
+    {
+      id: "insight",
+      label: "El cuerpo dice algo que ella no sabía",
+      ok: inBody(script.newInsight),
+      detail: script.newInsight ? undefined : "falta el dato nuevo",
+      hard: !inBody(script.newInsight),
+    },
+    {
+      id: "felt",
+      label: "Nombra lo que ella sintió",
+      ok: inBody(script.feltLine),
+      detail: script.feltLine ? undefined : "falta la emoción",
+      hard: !inBody(script.feltLine),
+    },
+    {
+      id: "productEffect",
+      label: "El producto solo se nombra, sin atribuirle efectos",
+      ok: effectHits.length === 0,
+      detail: effectHits.length ? `escena ${effectHits.map((hit) => hit.index + 1).join(", ")}` : undefined,
+      hard: effectHits.length > 0,
+    },
+    {
+      id: "claims",
+      label: "Sin claims médicos ni plazos de resultados",
+      ok: !MEDICAL_CLAIM.test(fullText) && !promise,
+      detail: [fullText.match(MEDICAL_CLAIM)?.[0], promise].filter(Boolean).join("; ") || undefined,
+      hard: MEDICAL_CLAIM.test(fullText) || Boolean(promise),
     },
     {
       id: "forbidden",
@@ -141,6 +250,8 @@ export function runScriptChecks(
       hard: forbidden.length > 0,
     },
   ];
+
+  checks.push(...runFormatChecks(script));
 
   if (channel === "pagado") {
     const hits = scenes
@@ -156,16 +267,94 @@ export function runScriptChecks(
   return checks;
 }
 
+/** Checks that the script is actually staged in its format. */
+export function runFormatChecks(script: VideoScript): QualityCheck[] {
+  const spec = VIDEO_FORMATS[script.format];
+  const allLines = script.scenes.flatMap((scene) => scene.lines ?? []);
+  const speakers = new Set(allLines.map((line) => normalizeText(line.speaker)).filter(Boolean));
+  const speakerOf = (sentence: string) => {
+    const target = normalizeText(sentence);
+    return allLines.find((line) => target && normalizeText(line.text).includes(target))?.speaker;
+  };
+  const checks: QualityCheck[] = [
+    {
+      id: "formatReason",
+      label: `Formato ${spec.label} justificado`,
+      ok: Boolean(script.formatReason?.trim()),
+      detail: script.formatReason?.trim() || "falta la razón",
+    },
+  ];
+
+  if (spec.dialogue) {
+    const firstLine = script.scenes[0]?.lines?.[0];
+    const insightBy = speakerOf(script.newInsight);
+    const feltBy = speakerOf(script.feltLine);
+    checks.push(
+      {
+        id: "dialogue",
+        label: "Diálogo con al menos dos personajes",
+        ok: speakers.size >= 2,
+        detail: `${speakers.size} personaje(s)`,
+        hard: speakers.size < 2,
+      },
+      {
+        id: "dialogueHook",
+        label: "El gancho es la primera línea de diálogo",
+        ok: Boolean(firstLine) && normalizeText(firstLine!.text).includes(normalizeText(script.hook).slice(0, 40)),
+      },
+      {
+        id: "dialogueRoles",
+        label: "El dato lo dice quien sabe y la emoción quien no sabe",
+        ok: Boolean(insightBy && feltBy && normalizeText(insightBy) !== normalizeText(feltBy)),
+        detail: insightBy && feltBy ? `dato: ${insightBy} · emoción: ${feltBy}` : undefined,
+      }
+    );
+  } else {
+    checks.push({
+      id: "singleVoice",
+      label: "Una sola voz",
+      ok: speakers.size <= 1,
+      detail: speakers.size > 1 ? [...speakers].join(", ") : undefined,
+    });
+  }
+
+  if (script.format === "reaccion") {
+    checks.push({
+      id: "comment",
+      label: "Comentario de su audiencia en pantalla como gancho",
+      ok: Boolean(script.onScreenComment),
+      hard: !script.onScreenComment,
+    });
+  }
+  if (script.format === "dinamico") {
+    const withText = script.scenes.filter((scene) => scene.onScreenText.trim()).length;
+    checks.push({
+      id: "onScreen",
+      label: "Texto en pantalla en la mayoría de escenas",
+      ok: withText >= 3,
+      detail: `${withText} de ${script.scenes.length}`,
+    });
+  }
+  return checks;
+}
+
 /** Writes (or rewrites, with the stored feedback) the script of a project. */
 export async function generateVideoScript(projectId: string): Promise<VideoProject> {
   const project = await prisma.videoProject.findUniqueOrThrow({ where: { id: projectId } });
   const product = project.product as VideoProduct;
   const channel = project.channel as VideoChannel;
+  const requiredFormat = project.format && project.format !== "auto" ? (project.format as VideoFormat) : undefined;
   const previous = project.script as VideoScript | null;
 
   try {
     const instructions = buildScriptInstructions(getBrandContext());
-    const brief = { idea: project.idea, product, channel, hookMold: project.hookMold };
+    const brief = {
+      idea: project.idea,
+      product,
+      channel,
+      format: (project.format as VideoFormat | "auto" | null) ?? "auto",
+      hookMold: project.hookMold,
+    };
     let feedback = project.feedback && previous ? project.feedback : undefined;
     let result: { script: VideoScript; checks: QualityCheck[]; model: string } | null = null;
 
@@ -181,7 +370,7 @@ export async function generateVideoScript(projectId: string): Promise<VideoProje
           feedback && (previous || result) ? { previous: result?.script ?? previous!, feedback } : undefined
         ),
       });
-      const script = normalizeScript(generated.value);
+      const script = normalizeScript(generated.value, requiredFormat);
       const checks = runScriptChecks(script, product, channel);
       result = { script, checks, model: generated.model };
       const failedHard = checks.filter((check) => check.hard && !check.ok);

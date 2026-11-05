@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db/client";
 import { requireBlogAdmin } from "@/lib/blog/access";
-import { HOOK_MOLDS } from "@/lib/video/constants";
+import { HOOK_MOLDS, VIDEO_FORMAT_IDS } from "@/lib/video/constants";
 import { enqueueScriptJob } from "@/lib/video/jobs";
 
 export const runtime = "nodejs";
@@ -11,6 +11,7 @@ const createSchema = z.object({
   idea: z.string().trim().min(5, "Escribe la idea del video").max(2000),
   product: z.enum(["creatina", "inositol"]),
   channel: z.enum(["organico", "pagado"]).default("organico"),
+  format: z.enum(["auto", ...VIDEO_FORMAT_IDS] as [string, ...string[]]).default("auto"),
   hookMold: z.enum(HOOK_MOLDS).optional(),
 });
 
@@ -27,6 +28,7 @@ export async function GET() {
       idea: true,
       product: true,
       channel: true,
+      format: true,
       script: true,
       createdAt: true,
     },
@@ -36,6 +38,7 @@ export async function GET() {
     data: projects.map(({ script, ...project }) => ({
       ...project,
       title: (script as { title?: string } | null)?.title ?? null,
+      chosenFormat: (script as { format?: string } | null)?.format ?? null,
     })),
   });
 }
