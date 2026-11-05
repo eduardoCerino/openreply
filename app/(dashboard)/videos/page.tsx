@@ -10,11 +10,13 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
+  AWARENESS_LEVELS,
   HOOK_MOLDS,
-  MAX_VIDEO_SECONDS,
-  SCENE_COUNT,
+  VIDEO_DURATIONS,
   VIDEO_FORMATS,
   VIDEO_FORMAT_IDS,
+  type AwarenessParam,
+  type VideoDuration,
   type VideoFormat,
 } from "@/lib/video/constants";
 
@@ -36,6 +38,7 @@ interface ProjectRow {
 
 const STATUS_LABEL: Record<string, string> = {
   GENERATING_SCRIPT: "Escribiendo guion",
+  IDEA_REJECTED: "Idea rechazada",
   SCRIPT_READY: "Guion listo para revisar",
   SCRIPT_APPROVED: "Guion aprobado",
   FAILED: "Falló",
@@ -45,6 +48,7 @@ const STATUS_TONE: Record<string, string> = {
   SCRIPT_READY: "text-accent",
   SCRIPT_APPROVED: "text-success",
   FAILED: "text-error",
+  IDEA_REJECTED: "text-warning",
 };
 
 export default function VideosPage() {
@@ -54,6 +58,10 @@ export default function VideosPage() {
   const [channel, setChannel] = useState<"organico" | "pagado">("organico");
   const [hookMold, setHookMold] = useState("");
   const [format, setFormat] = useState<VideoFormat | "auto">("auto");
+  const [duration, setDuration] = useState<VideoDuration>("auto");
+  const [awareness, setAwareness] = useState<AwarenessParam>("1");
+  const [ideaValidated, setIdeaValidated] = useState(false);
+  const [previousFormat, setPreviousFormat] = useState<VideoFormat>("hac");
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [projects, setProjects] = useState<ProjectRow[]>([]);
@@ -78,7 +86,17 @@ export default function VideosPage() {
     const response = await fetch("/api/videos", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ idea, product, channel, format, hookMold: hookMold || undefined }),
+      body: JSON.stringify({
+        idea,
+        product,
+        channel,
+        format,
+        duration,
+        awareness,
+        ideaValidated,
+        previousFormat: ideaValidated ? previousFormat : undefined,
+        hookMold: hookMold || undefined,
+      }),
     });
     const payload = await response.json();
     if (!payload.success) {
@@ -94,8 +112,8 @@ export default function VideosPage() {
       <div>
         <h1 className="text-2xl font-bold text-foreground">Videos</h1>
         <p className="mt-1 text-sm text-muted">
-          Guiones de Reels/TikTok de {MAX_VIDEO_SECONDS} s en {SCENE_COUNT} escenas, con la estructura gancho → contexto →
-          aterrizaje → CTA. Después vienen las imágenes y los clips.
+          Guiones de Reels/TikTok en escenas de 5 s, con la estructura gancho → cuerpo → aterrizaje → CTA. La
+          duración depende del formato. Después vienen las imágenes y los clips.
         </p>
       </div>
 
@@ -139,6 +157,82 @@ export default function VideosPage() {
               ? "Se elige por cuál comunica mejor la idea, nunca por cuál parece más viral."
               : `${VIDEO_FORMATS[format].description} ${VIDEO_FORMATS[format].production}`}
           </p>
+        </div>
+        <div>
+          <label htmlFor="video-duration" className="mb-1 block text-sm font-medium text-foreground">
+            Duración
+          </label>
+          <select
+            id="video-duration"
+            value={duration}
+            onChange={(event) => setDuration(event.target.value as VideoDuration)}
+            className={inputClass}
+          >
+            <option value="auto">Auto: rango del formato, o corto si no hay un segundo dato real</option>
+            <option value="estandar">Estándar: rango por defecto del formato</option>
+            <option value="corto">Corto: 25-30 s</option>
+          </select>
+          <p className="mt-1 text-xs text-muted">
+            {format === "auto"
+              ? "Estándar: 45-55 s en HAC, VOF y Dinámico · 40-50 s en Vlog · 30-40 s en POV, Personaje y Reacción."
+              : (() => {
+                  const range = VIDEO_DURATIONS[format][duration === "corto" ? "corto" : "estandar"];
+                  return `${VIDEO_FORMATS[format].label}: ${range.seconds[0]}-${range.seconds[1]} s · ${range.words[0]}-${range.words[1]} palabras habladas.`;
+                })()}
+          </p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div>
+            <label htmlFor="video-awareness" className="mb-1 block text-sm font-medium text-foreground">
+              Nivel de conciencia
+            </label>
+            <select
+              id="video-awareness"
+              value={awareness}
+              onChange={(event) => setAwareness(event.target.value as AwarenessParam)}
+              className={inputClass}
+            >
+              {(["1", "0", "2"] as const).map((level) => (
+                <option key={level} value={level}>
+                  {AWARENESS_LEVELS[level].label}: {AWARENESS_LEVELS[level].state} ({AWARENESS_LEVELS[level].share})
+                </option>
+              ))}
+              <option value="auto">Auto: que la IA elija entre 0, 1 y 2</option>
+            </select>
+            <p className="mt-1 text-xs text-muted">
+              {awareness === "auto"
+                ? "Nunca se escribe para los niveles 3-4 (fórmula, dosis, marca vs marca)."
+                : `${AWARENESS_LEVELS[awareness].content} Ej.: «${AWARENESS_LEVELS[awareness].example}».`}
+            </p>
+          </div>
+          <div>
+            <label className="flex items-center gap-2 text-sm font-medium text-foreground">
+              <input
+                type="checkbox"
+                checked={ideaValidated}
+                onChange={(event) => setIdeaValidated(event.target.checked)}
+                className="h-4 w-4 accent-[var(--color-accent)]"
+              />
+              Idea ya validada
+            </label>
+            <p className="mt-1 text-xs text-muted">
+              Ya funcionó: se reescribe con otro gancho, otra situación y otro formato, mismo dato de fondo.
+            </p>
+            {ideaValidated && (
+              <select
+                aria-label="Formato en que se publicó"
+                value={previousFormat}
+                onChange={(event) => setPreviousFormat(event.target.value as VideoFormat)}
+                className={`${inputClass} mt-2`}
+              >
+                {VIDEO_FORMAT_IDS.map((id) => (
+                  <option key={id} value={id}>
+                    Se publicó como {VIDEO_FORMATS[id].label}
+                  </option>
+                ))}
+              </select>
+            )}
+          </div>
         </div>
         <div className="grid gap-4 sm:grid-cols-3">
           <div>
@@ -193,7 +287,9 @@ export default function VideosPage() {
           <button type="submit" disabled={submitting} className={primaryButton}>
             {submitting ? "Enviando…" : "Generar guion"}
           </button>
-          <span className="text-xs text-muted">Tarda menos de un minuto.</span>
+          <span className="text-xs text-muted">
+            Primero se evalúa la idea (8 filtros, mínimo 5); si pasa, se escribe el guion. 1-2 minutos.
+          </span>
         </div>
       </form>
 

@@ -545,6 +545,7 @@ model BlogRun {
 
 enum VideoProjectStatus {
   GENERATING_SCRIPT
+  IDEA_REJECTED
   SCRIPT_READY
   SCRIPT_APPROVED
   DISCARDED
@@ -559,6 +560,16 @@ model VideoProject {
   channel     String
   // One of lib/video/constants VIDEO_FORMAT_IDS, or "auto" to let the model pick.
   format      String?
+  // "auto", "estandar" or "corto" (lib/video/constants VideoDuration).
+  duration    String?
+  // "0", "1", "2" or "auto" (lib/video/constants AwarenessParam).
+  awareness   String?
+  // The idea already worked: rewrite with a new hook and a format other than
+  // previousFormat.
+  ideaValidated  Boolean @default(false)
+  previousFormat String?
+  // Winning-idea checklist result (lib/video/idea-check IdeaCheck).
+  ideaCheck   Json?
   hookMold    String?
   // Free-text change request for the next regeneration, cleared once used.
   feedback    String?

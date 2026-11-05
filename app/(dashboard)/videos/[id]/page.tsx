@@ -9,8 +9,10 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
-  SCENE_COUNT,
+  IDEA_FILTERS,
+  IDEA_MIN_SCORE,
   STALE_SCRIPT_MS,
+  VIDEO_DURATIONS,
   VIDEO_CTA,
   VIDEO_FORMATS,
   type VideoFormat,
@@ -18,7 +20,8 @@ import {
 } from "@/lib/video/constants";
 
 interface Scene {
-  section: "gancho" | "contexto" | "aterrizaje" | "cierre";
+  // "aterrizaje" and "cierre" are the four-part labels of older scripts.
+  section: "gancho" | "contexto" | "moraleja" | "solucion" | "cta" | "aterrizaje" | "cierre";
   startSecond: number;
   endSecond: number;
   lines?: Array<{ speaker: string; text: string; direction: string }>;
@@ -35,12 +38,19 @@ interface Script {
   title: string;
   format?: VideoFormat;
   formatReason?: string;
+  durationTier?: "estandar" | "corto";
+  targetSeconds?: number;
+  secondInsight?: string;
   onScreenComment?: string;
   hookMold: string;
   hook: string;
   symptom: string;
   newInsight?: string;
   feltLine?: string;
+  awarenessLevel?: "0" | "1" | "2";
+  bridgeLine?: string;
+  productLine?: string;
+  bridgeTest?: string;
   character: string;
   visualStyle: string;
   scenes: Scene[];
@@ -52,11 +62,22 @@ interface Script {
 
 interface Project {
   id: string;
-  status: "GENERATING_SCRIPT" | "SCRIPT_READY" | "SCRIPT_APPROVED" | "DISCARDED" | "FAILED";
+  status: "GENERATING_SCRIPT" | "IDEA_REJECTED" | "SCRIPT_READY" | "SCRIPT_APPROVED" | "DISCARDED" | "FAILED";
   idea: string;
   product: VideoProduct;
   channel: "organico" | "pagado";
   format: VideoFormat | "auto" | null;
+  duration: string | null;
+  awareness: string | null;
+  hookMold: string | null;
+  ideaValidated: boolean;
+  ideaCheck: {
+    filters: Record<string, { passed: boolean; reason: string }>;
+    score: number;
+    passed: boolean;
+    reformulations: string[];
+    viralReference: string;
+  } | null;
   script: Script | null;
   checks: Array<{ id: string; label: string; ok: boolean; detail?: string }> | null;
   revision: number;
@@ -65,8 +86,11 @@ interface Project {
 }
 
 const SECTION_LABEL: Record<Scene["section"], string> = {
-  gancho: "Gancho",
-  contexto: "Contexto",
+  gancho: "1 · Gancho",
+  contexto: "2 · Contexto (intriga)",
+  moraleja: "3 · Moraleja",
+  solucion: "4 · Solución",
+  cta: "5 · CTA",
   aterrizaje: "Aterrizaje",
   cierre: "Cierre / CTA",
 };
@@ -74,14 +98,77 @@ const SECTION_LABEL: Record<Scene["section"], string> = {
 const SECTION_TONE: Record<Scene["section"], string> = {
   gancho: "bg-accent/10 text-accent",
   contexto: "bg-surface-hover text-foreground",
+  moraleja: "bg-accent/10 text-foreground",
+  solucion: "bg-success/10 text-success",
+  cta: "bg-warning/10 text-warning",
   aterrizaje: "bg-success/10 text-success",
   cierre: "bg-warning/10 text-warning",
 };
+
+function normalized(value: string | undefined): string {
+  return (value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9ñ\s]/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+/** Marks the 4a/4b lines inside the solution scenes. */
+function partTag(script: Script, text: string): string | null {
+  const line = normalized(text);
+  if (!line) return null;
+  if (script.bridgeLine && normalized(script.bridgeLine).includes(line)) return "4a puente";
+  if (script.productLine && normalized(script.productLine).includes(line)) return "4b producto";
+  return null;
+}
 
 const primaryButton =
   "rounded-lg bg-accent px-5 py-2 text-sm font-medium text-white hover:bg-accent-hover disabled:opacity-50";
 const secondaryButton =
   "rounded-lg border border-border px-4 py-2 text-sm font-medium text-muted hover:text-foreground disabled:opacity-50";
+
+function spokenWords(script: Script): number {
+  return script.scenes
+    .flatMap((scene) => (scene.lines?.length ? scene.lines.map((line) => line.text) : [scene.voiceover]))
+    .join(" ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean).length;
+}
+
+/** "HAC 45-55s · rango 125-155 · 141 palabras ✓" */
+function durationSummary(script: Script, ideaScore?: number): string {
+  if (!script.format || !script.durationTier) return "";
+  const budget = VIDEO_DURATIONS[script.format][script.durationTier];
+  const count = spokenWords(script);
+  const fits = count >= budget.words[0] && count <= budget.words[1];
+  return `${script.format.toUpperCase()} ${budget.seconds[0]}-${budget.seconds[1]}s${
+    script.durationTier === "corto" ? " (corto)" : ""
+  } · ${script.targetSeconds ?? script.scenes.length * 5}s · rango ${budget.words[0]}-${budget.words[1]} · ${count} palabras ${fits ? "✓" : "✗"}${
+    script.awarenessLevel ? ` · nivel ${script.awarenessLevel}` : ""
+  }${ideaScore != null ? ` · idea ${ideaScore}/8` : ""}`;
+}
+
+function IdeaChecklist({ check }: { check: NonNullable<Project["ideaCheck"]> }) {
+  return (
+    <ul className="space-y-1.5">
+      {IDEA_FILTERS.map((filter) => {
+        const result = check.filters[filter.id];
+        return (
+          <li key={filter.id} className="flex items-start gap-2 text-sm">
+            <span className={result?.passed ? "text-success" : "text-error"}>{result?.passed ? "✓" : "✗"}</span>
+            <span className="text-foreground">
+              {filter.label}
+              {result?.reason && <span className="text-muted"> · {result.reason}</span>}
+            </span>
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
 
 function FramePrompt({ label, value }: { label: string; value: string }) {
   return (
@@ -170,6 +257,32 @@ export default function VideoScriptPage() {
     </button>
   );
 
+  async function writeWithIdea(idea: string) {
+    if (!project) return;
+    setBusy(true);
+    setActionError(null);
+    const response = await fetch("/api/videos", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        idea,
+        product: project.product,
+        channel: project.channel,
+        format: project.format ?? "auto",
+        duration: project.duration ?? "auto",
+        awareness: project.awareness ?? "1",
+        hookMold: project.hookMold ?? undefined,
+      }),
+    });
+    const payload = await response.json();
+    setBusy(false);
+    if (!payload.success) {
+      setActionError(payload.error);
+      return;
+    }
+    router.push(`/videos/${payload.data.id}`);
+  }
+
   function discard() {
     if (!window.confirm("¿Descartar este guion?")) return;
     void act(`/api/videos/${params.id}`, { method: "DELETE" }, () => router.push("/videos"));
@@ -187,6 +300,52 @@ export default function VideoScriptPage() {
 
   const script = project.script;
   const generating = project.status === "GENERATING_SCRIPT";
+
+  if (project.status === "IDEA_REJECTED" && project.ideaCheck) {
+    const check = project.ideaCheck;
+    return (
+      <div className="mx-auto max-w-3xl space-y-4">
+        <Link href="/videos" className="text-sm text-muted hover:text-foreground">← Videos</Link>
+        <div className="panel space-y-4 rounded p-6">
+          <div>
+            <p className="text-base font-semibold text-foreground">
+              Esta idea no pasa la checklist: {check.score}/8 (mínimo {IDEA_MIN_SCORE})
+            </p>
+            <p className="mt-1 text-sm text-muted">
+              “{project.idea}”. Video viral = idea ganadora; ningún formato salva una idea mala, así que no se escribió
+              el guion.
+            </p>
+          </div>
+          <IdeaChecklist check={check} />
+          {check.reformulations.length > 0 && (
+            <div className="space-y-2 border-t border-border pt-4">
+              <p className="text-xs font-semibold uppercase text-muted">La misma idea, reformulada para que pase</p>
+              {check.reformulations.map((reformulation) => (
+                <div
+                  key={reformulation}
+                  className="flex flex-col gap-2 rounded border border-border bg-background p-3 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <p className="text-sm text-foreground">{reformulation}</p>
+                  <button
+                    type="button"
+                    onClick={() => void writeWithIdea(reformulation)}
+                    disabled={busy}
+                    className={`${primaryButton} shrink-0`}
+                  >
+                    Escribir con esta
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+          {actionError && <p className="text-sm text-error">{actionError}</p>}
+          <button type="button" onClick={discard} disabled={busy} className={secondaryButton}>
+            Descartar
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (generating && !script) {
     return (
@@ -248,14 +407,18 @@ export default function VideoScriptPage() {
       )}
       {project.status === "FAILED" && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-error/30 bg-error/10 p-4 text-sm text-foreground">
-          <span>No se pudo escribir el guion.</span>
+          <span>
+            {script
+              ? "Este guion no cumplió las reglas y no se puede aprobar. Reintenta o pide cambios."
+              : "No se pudo escribir el guion."}
+          </span>
           {retryButton}
         </div>
       )}
       {project.status === "SCRIPT_APPROVED" && (
         <div className="rounded-lg border border-success/30 bg-success/10 p-4 text-sm text-foreground">
-          Guion aprobado. Siguiente paso: generar las {SCENE_COUNT * 2} imágenes (inicial y final de cada escena) y
-          los {SCENE_COUNT} clips de video. Esa fase todavía no está disponible.
+          Guion aprobado. Siguiente paso: generar las {(script?.scenes.length ?? 0) * 2} imágenes (inicial y final de
+          cada escena) y los {script?.scenes.length ?? 0} clips de video. Esa fase todavía no está disponible.
         </div>
       )}
       {(project.error || actionError) && (
@@ -298,12 +461,18 @@ export default function VideoScriptPage() {
                     <p className="mt-0.5">{script.onScreenComment}</p>
                   </div>
                 )}
+                <p className="mt-3 text-[11px] font-semibold uppercase text-muted">Locución</p>
                 {scene.lines && scene.lines.length > 0 ? (
-                  <div className="mt-3 space-y-1.5">
+                  <div className="mt-1 space-y-1.5">
                     {scene.lines.map((line, lineIndex) => (
                       <p key={lineIndex} className="text-base text-foreground">
                         {(VIDEO_FORMATS[script.format ?? "hac"]?.dialogue || line.speaker === "Voz en off") && (
                           <span className="mr-1.5 text-xs font-semibold uppercase text-accent">{line.speaker}:</span>
+                        )}
+                        {partTag(script, line.text) && (
+                          <span className="mr-1.5 rounded bg-success/10 px-1.5 py-0.5 text-[11px] font-semibold uppercase text-success">
+                            {partTag(script, line.text)}
+                          </span>
                         )}
                         {line.direction && <span className="mr-1.5 text-sm text-muted">[{line.direction}]</span>}
                         “{line.text}”
@@ -311,12 +480,15 @@ export default function VideoScriptPage() {
                     ))}
                   </div>
                 ) : (
-                  <p className="mt-3 text-base text-foreground">“{scene.voiceover}”</p>
+                  <p className="mt-1 text-base text-foreground">“{scene.voiceover}”</p>
                 )}
                 {scene.onScreenText && (
-                  <p className="mt-2 inline-block rounded bg-foreground px-2 py-1 text-xs font-semibold text-background">
-                    {scene.onScreenText}
-                  </p>
+                  <>
+                    <p className="mt-3 text-[11px] font-semibold uppercase text-muted">Texto en pantalla</p>
+                    <p className="mt-1 inline-block rounded bg-foreground px-2 py-1 text-xs font-semibold text-background">
+                      {scene.onScreenText}
+                    </p>
+                  </>
                 )}
                 <p className="mt-2 text-sm text-muted">{scene.visual}</p>
                 {showPrompts && (
@@ -349,16 +521,46 @@ export default function VideoScriptPage() {
                 <p className="text-xs font-semibold uppercase text-muted">Síntoma</p>
                 <p className="mt-1 text-foreground">{script.symptom}</p>
               </div>
+              {script.format && script.durationTier && (
+                <div>
+                  <p className="text-xs font-semibold uppercase text-muted">Duración</p>
+                  <p className="mt-1 font-mono text-xs text-foreground">{durationSummary(script, project.ideaCheck?.score)}</p>
+                </div>
+              )}
               {script.newInsight && (
                 <div>
-                  <p className="text-xs font-semibold uppercase text-muted">Lo que ella no sabía</p>
+                  <p className="text-xs font-semibold uppercase text-muted">
+                    {script.secondInsight ? "Lo que ella no sabía (1)" : "Lo que ella no sabía"}
+                  </p>
                   <p className="mt-1 text-foreground">{script.newInsight}</p>
+                </div>
+              )}
+              {script.secondInsight && (
+                <div>
+                  <p className="text-xs font-semibold uppercase text-muted">Lo que ella no sabía (2)</p>
+                  <p className="mt-1 text-foreground">{script.secondInsight}</p>
                 </div>
               )}
               {script.feltLine && (
                 <div>
                   <p className="text-xs font-semibold uppercase text-muted">Lo que ella sintió</p>
                   <p className="mt-1 text-foreground">{script.feltLine}</p>
+                </div>
+              )}
+              {script.bridgeLine && (
+                <div>
+                  <p className="text-xs font-semibold uppercase text-muted">Solución</p>
+                  <p className="mt-1 text-foreground">
+                    <span className="text-xs font-semibold text-success">4a · </span>
+                    {script.bridgeLine}
+                  </p>
+                  {script.productLine && (
+                    <p className="mt-1 text-foreground">
+                      <span className="text-xs font-semibold text-success">4b · </span>
+                      {script.productLine}
+                    </p>
+                  )}
+                  {script.bridgeTest && <p className="mt-1 text-xs text-muted">Sin el producto: {script.bridgeTest}</p>}
                 </div>
               )}
               <div>
@@ -370,7 +572,7 @@ export default function VideoScriptPage() {
                 </p>
               </div>
               <div>
-                <p className="text-xs font-semibold uppercase text-muted">Descripción</p>
+                <p className="text-xs font-semibold uppercase text-muted">Caption (texto)</p>
                 <p className="mt-1 whitespace-pre-line text-foreground">{script.caption}</p>
                 <p className="mt-1 text-xs text-accent">{script.hashtags.join(" ")}</p>
               </div>
@@ -398,6 +600,21 @@ export default function VideoScriptPage() {
               )}
             </div>
 
+            {project.ideaCheck && (
+              <details className="panel rounded p-4">
+                <summary className="cursor-pointer text-xs font-semibold uppercase text-muted">
+                  Checklist de idea · {project.ideaCheck.score}/8
+                  {project.ideaValidated ? " · idea validada" : ""}
+                </summary>
+                <div className="mt-3">
+                  <IdeaChecklist check={project.ideaCheck} />
+                  {project.ideaCheck.viralReference && (
+                    <p className="mt-2 text-xs text-muted">Referencia: {project.ideaCheck.viralReference}</p>
+                  )}
+                </div>
+              </details>
+            )}
+
             {project.checks && project.checks.length > 0 && (
               <div className="panel rounded p-4">
                 <p className="text-xs font-semibold uppercase text-muted">Revisión del método</p>
@@ -415,7 +632,9 @@ export default function VideoScriptPage() {
               </div>
             )}
 
-            {(project.status === "SCRIPT_READY" || project.status === "SCRIPT_APPROVED") && (
+            {(project.status === "SCRIPT_READY" ||
+              project.status === "SCRIPT_APPROVED" ||
+              (project.status === "FAILED" && script)) && (
               <form onSubmit={requestChanges} className="panel space-y-3 rounded p-4">
                 <label htmlFor="video-feedback" className="block text-xs font-semibold uppercase text-muted">
                   Pedir cambios

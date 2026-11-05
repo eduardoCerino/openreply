@@ -12,6 +12,10 @@ const createSchema = z.object({
   product: z.enum(["creatina", "inositol"]),
   channel: z.enum(["organico", "pagado"]).default("organico"),
   format: z.enum(["auto", ...VIDEO_FORMAT_IDS] as [string, ...string[]]).default("auto"),
+  duration: z.enum(["auto", "estandar", "corto"]).default("auto"),
+  awareness: z.enum(["0", "1", "2", "auto"]).default("1"),
+  ideaValidated: z.boolean().default(false),
+  previousFormat: z.enum(VIDEO_FORMAT_IDS as [string, ...string[]]).optional(),
   hookMold: z.enum(HOOK_MOLDS).optional(),
 });
 
@@ -59,8 +63,25 @@ export async function POST(request: NextRequest) {
       { status: 400 }
     );
   }
+  const { ideaValidated, previousFormat, format } = parsed.data;
+  if (ideaValidated && !previousFormat) {
+    return NextResponse.json(
+      { success: false, error: "Indica en qué formato se publicó la idea validada" },
+      { status: 400 }
+    );
+  }
+  if (ideaValidated && format === previousFormat) {
+    return NextResponse.json(
+      { success: false, error: "Una idea validada se vuelve a publicar en un formato distinto al anterior" },
+      { status: 400 }
+    );
+  }
   const project = await prisma.videoProject.create({
-    data: { ...parsed.data, createdById: context.userId },
+    data: {
+      ...parsed.data,
+      previousFormat: ideaValidated ? previousFormat : null,
+      createdById: context.userId,
+    },
   });
   await enqueueScriptJob(project.id, project.revision);
   return NextResponse.json({ success: true, data: { id: project.id } });
