@@ -750,6 +750,9 @@ export async function generateVideoScript(projectId: string): Promise<VideoProje
   const awareness = (project.awareness as AwarenessParam | null) ?? "1";
   const requiredAwareness: AwarenessLevel | undefined = awareness === "auto" ? undefined : awareness;
   const previousFormat = project.ideaValidated ? ((project.previousFormat as VideoFormat | null) ?? null) : null;
+  // The model picked in the form is stored on the project; older projects
+  // fall back to OPENAI_MODEL.
+  const textModel = project.model ?? undefined;
   const hookVoice = (project.hookVoice as HookVoiceParam | null) ?? "auto";
   const requiredHookVoice: HookVoice | undefined = hookVoice === "auto" ? undefined : hookVoice;
   const previous = project.script as VideoScript | null;
@@ -761,7 +764,7 @@ export async function generateVideoScript(projectId: string): Promise<VideoProje
     // project and never blocks writing.
     let ideaCheck = project.ideaCheck as (Partial<IdeaCheck> & { reformulations?: string[] }) | null;
     if (!ideaCheck) {
-      const { check } = await checkIdea(project.idea, product);
+      const { check } = await checkIdea(project.idea, product, textModel);
       ideaCheck = check;
       await prisma.videoProject.update({
         where: { id: project.id },
@@ -795,6 +798,7 @@ export async function generateVideoScript(projectId: string): Promise<VideoProje
     for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
       const generated: { value: VideoScript; model: string } = await generateStructured<VideoScript>({
         name: "video_script",
+        model: textModel,
         schema: SCRIPT_SCHEMA as unknown as Record<string, unknown>,
         instructions,
         input: buildScriptInput(

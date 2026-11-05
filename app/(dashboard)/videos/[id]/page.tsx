@@ -72,6 +72,7 @@ interface Project {
   hookMold: string | null;
   ctaKeyword: string | null;
   hookVoice: string | null;
+  model: string | null;
   ideaValidated: boolean;
   ideaCheck: {
     filters: Record<string, { passed: boolean; reason: string }>;
@@ -337,7 +338,8 @@ export default function VideoScriptPage() {
           <p className="mt-1 text-sm text-muted">
             {project.product} · {project.channel === "pagado" ? "anuncio pagado" : "orgánico"}
             {script?.format ? ` · ${VIDEO_FORMATS[script.format]?.label ?? script.format}` : ""}
-            {project.format === "auto" ? " (elegido por la IA)" : ""} · versión{" "}
+            {project.format === "auto" ? " (elegido por la IA)" : ""}
+            {project.model ? ` · ${project.model}` : ""} · versión{" "}
             {project.revision} · idea: {project.idea}
           </p>
         </div>

@@ -699,3 +699,11 @@ describe("concrete product result", () => {
   });
 });
 
+describe("text model choice", () => {
+  it("offers Terra (default) and Sol only", async () => {
+    const { VIDEO_TEXT_MODEL_IDS, DEFAULT_VIDEO_TEXT_MODEL } = await import("../lib/video/constants");
+    expect(VIDEO_TEXT_MODEL_IDS).toEqual(["gpt-6.1-terra", "gpt-6.1-sol"]);
+    expect(DEFAULT_VIDEO_TEXT_MODEL).toBe("gpt-6.1-terra");
+  });
+});
+

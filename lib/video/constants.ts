@@ -11,6 +11,16 @@ export type VideoChannel = "organico" | "pagado";
 // range per format and tier (see VIDEO_DURATIONS below).
 export const CLIP_SECONDS = 5;
 
+// Text models offered in the Videos form. Both take the same low reasoning
+// effort and Structured Outputs, so they are interchangeable per project.
+export const VIDEO_TEXT_MODELS = [
+  { id: "gpt-6.1-terra", label: "GPT-6.1 Terra", hint: "rápido y económico (por defecto)" },
+  { id: "gpt-6.1-sol", label: "GPT-6.1 Sol", hint: "mejor calidad, más lento y más caro" },
+] as const;
+export type VideoTextModel = (typeof VIDEO_TEXT_MODELS)[number]["id"];
+export const VIDEO_TEXT_MODEL_IDS = VIDEO_TEXT_MODELS.map((model) => model.id) as VideoTextModel[];
+export const DEFAULT_VIDEO_TEXT_MODEL: VideoTextModel = "gpt-6.1-terra";
+
 // A script normally takes under a minute. After this long in "writing" it is
 // treated as lost (usually a worker restart) and can be retried from the panel.
 export const STALE_SCRIPT_MS = 4 * 60_000;

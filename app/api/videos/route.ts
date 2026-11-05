@@ -2,7 +2,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db/client";
 import { requireBlogAdmin } from "@/lib/blog/access";
-import { CTA_KEYWORD_PATTERN, HOOK_MOLDS, VIDEO_FORMAT_IDS } from "@/lib/video/constants";
+import {
+  CTA_KEYWORD_PATTERN,
+  DEFAULT_VIDEO_TEXT_MODEL,
+  HOOK_MOLDS,
+  VIDEO_FORMAT_IDS,
+  VIDEO_TEXT_MODEL_IDS,
+} from "@/lib/video/constants";
 import { enqueueScriptJob } from "@/lib/video/jobs";
 
 export const runtime = "nodejs";
@@ -15,6 +21,7 @@ const createSchema = z.object({
   duration: z.enum(["auto", "estandar", "corto"]).default("auto"),
   awareness: z.enum(["0", "1", "2", "auto"]).default("1"),
   hookVoice: z.enum(["auto", "segunda", "primera"]).default("auto"),
+  model: z.enum(VIDEO_TEXT_MODEL_IDS as [string, ...string[]]).default(DEFAULT_VIDEO_TEXT_MODEL),
   ideaValidated: z.boolean().default(false),
   ctaKeyword: z
     .string()

@@ -98,10 +98,12 @@ Ejemplos:
 
 export async function checkIdea(
   idea: string,
-  product: VideoProduct
+  product: VideoProduct,
+  textModel?: string
 ): Promise<{ check: IdeaCheck; model: string }> {
   const { value, model } = await generateStructured<IdeaCheckOutput>({
     name: "idea_check",
+    model: textModel,
     schema: IDEA_CHECK_SCHEMA as unknown as Record<string, unknown>,
     instructions: instructions(),
     input: `Idea: ${idea}\nProducto en el que aterrizará el video: ${product}`,

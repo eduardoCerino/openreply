@@ -11,8 +11,10 @@ import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   AWARENESS_LEVELS,
+  DEFAULT_VIDEO_TEXT_MODEL,
   HOOK_MOLDS,
   HOOK_VOICES,
+  VIDEO_TEXT_MODELS,
   VIDEO_DURATIONS,
   VIDEO_FORMATS,
   VIDEO_FORMAT_IDS,
@@ -20,6 +22,7 @@ import {
   type HookVoiceParam,
   type VideoDuration,
   type VideoFormat,
+  type VideoTextModel,
 } from "@/lib/video/constants";
 
 const inputClass =
@@ -63,6 +66,7 @@ export default function VideosPage() {
   const [duration, setDuration] = useState<VideoDuration>("auto");
   const [awareness, setAwareness] = useState<AwarenessParam>("1");
   const [hookVoice, setHookVoice] = useState<HookVoiceParam>("auto");
+  const [model, setModel] = useState<VideoTextModel>(DEFAULT_VIDEO_TEXT_MODEL);
   const [ideaValidated, setIdeaValidated] = useState(false);
   const [previousFormat, setPreviousFormat] = useState<VideoFormat>("hac");
   const [ctaKeyword, setCtaKeyword] = useState("");
@@ -98,6 +102,7 @@ export default function VideosPage() {
         duration,
         awareness,
         hookVoice,
+        model,
         ideaValidated,
         previousFormat: ideaValidated ? previousFormat : undefined,
         ctaKeyword: ctaKeyword.trim() || undefined,
@@ -186,6 +191,24 @@ export default function VideosPage() {
                   return `${VIDEO_FORMATS[format].label}: ${range.seconds[0]}-${range.seconds[1]} s · ${range.words[0]}-${range.words[1]} palabras habladas.`;
                 })()}
           </p>
+        </div>
+        <div>
+          <label htmlFor="video-model" className="mb-1 block text-sm font-medium text-foreground">
+            Modelo de IA
+          </label>
+          <select
+            id="video-model"
+            value={model}
+            onChange={(event) => setModel(event.target.value as VideoTextModel)}
+            className={inputClass}
+          >
+            {VIDEO_TEXT_MODELS.map((option) => (
+              <option key={option.id} value={option.id}>
+                {option.label}: {option.hint}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1 text-xs text-muted">Se usa para la checklist de idea y para escribir el guion.</p>
         </div>
         <div>
           <label htmlFor="video-hook-voice" className="mb-1 block text-sm font-medium text-foreground">

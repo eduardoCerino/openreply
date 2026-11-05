@@ -48,13 +48,16 @@ export async function generateStructured<T>({
   schema,
   instructions,
   input,
+  model,
 }: {
   name: string;
   schema: Record<string, unknown>;
   instructions: string;
   input: string;
+  /** Overrides OPENAI_MODEL for this call (the Videos form picks it per project). */
+  model?: string;
 }): Promise<{ value: T; model: string }> {
-  const { textModel } = getBlogConfig();
+  const textModel = model || getBlogConfig().textModel;
   const data = await withRetry(
     `OpenAI ${name}`,
     () =>

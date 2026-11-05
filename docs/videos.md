@@ -221,9 +221,17 @@ Todas estas reglas, salvo el número de palabras por escena y la segunda persona
 
 `content/peach-perfect-contexto-contenido.md` se manda completo al modelo como la única fuente de datos sobre la marca, los productos, la audiencia, el método y los guardrails. Edítalo y vuelve a desplegar el worker para que los guiones nuevos lo usen. Las reglas de formato (escenas, frames, salida JSON) están en `lib/video/prompt.ts`.
 
+## Modelo de IA
+
+El formulario tiene un selector **Modelo de IA**, que se usa para la checklist de idea y para escribir el guion:
+- **GPT-6.1 Terra** (`gpt-6.1-terra`, por defecto): rápido y económico.
+- **GPT-6.1 Sol** (`gpt-6.1-sol`): mejor calidad, más lento y más caro.
+
+El modelo queda guardado en el proyecto, así que **Reescribir** y **Reintentar** usan el mismo. La lista vive en `VIDEO_TEXT_MODELS` (`lib/video/constants.ts`). El blog sigue usando `OPENAI_MODEL`.
+
 ## Dónde corre
 
-Lo genera el worker de Railway, en la cola `video-generation` (`lib/video/jobs.ts`). Usa `OPENAI_API_KEY` y `OPENAI_MODEL`, las mismas variables que el blog, y no necesita ninguna nueva. Los proyectos se guardan en la tabla `VideoProject` (migración `20261104120000_video_projects`).
+Lo genera el worker de Railway, en la cola `video-generation` (`lib/video/jobs.ts`). Usa `OPENAI_API_KEY`, la misma que el blog. El modelo se elige en el formulario. Los proyectos se guardan en la tabla `VideoProject` (migración `20261104120000_video_projects`).
 
 ## Pendiente (siguientes fases)
 
