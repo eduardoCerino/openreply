@@ -62,6 +62,7 @@ export default function VideosPage() {
   const [awareness, setAwareness] = useState<AwarenessParam>("1");
   const [ideaValidated, setIdeaValidated] = useState(false);
   const [previousFormat, setPreviousFormat] = useState<VideoFormat>("hac");
+  const [ctaKeyword, setCtaKeyword] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState<string | null>(null);
   const [projects, setProjects] = useState<ProjectRow[]>([]);
@@ -95,6 +96,7 @@ export default function VideosPage() {
         awareness,
         ideaValidated,
         previousFormat: ideaValidated ? previousFormat : undefined,
+        ctaKeyword: ctaKeyword.trim() || undefined,
         hookMold: hookMold || undefined,
       }),
     });
@@ -233,6 +235,22 @@ export default function VideosPage() {
               </select>
             )}
           </div>
+        </div>
+        <div>
+          <label htmlFor="video-cta" className="mb-1 block text-sm font-medium text-foreground">
+            Palabra clave del CTA <span className="font-normal text-muted">(opcional)</span>
+          </label>
+          <input
+            id="video-cta"
+            value={ctaKeyword}
+            onChange={(event) => setCtaKeyword(event.target.value.toUpperCase().replace(/\s+/g, ""))}
+            maxLength={14}
+            placeholder="Vacío: la IA crea una a la medida del video (ej. MANDÍBULA)"
+            className={inputClass}
+          />
+          <p className="mt-1 text-xs text-muted">
+            Úsala si ya tienes una campaña en OpenReply con esa palabra. Cada palabra nueva necesita su campaña.
+          </p>
         </div>
         <div className="grid gap-4 sm:grid-cols-3">
           <div>

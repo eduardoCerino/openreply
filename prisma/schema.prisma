@@ -570,6 +570,8 @@ model VideoProject {
   previousFormat String?
   // Winning-idea checklist result (lib/video/idea-check IdeaCheck).
   ideaCheck   Json?
+  // CTA keyword pinned by the reviewer; null lets each script pick its own.
+  ctaKeyword  String?
   hookMold    String?
   // Free-text change request for the next regeneration, cleared once used.
   feedback    String?

@@ -7,7 +7,8 @@ import {
   PHONETIC_SPELLINGS,
   PRODUCT_SPOKEN_NAMES,
   SCENE_WORDS_MAX,
-  VIDEO_CTA,
+  CTA_EXAMPLES,
+  CTA_OFFERS,
   VIDEO_DURATIONS,
   VIDEO_FORMATS,
   VIDEO_FORMAT_IDS,
@@ -65,6 +66,8 @@ export interface VideoScript {
   /** Second new insight, required in the long (40 s or more) ranges; "" otherwise. */
   secondInsight: string;
   feltLine: string;
+  /** The comment keyword of this video's CTA, uppercase, one word. */
+  ctaKeyword: string;
   /** Part 4a, verbatim: connects the lesson to the product without crediting it. */
   bridgeLine: string;
   /** Part 4b, verbatim: product name, relevant ingredient, flavor. */
@@ -99,6 +102,7 @@ export const SCRIPT_SCHEMA = {
     "newInsight",
     "secondInsight",
     "feltLine",
+    "ctaKeyword",
     "bridgeLine",
     "productLine",
     "bridgeTest",
@@ -133,7 +137,7 @@ export const SCRIPT_SCHEMA = {
     },
     hookMold: str("Molde de gancho usado (copia el molde) o 'propio' si no encaja ninguno."),
     hook: str(
-      "La frase exacta de los primeros 3 segundos: narración en formatos de una voz, primera línea de diálogo en POV/Personaje, el comentario en Reacción."
+      "La frase exacta del gancho, en primera persona como experiencia vivida y sin preguntas: narración en formatos de una voz, primera línea de diálogo en POV/Personaje, el comentario en Reacción."
     ),
     symptom: str("El síntoma cotidiano del que parte el video, con las palabras de ella."),
     newInsight: str(
@@ -145,10 +149,15 @@ export const SCRIPT_SCHEMA = {
     feltLine: str(
       "Copia EXACTA de la frase de la MORALEJA que nombra lo que ella SINTIÓ (no lo que le pasó)."
     ),
+    ctaKeyword: str(
+      "Palabra clave del CTA de este video: una sola palabra en MAYÚSCULAS, 3-14 letras, sin espacios ni números, ligada al tema del video y fácil de escribir en un comentario."
+    ),
     bridgeLine: str(
       "Copia EXACTA de la frase puente (parte 4a): habla del problema y de dónde hay que atacarlo, nunca de lo que hace el producto, y no nombra el producto."
     ),
-    productLine: str("Copia EXACTA de la frase del producto (parte 4b): nombre, ingrediente relevante, sabor. Seca y corta."),
+    productLine: str(
+      "Copia EXACTA de la frase del producto (parte 4b): testimonio en primera persona con el resultado que ella vivió, conectado con el dolor del gancho. Sin características técnicas."
+    ),
     bridgeTest: str(
       "Una oración: cómo se lee la frase puente si borras el producto del guion, y por qué sigue siendo verdadera."
     ),
@@ -207,7 +216,7 @@ export const SCRIPT_SCHEMA = {
         },
       },
     },
-    cta: str("El cierre, exactamente la línea de CTA indicada."),
+    cta: str("La línea del CTA de este video (la que se dice en la escena cta), con la palabra clave en mayúsculas."),
     caption: str("Descripción del post para Instagram/TikTok, 1-3 líneas, que repita el CTA. Grafía correcta (Peach Perfect), nunca la fonética."),
     hashtags: { type: "array", items: { type: "string" }, description: "3 a 6 hashtags sin espacios." },
     storyFollowUps: {
@@ -237,10 +246,10 @@ function selectionTable(): string {
 }
 
 // Few-shot of a long single-voice script that meets every rule, from the
-// method brief. The CTA is the fixed one from VIDEO_CTA.
+// method brief.
 const FEW_SHOT = `EJEMPLO (few-shot) · idea "el acné de la mandíbula" · formato hac · estandar · 55 s · 11 escenas · nivel 1 · checklist 6/8
 [1 · GANCHO]
-Llevas dos años cambiando de skincare por un acné que no está en tu piel.
+Dos años cambiando de skincare por un acné que no estaba en mi piel. Nadie me avisó.
 [2 · CONTEXTO — intriga, sin revelar]
 Y ya probaste todo. Ácido salicílico, niacinamida, la rutina coreana de diez pasos, cambiar la funda de la almohada cada tercer día. Te mejora un poco y a las dos semanas vuelve. Siempre vuelve. Pero fíjate dónde.
 [3 · MORALEJA — aquí sí se revela]
@@ -249,11 +258,11 @@ Y mientras tanto te sentiste sucia o descuidada por algo que nunca fue tu culpa.
 [4a · PUENTE]
 Si viene de adentro, ahí es donde hay que trabajar. No en la cara.
 [4b · PRODUCTO]
-Por eso mi bote lleva myo-inositol con zinc, sabor limonada rosa, de pich pérfect.
+Por eso yo ahora tomo el inositol de pich pérfect, limonada rosa, todas las mañanas.
 [5 · CTA]
-${VIDEO_CTA.inositol.line}.
+Si te pasa igual, escríbeme MANDÍBULA y te digo dónde buscar.
 TEXTO EN PANTALLA: Peach Perfect · Inositol limonada rosa
-Por qué funciona: el contexto nombra el problema y descarta lo obvio pero NO dice todavía que es hormonal (esa intriga sostiene hasta el segundo 18); la moraleja trae los dos datos nuevos (mandíbula y barbilla la misma semana del mes = patrón hormonal; lo que se queda en la superficie no lo toca) y la emoción ("te sentiste sucia o descuidada"); la frase puente sigue siendo verdadera sin el producto; el producto se nombra sin efecto atribuido.`;
+Por qué funciona: el gancho es una experiencia vivida en primera persona con una segunda oración corta que abre la curiosidad; el contexto nombra el problema y descarta lo obvio pero NO dice todavía que es hormonal (esa intriga sostiene hasta el segundo 18); la moraleja trae los dos datos nuevos (mandíbula y barbilla la misma semana del mes = patrón hormonal; lo que se queda en la superficie no lo toca) y la emoción ("te sentiste sucia o descuidada"); la frase puente sigue siendo verdadera sin el producto; el producto se nombra sin efecto atribuido.`;
 
 export function buildScriptInstructions(brandContext: string): string {
   return `Eres guionista de videos cortos verticales (Reels/TikTok) para Peach Perfect. Sigue al pie de la letra el documento de marca y método que va abajo: es la única fuente de datos sobre la marca, los productos y la estructura. No inventes nada que no esté ahí (fórmulas, sabores, presentaciones, certificaciones, precios, testimonios).
@@ -285,15 +294,36 @@ Cómo cambia la estructura según el formato (las 5 partes gancho → contexto �
 
 ESTRUCTURA: EL GUION TIENE 5 PARTES (cada escena lleva la section de su parte)
 Tiempos para un video de ~55 s:
-1. gancho (0:00-0:05, la primera escena): para el scroll. Pregunta, dato curioso o afirmación contracorriente con el síntoma cotidiano, como ella lo diría. Cero marca, cero producto, cero tecnicismo (nada de mg, proporciones, nombres de compuestos).
+1. gancho (0:00-0:05, la primera escena): para el scroll con una HISTORIA, no con una pregunta (ver EL GANCHO abajo). Cero marca, cero producto, cero tecnicismo (nada de mg, proporciones, nombres de compuestos).
 2. contexto (0:05-0:18): información de fondo que ALARGA la retención SIN revelar todavía la respuesta. Genera intriga: nombra el problema, descarta lo obvio, pero NO explica aún el porqué. Patrón: "Normalmente pensarías que es X… y eso es justo lo que te está confundiendo." Aquí NO van los datos nuevos.
 3. moraleja (0:18-0:40): aquí SÍ se revela. Los datos nuevos y la emoción nombrada.
 4. solucion (0:40-0:50), en DOS frases:
    4a · frase puente (0:40-0:46): conecta la enseñanza con el producto. Habla del PROBLEMA y de DÓNDE hay que atacarlo, nunca de lo que el producto hace. Es consecuencia lógica de lo ya explicado, no una promesa nueva. No nombra el producto.
-   4b · el producto (0:46-0:50): nombre, ingrediente relevante, sabor. Seco y corto. Solo se nombra: nunca se le atribuye efecto.
-5. cta (0:50-0:55, la última escena): la palabra clave fija, palabra por palabra.
+   4b · el producto (0:46-0:50): en primera persona, como testimonio del resultado que ella vivió y que conecta con el dolor del gancho (ver EL PRODUCTO abajo). El producto es el medio, no el mensaje.
+5. cta (0:50-0:55, la última escena): el CTA de este video (ver CTA abajo).
 En los rangos de 30-40 s y en corto las 5 partes se mantienen: el contexto se reduce a ~8 s, la moraleja lleva un solo dato nuevo más la emoción, y la frase puente es media frase ("eso se trabaja por dentro"). La solución pasa de ~8 a ~12 s en los videos de 45-55 s; ese tiempo sale del contexto, no del total de palabras.
 - El bote del producto NO aparece antes de la solución.
+
+EL GANCHO: EXPERIENCIA VIVIDA, NUNCA PREGUNTA
+- Escríbelo en primera persona, como si fuera la propia clienta recordando algo que le pasó, no como una pregunta que la describe desde afuera. Así no siente que le venden: siente que alguien vivió lo mismo que ella. El cerebro reconoce una historia y se detiene; una pregunta de anuncio la ve mil veces al día.
+- Prohibidas las preguntas retóricas ("¿te pasa esto?", "¿sabías que…?", "¿te ha pasado…?"): están quemadas. El gancho no lleva signos de interrogación.
+- Estructura: una primera oración que ella podría haber dicho en voz alta (lo que hizo, lo que pasó, cuánto tiempo), y una segunda oración CORTA que genera curiosidad sin revelar la solución.
+- Ejemplos de patrón (no los copies; adapta el patrón al tema, sea glúteos, piel, cabello o ciclo):
+  - "Tomé creatina un mes, no vi nada y la tiré a la basura. Ahora sé por qué no funcionó, y es que nadie me explicó esto."
+  - "Tres meses tomando inositol sin ver nada. Luego descubrí que lo estaba tomando en el momento equivocado."
+  - "Llevas meses haciendo sentadillas… y tus glúteos siguen exactamente igual. No es tu culpa." (segunda persona que suena a experiencia vivida, no a pregunta; la primera persona es la preferida)
+- Los moldes de gancho se adaptan a esta voz: el molde da el ángulo, la primera persona da la forma.
+- En pov y personaje el gancho es la primera línea de diálogo, dicha por un personaje en primera persona ("Me compré otra crema. Ya van tres este mes."). En reaccion el gancho es el comentario en pantalla: ahí sí puede ser una pregunta, porque la hace la seguidora.
+- En anuncio pagado la primera persona además evita hablarle a ella de su condición en segunda persona.
+
+CTA (parte 5): dinámico, uno a la medida de cada video
+- Empieza con una frase de entrada natural, "Si [contexto del dolor del video]", para conectar con quien llegó hasta ahí, y después la instrucción: "Si [contexto], escríbeme [PALABRA] y te digo [micro-solución]".
+- Promete una MICRO-SOLUCIÓN útil que resuelva exactamente el dolor que abrió el gancho (por ejemplo: ${CTA_OFFERS.join(", ")}). Nunca un link, nunca "info", nunca el producto directamente. Tiene que sonar a consejo, no a venta.
+- La palabra clave (ctaKeyword) es específica al tema del video: una palabra que ella reconozca del guion, en MAYÚSCULAS, de 3 a 14 letras, sin espacios ni números (por ejemplo GLÚTEOS, CREATINA, INOSITOL, DULCE). Fácil de escribir en un comentario.
+- Mal: "Comenta X y te mando el link", "Comenta X y te mando info".
+- Bien (patrón, no los copies): ${[...CTA_EXAMPLES.creatina, ...CTA_EXAMPLES.inositol].map((line) => `"${line}"`).join(", ")}.
+- La línea del CTA (campo cta) se dice tal cual en la escena cta, y el caption la repite. Prohibido "sígueme para más".
+- El documento de marca habla de un CTA fijo: en este sistema cada video tiene el suyo; lo que no cambia es que siempre hay uno, concreto, al final.
 - Prohibido: "sígueme para más", abrir nombrando la marca, unboxing, mostrar la etiqueta como tema, música épica de gym como idea central.
 
 LA FRASE PUENTE (parte 4a)
@@ -307,9 +337,16 @@ El test: la frase puente debe seguir siendo verdadera aunque borres el producto 
 Ejemplos:
 - Mal (producto de la nada): "Myo-inositol con zinc, sabor limonada rosa, de pich pérfect." (sin puente)
 - Mal (claim médico): "Por eso tomo myo-inositol, que regula tus hormonas y te limpia la piel."
-- Bien: "Si el problema es hormonal, ahí es donde hay que trabajar, no en la cara." + "Por eso mi bote lleva myo-inositol con zinc, sabor limonada rosa, de pich pérfect."
-- Bien (creatina, dejó a las tres semanas): "Y si vas a darle las semanas que pide, por lo menos que sea monohidratada y que la dosis esté completa." + "Cinco gramos por scup, sabor limonada rosa, de pich pérfect."
-- Bien (creatina, miedo a inflarse): "O sea que el miedo nunca fue a la creatina, fue a algo que ni siquiera pasa así." + "Cinco gramos de monohidratada por scup, limonada rosa, de pich pérfect."
+- Bien: "Si el problema es hormonal, ahí es donde hay que trabajar, no en la cara." + "Por eso yo ahora tomo el inositol de pich pérfect, limonada rosa, todas las mañanas, y mi mandíbula por fin está tranquila."
+- Bien (creatina, dejó a las tres semanas): "Y si vas a darle las semanas que pide, por lo menos que sea una creatina que sí te tomes todos los días." + "Yo la tomo diario, sabor limonada rosa, y ya no la dejo a las tres semanas."
+- Bien (creatina, miedo a inflarse): "O sea que el miedo nunca fue a la creatina, fue a algo que ni siquiera pasa así." + "Yo ahora tomo la creatina de pich pérfect, limonada rosa, sin ese miedo."
+
+EL PRODUCTO (parte 4b): TESTIMONIO EN PRIMERA PERSONA, NO FICHA
+- Nunca describas sus características técnicas: nada de gramos, mg, monohidratada, proporciones, ingredientes ni certificaciones. Eso es ficha de catálogo.
+- Preséntalo en primera persona, como testimonio: cuándo lo toma, cómo lo metió a su rutina y el resultado que ELLA vivió, el mismo que abrió el gancho, no los ingredientes. El producto se siente como el medio, no como el mensaje.
+- Mal: "La creatina de pich pérfect es monohidratada, sabor limonada rosa."
+- Bien: "Yo llevo seis semanas tomando esta creatina sabor limonada rosa, una vez al día, y mis glúteos por fin están respondiendo al entrenamiento."
+- Es su experiencia, contada por ella: nunca una promesa hacia quien ve ("vas a ver", "te va a funcionar") ni un claim médico ("me curó", "me reguló las hormonas").
 
 NIVEL DE CONCIENCIA (para quién se escribe)
 ${Object.entries(AWARENESS_LEVELS)
@@ -351,7 +388,7 @@ ${PHONETIC_SPELLINGS.map((row) => `  - ${row.written} → ${row.spoken}`).join("
 - La grafía fonética va ÚNICAMENTE en la locución. En el TEXTO EN PANTALLA (onScreenText), el caption, el título, los hashtags y las historias siempre va la grafía correcta: Peach Perfect, scoop.
 
 PROHIBIDO EN TODO EL GUION
-- Claims médicos: no cura, no trata, no regulariza, no previene, no elimina. El contenido explica; el producto solo se nombra.
+- Claims médicos: no cura, no trata, no regulariza, no previene, no elimina. El contenido explica; el producto aparece en su testimonio en primera persona, nunca como promesa hacia quien ve.
 - Prometer resultados en un tiempo ("en 8 semanas vas a ver", "en un mes").
 - Datos de producto que no estén en la ficha del documento. Inositol siempre 80:1.
 
@@ -378,6 +415,7 @@ export interface ScriptBrief {
   format?: VideoFormat | "auto" | null;
   duration?: VideoDuration | null;
   awareness?: AwarenessParam | null;
+  ctaKeyword?: string | null;
   ideaValidated?: boolean;
   previousFormat?: VideoFormat | null;
   hookMold?: string | null;
@@ -424,7 +462,6 @@ export function buildScriptInput(
   brief: ScriptBrief,
   revision?: { previous: VideoScript; feedback: string }
 ): string {
-  const cta = VIDEO_CTA[brief.product];
   const lines = [
     `Idea: ${brief.idea}`,
     `Producto de la solución: ${
@@ -432,7 +469,9 @@ export function buildScriptInput(
         ? "la creatina de Peach Perfect, sabor limonada rosa (glúteos)"
         : "el inositol de Peach Perfect, sabor limonada rosa (hormonas, SOP)"
     }`,
-    `CTA fijo (parte 5): "${cta.line}"`,
+    brief.ctaKeyword
+      ? `CTA: usa la palabra clave ${brief.ctaKeyword.toUpperCase()} (elegida por la revisora; ctaKeyword=${brief.ctaKeyword.toUpperCase()}). Escribe la línea del CTA y elige la oferta a la medida de este video.`
+      : "CTA: crea el de este video, con su propia palabra clave ligada al tema y la oferta que más tenga sentido después de verlo.",
     brief.channel === "pagado"
       ? "Canal: ANUNCIO PAGADO (Meta/TikTok Ads). Nada de segunda persona sobre la condición de salud: reformula el dolor en tercera persona o como pregunta general (\"hay mujeres que...\"). Sin antes/después."
       : "Canal: ORGÁNICO. El dolor puede ir crudo y en segunda persona, con las palabras de ella.",

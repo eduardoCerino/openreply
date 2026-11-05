@@ -9,7 +9,8 @@ import {
   PHONETIC_SPELLINGS,
   SCENE_WORDS_MAX,
   SERIES_PHRASES,
-  VIDEO_CTA,
+  CTA_FORBIDDEN_OFFERS,
+  CTA_KEYWORD_PATTERN,
   VIDEO_FORMATS,
   VIDEO_FORMAT_IDS,
   durationBudget,
@@ -61,11 +62,18 @@ const SCRIPT_FORBIDDEN: Array<{ term: string; why: string }> = [
 ];
 
 // The product is named, never credited with an effect.
+// Effects claimed for the product itself, said to her ("te ayuda", "regula").
+// Her own first-person result ("mis glúteos por fin responden") is a
+// testimonial and allowed.
 const PRODUCT_EFFECT = /\b(ayuda|ayudan|ayudar|ayudarte|mejora|mejoran|mejorar|regula|equilibra|equilibrar|regulariza|reduce|reducir|aumenta|aumentar|hace que|te da|te dara|te devuelve)\b/;
+
+// Part 4b is lived experience, not a spec sheet.
+const PRODUCT_SPECS = /\b(\d+ ?(g|gr|mg|mcg)|gramos?|miligramos?|monohidratada|80 1|myo|d chiro|dim|zinc|magnesio|bcaa|bcaas|colageno|nsf|gmp|certificad[ao]s?)\b/;
+
 
 // No medical claims anywhere in the script ("se trata de" is ordinary speech,
 // so only "trata/tratar + object" counts).
-const MEDICAL_CLAIM = /\b(cura|curar|regulariza|regularizar|previene|prevenir|elimina|eliminar|tratar? (el|la|los|las|tu|tus))\b/;
+const MEDICAL_CLAIM = /\b(cura|curar|curo|regulariza|regularizar|regularizo|regulo|previene|prevenir|elimina|elimino|eliminar|tratar? (el|la|los|las|tu|tus))\b/;
 
 // No results promised in a time frame ("en 8 semanas vas a ver"). A time
 // reference alone is fine — rule 2 asks for time data ("la semana antes de que
@@ -87,6 +95,14 @@ const BRIDGE_VERB = new RegExp(`\\b(${BRIDGE_FORBIDDEN.join("|")})\\b`);
 // lesson: it must read true with the product deleted.
 const BRIDGE_PRODUCT = /\b(pich perfect|peach perfect|bote|scup|scoop|limonada rosa)\b/;
 const BRIDGE_PROMISE = /\b(vas a ver|veras|vas a notar|notaras|te va a|te van a|resultados|funciona|funcionara)\b/;
+// The hook is a lived experience, never an ad question (except in reactions,
+// where the on-screen comment is the follower's own question).
+const HOOK_RHETORICAL = /\b(te pasa|te ha pasado|te paso|sabias que|alguna vez|te suena|eres de las)\b/;
+// First-person markers: what she did or felt, said by her.
+const FIRST_PERSON = /\b(yo|me|mi|mis|tome|deje|llevo|llevaba|estaba|pense|empece|probe|compre|hice|tire|descubri|tuve|senti|vi|fui|era|cambie|gaste|segui)\b/;
+// A lived experience said to her ("llevas meses…") also reads as a story.
+const LIVED_SECOND_PERSON = /^(llevas|llevabas|tomaste|dejaste|probaste|gastaste|cambiaste|hiciste)\b/;
+
 // Talking to the 3-4 awareness levels (brand vs brand, certifications).
 const LEVEL_34 = /\b(vs|versus|otras marcas|otra marca|la competencia|certificad[ao]s?|nsf|gmp)\b/;
 
@@ -135,6 +151,11 @@ const CATALOG_TERMS = ["pich perfect", "limonada rosa", "en polvo", "mexico", "m
  * spoken text of each scene is joined from its lines, and a format the
  * reviewer chose wins over whatever the model reports.
  */
+/** "#glúteos " → "GLÚTEOS": what the comment has to say, as one word. */
+export function normalizeCtaKeyword(value: string): string {
+  return value.trim().replace(/^#+/, "").trim().toUpperCase();
+}
+
 // Hard cap so a runaway response cannot produce dozens of clips.
 const MAX_SCENES = 14;
 
@@ -142,7 +163,8 @@ export function normalizeScript(
   script: VideoScript,
   requiredFormat?: VideoFormat,
   requiredTier?: DurationTier,
-  requiredAwareness?: AwarenessLevel
+  requiredAwareness?: AwarenessLevel,
+  requiredCtaKeyword?: string | null
 ): VideoScript {
   const format =
     requiredFormat ?? (VIDEO_FORMAT_IDS.includes(script.format) ? script.format : "hac");
@@ -160,6 +182,7 @@ export function normalizeScript(
     awarenessLevel:
       requiredAwareness ??
       (["0", "1", "2"].includes(script.awarenessLevel) ? script.awarenessLevel : "1"),
+    ctaKeyword: normalizeCtaKeyword(requiredCtaKeyword || script.ctaKeyword || ""),
     bridgeLine: toSpoken(script.bridgeLine ?? ""),
     productLine: toSpoken(script.productLine ?? ""),
     bridgeTest: toWritten(script.bridgeTest ?? ""),
@@ -200,7 +223,10 @@ export function runScriptChecks(
   script: VideoScript,
   product: VideoProduct,
   channel: VideoChannel,
-  { previousFormat }: { previousFormat?: VideoFormat | null } = {}
+  {
+    previousFormat,
+    requiredCtaKeyword,
+  }: { previousFormat?: VideoFormat | null; requiredCtaKeyword?: string | null } = {}
 ): QualityCheck[] {
   const scenes = script.scenes;
   const first = scenes[0];
@@ -231,7 +257,12 @@ export function runScriptChecks(
       ...scenes.flatMap((scene) => [scene.voiceover, scene.onScreenText]),
     ].join(" ")
   );
-  const cta = VIDEO_CTA[product];
+  const keyword = script.ctaKeyword ?? "";
+  const lastText = normalizeText(last?.voiceover ?? "");
+  const ctaText = normalizeText(`${last?.voiceover ?? ""} ${script.cta}`);
+  const ctaOpensWithIf = /^si\b/.test(lastText) || /^si\b/.test(normalizeText(script.cta ?? ""));
+  const productSpec = productLine.match(PRODUCT_SPECS)?.[0];
+  const badOffer = CTA_FORBIDDEN_OFFERS.find((offer) => ` ${ctaText} `.includes(` ${offer} `));
   const budget = durationBudget(script.format, script.durationTier);
   const [wordsMin, wordsMax] = budget.words;
   const seconds = scenes.length * CLIP_SECONDS;
@@ -248,6 +279,10 @@ export function runScriptChecks(
   const inBody = (line: string) => contains(lesson, line);
   const revealedEarly = [script.newInsight, script.secondInsight].filter((line) => contains(contextText, line));
   const series = SERIES_PHRASES.filter((phrase) => fullText.includes(phrase));
+  const hookLine = script.format === "reaccion" ? "" : script.hook ?? "";
+  const hookNormalized = normalizeText(hookLine);
+  const hookIsQuestion = /[¿?]/.test(hookLine) || HOOK_RHETORICAL.test(hookNormalized);
+  const hookSentences = hookLine.split(/(?<=[.!…])\s+/).map((part) => part.trim()).filter(Boolean);
   const brochureHits = voice
     .map((text, index) => ({ index, match: text.match(BROCHURE)?.[1] }))
     .filter((hit) => hit.match);
@@ -292,6 +327,28 @@ export function runScriptChecks(
       detail: missingParts.length ? `falta: ${missingParts.join(", ")}` : ordered ? undefined : "partes fuera de orden",
       hard: !(first?.section === "gancho" && last?.section === "cta" && ordered && missingParts.length === 0),
     },
+    ...(script.format === "reaccion"
+      ? []
+      : [
+          {
+            id: "hookStory",
+            label: "Gancho como historia, sin pregunta retórica",
+            ok: !hookIsQuestion,
+            detail: hookIsQuestion ? `«${hookLine}» suena a pregunta de anuncio` : undefined,
+            hard: hookIsQuestion,
+          } satisfies QualityCheck,
+          {
+            id: "hookVoice",
+            label: "Gancho en primera persona (experiencia vivida)",
+            ok: FIRST_PERSON.test(hookNormalized) || LIVED_SECOND_PERSON.test(hookNormalized),
+          } satisfies QualityCheck,
+          {
+            id: "hookCuriosity",
+            label: "Segunda oración corta que genera curiosidad",
+            ok: hookSentences.length >= 2 && words(hookSentences[hookSentences.length - 1]) <= 14,
+            detail: hookSentences.length < 2 ? "el gancho tiene una sola oración" : undefined,
+          } satisfies QualityCheck,
+        ]),
     {
       id: "intrigue",
       label: "El contexto genera intriga sin revelar el dato",
@@ -370,9 +427,65 @@ export function runScriptChecks(
     },
     {
       id: "cta",
-      label: `Cierre con el CTA fijo (${cta.keyword})`,
-      ok: normalizeText(`${last?.voiceover ?? ""} ${script.cta}`).includes(normalizeText(cta.keyword)),
-      hard: true,
+      label: keyword ? `CTA con palabra clave ${keyword} en la última escena` : "CTA con palabra clave",
+      ok: Boolean(keyword) && lastText.includes(normalizeText(keyword)),
+      detail: !keyword
+        ? "falta la palabra clave"
+        : !lastText.includes(normalizeText(keyword))
+          ? "la palabra clave no se dice en la escena cta"
+          : undefined,
+      hard: !keyword || !lastText.includes(normalizeText(keyword)),
+    },
+    {
+      id: "ctaKeyword",
+      label: "Palabra clave de una sola palabra, 3-14 letras",
+      ok: CTA_KEYWORD_PATTERN.test(keyword),
+      detail: keyword || undefined,
+      hard: !CTA_KEYWORD_PATTERN.test(keyword),
+    },
+    ...(requiredCtaKeyword
+      ? [
+          {
+            id: "ctaKeywordRequested",
+            label: "Usa la palabra clave pedida",
+            ok: keyword === normalizeCtaKeyword(requiredCtaKeyword),
+            detail: `pedida: ${normalizeCtaKeyword(requiredCtaKeyword)}`,
+            hard: keyword !== normalizeCtaKeyword(requiredCtaKeyword),
+          } satisfies QualityCheck,
+        ]
+      : []),
+    {
+      id: "ctaOffer",
+      label: "El CTA promete una micro-solución, no un link ni el producto",
+      ok: !badOffer,
+      detail: badOffer ? `«${badOffer}»: promete un consejo que resuelva el dolor del gancho` : undefined,
+      hard: Boolean(badOffer),
+    },
+    {
+      id: "ctaOpening",
+      label: "El CTA abre con «Si [contexto del dolor]…»",
+      ok: ctaOpensWithIf,
+      hard: !ctaOpensWithIf,
+    },
+    {
+      id: "productSpecs",
+      label: "El producto aparece como experiencia, sin características técnicas",
+      ok: !productSpec,
+      detail: productSpec ? `«${productSpec}» es ficha técnica` : undefined,
+      hard: Boolean(productSpec),
+    },
+    {
+      id: "productVoice",
+      label: "El producto como testimonio en primera persona",
+      ok: FIRST_PERSON.test(productLine) || /\b(tomo|uso|preparo|meto|llevo)\b/.test(productLine),
+    },
+    {
+      id: "ctaLine",
+      label: "La línea del CTA se dice en la escena cta y el caption la repite",
+      ok:
+        Boolean(script.cta) &&
+        lastText.includes(normalizeText(script.cta)) &&
+        normalizeText(script.caption).includes(normalizeText(keyword)),
     },
     {
       // Must be met, not just reported: a short script wastes paid seconds of
@@ -608,6 +721,7 @@ export async function generateVideoScript(projectId: string): Promise<VideoProje
       ideaValidated: project.ideaValidated,
       previousFormat,
       hookMold: project.hookMold,
+      ctaKeyword: project.ctaKeyword,
     };
     let feedback = project.feedback && previous ? project.feedback : undefined;
     let result: { script: VideoScript; checks: QualityCheck[]; model: string } | null = null;
@@ -625,8 +739,17 @@ export async function generateVideoScript(projectId: string): Promise<VideoProje
           feedback && (previous || result) ? { previous: result?.script ?? previous!, feedback } : undefined
         ),
       });
-      const script = normalizeScript(generated.value, requiredFormat, requiredTier, requiredAwareness);
-      const checks = runScriptChecks(script, product, channel, { previousFormat });
+      const script = normalizeScript(
+        generated.value,
+        requiredFormat,
+        requiredTier,
+        requiredAwareness,
+        project.ctaKeyword
+      );
+      const checks = runScriptChecks(script, product, channel, {
+        previousFormat,
+        requiredCtaKeyword: project.ctaKeyword,
+      });
       result = { script, checks, model: generated.model };
       const failedHard = checks.filter((check) => check.hard && !check.ok);
       if (failedHard.length === 0) break;

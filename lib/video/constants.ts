@@ -167,7 +167,7 @@ export const PHONETIC_SPELLINGS: Array<{ written: string; spoken: string }> = [
 
 // How the product is named out loud: short, in Spanish, no catalog listing.
 export const PRODUCT_SPOKEN_NAMES: Record<VideoProduct, string[]> = {
-  creatina: ["la creatina de Peach Perfect", "cinco gramos de creatina por scoop", "limonada rosa"],
+  creatina: ["la creatina de Peach Perfect", "esta creatina sabor limonada rosa"],
   inositol: ["el inositol de Peach Perfect", "limonada rosa"],
 };
 
@@ -183,13 +183,43 @@ export const BROCHURE_VERBS = [
   "contiene", "contienen",
 ] as const;
 
-// The fixed close (method section 7: the CTA is part of the template, never
-// reinvented). The keyword is the one to set on the OpenReply comment-to-DM
-// campaign so the comment turns into a DM with the product link.
-export const VIDEO_CTA: Record<VideoProduct, { keyword: string; line: string }> = {
-  creatina: { keyword: "GLÚTEOS", line: "Comenta GLÚTEOS y te mando el link" },
-  inositol: { keyword: "SOP", line: "Escríbeme SOP y te paso la fórmula completa" },
+// ─── CTA ─────────────────────────────────────────────────────────────────────
+// Each video writes its own CTA: a comment keyword tied to its topic plus what
+// she gets for it. The keyword is what an OpenReply comment-to-DM campaign
+// listens for (matching ignores case and accents), so every new keyword needs
+// its campaign. The reviewer can pin the keyword per video.
+// The CTA opens with "Si [the video's pain]…" and trades the comment for a
+// micro-solution to the hook's pain: advice, never a link or the product.
+export const CTA_EXAMPLES: Record<VideoProduct, string[]> = {
+  creatina: [
+    "Si quieres empezar, escríbeme GLÚTEOS aquí abajo y te digo cómo.",
+    "Si la dejaste por lo mismo, escríbeme CREATINA y te digo cómo tomarla bien.",
+  ],
+  inositol: [
+    "Si te pasa igual, escríbeme INOSITOL y te digo en qué momento tomarlo.",
+    "Si sientes eso, escríbeme DULCE y te explico por qué no es falta de voluntad.",
+  ],
 };
+
+// What the micro-solution may be: one concrete piece of advice the DM can give.
+export const CTA_OFFERS = [
+  "cómo empezar",
+  "cómo tomarlo bien",
+  "en qué momento tomarlo",
+  "por qué le pasa lo que el video describe",
+  "el error que lo está frenando",
+];
+
+// Never a link, generic info or the product itself, and nothing the brand
+// does not make (discounts, gifts, downloads).
+export const CTA_FORBIDDEN_OFFERS = [
+  "link", "liga", "info", "informacion", "precio", "el producto",
+  "descuento", "cupon", "codigo de descuento", "regalo", "gratis", "envio gratis",
+  "sorteo", "pdf", "ebook", "e book", "guia gratis", "muestra",
+];
+
+/** One word, letters only, 3-14 characters: easy to type in a comment. */
+export const CTA_KEYWORD_PATTERN = /^[A-ZÁÉÍÓÚÜÑ]{3,14}$/;
 
 // The 8 hook molds of method section 6.
 export const HOOK_MOLDS = [

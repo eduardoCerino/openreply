@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import { prisma } from "@/lib/db/client";
 import { requireBlogAdmin } from "@/lib/blog/access";
-import { HOOK_MOLDS, VIDEO_FORMAT_IDS } from "@/lib/video/constants";
+import { CTA_KEYWORD_PATTERN, HOOK_MOLDS, VIDEO_FORMAT_IDS } from "@/lib/video/constants";
 import { enqueueScriptJob } from "@/lib/video/jobs";
 
 export const runtime = "nodejs";
@@ -15,6 +15,13 @@ const createSchema = z.object({
   duration: z.enum(["auto", "estandar", "corto"]).default("auto"),
   awareness: z.enum(["0", "1", "2", "auto"]).default("1"),
   ideaValidated: z.boolean().default(false),
+  ctaKeyword: z
+    .string()
+    .trim()
+    .transform((value) => value.replace(/^#+/, "").toUpperCase())
+    .pipe(z.string().regex(CTA_KEYWORD_PATTERN, "La palabra clave del CTA es una sola palabra de 3 a 14 letras"))
+    .optional()
+    .or(z.literal("").transform(() => undefined)),
   previousFormat: z.enum(VIDEO_FORMAT_IDS as [string, ...string[]]).optional(),
   hookMold: z.enum(HOOK_MOLDS).optional(),
 });

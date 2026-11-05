@@ -13,7 +13,6 @@ import {
   IDEA_MIN_SCORE,
   STALE_SCRIPT_MS,
   VIDEO_DURATIONS,
-  VIDEO_CTA,
   VIDEO_FORMATS,
   type VideoFormat,
   type VideoProduct,
@@ -47,6 +46,7 @@ interface Script {
   symptom: string;
   newInsight?: string;
   feltLine?: string;
+  ctaKeyword?: string;
   awarenessLevel?: "0" | "1" | "2";
   bridgeLine?: string;
   productLine?: string;
@@ -70,6 +70,7 @@ interface Project {
   duration: string | null;
   awareness: string | null;
   hookMold: string | null;
+  ctaKeyword: string | null;
   ideaValidated: boolean;
   ideaCheck: {
     filters: Record<string, { passed: boolean; reason: string }>;
@@ -272,6 +273,7 @@ export default function VideoScriptPage() {
         duration: project.duration ?? "auto",
         awareness: project.awareness ?? "1",
         hookMold: project.hookMold ?? undefined,
+        ctaKeyword: project.ctaKeyword ?? undefined,
       }),
     });
     const payload = await response.json();
@@ -566,10 +568,20 @@ export default function VideoScriptPage() {
               <div>
                 <p className="text-xs font-semibold uppercase text-muted">CTA</p>
                 <p className="mt-1 text-foreground">{script.cta}</p>
-                <p className="mt-1 text-xs text-muted">
-                  Crea en Campaigns una campaña con la palabra clave {VIDEO_CTA[project.product].keyword} para mandar el link
-                  por DM.
-                </p>
+                {script.ctaKeyword ? (
+                  <p className="mt-1 text-xs text-muted">
+                    Palabra clave{project.ctaKeyword ? " (fijada por ti)" : ""}:{" "}
+                    <span className="font-semibold text-foreground">{script.ctaKeyword}</span>. Antes de publicar, ten en{" "}
+                    <Link href="/campaigns/new" className="text-accent underline">
+                      Campaigns
+                    </Link>{" "}
+                    una campaña con esa palabra que mande por DM lo que promete el CTA.
+                  </p>
+                ) : (
+                  <p className="mt-1 text-xs text-muted">
+                    Guion anterior al CTA dinámico: usa la palabra clave que aparece en la línea.
+                  </p>
+                )}
               </div>
               <div>
                 <p className="text-xs font-semibold uppercase text-muted">Caption (texto)</p>

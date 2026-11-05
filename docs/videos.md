@@ -1,6 +1,6 @@
 # Generador de videos (fase 1: guion)
 
-Crea guiones de Reels/TikTok para Peach Perfect con el método de `content/peach-perfect-contexto-contenido.md`: gancho con el síntoma, contexto, aterrizaje en el producto y CTA fijo. Por ahora genera y revisa el **guion**. Las imágenes, los clips y la publicación automática son las fases siguientes.
+Crea guiones de Reels/TikTok para Peach Perfect con el método de `content/peach-perfect-contexto-contenido.md`: checklist de idea, y guion en 5 partes (gancho, contexto, moraleja, solución y un CTA a la medida de cada video). Por ahora genera y revisa el **guion**. Las imágenes, los clips y la publicación automática son las fases siguientes.
 
 ## Formato y duración
 
@@ -46,6 +46,15 @@ Necesita **mínimo 5 de 8** (`IDEA_MIN_SCORE`). Si saca menos, **no se escribe e
 
 Una **idea validada** (ya funcionó) no se bloquea: se evalúa igual, pero solo para el reporte.
 
+## El gancho: experiencia vivida, nunca pregunta
+
+El gancho se escribe como si fuera la propia clienta recordando algo que le pasó, de preferencia en primera persona. Así no suena a anuncio: suena a alguien que vivió lo mismo. Su estructura es una oración que ella podría decir en voz alta, más una segunda oración corta que abre la curiosidad sin revelar la solución. Por ejemplo: "Tomé creatina un mes, no vi nada y la tiré a la basura. Ahora sé por qué no funcionó."
+
+- **Validaciones:**
+  - El gancho no puede ser una pregunta retórica ("¿te pasa esto?", "¿sabías que…?"). Es una regla crítica.
+  - Avisa si no suena a primera persona o si le falta la segunda oración corta.
+- **Por formato:** en POV y Personaje, el gancho es la primera línea de un personaje en primera persona. En Reacción, el gancho es el comentario de la seguidora, y ese sí puede ser pregunta.
+
 ## Las 5 partes del guion
 
 | # | Parte (`section`) | ~55 s | Qué hace |
@@ -62,7 +71,7 @@ En los rangos de 30-40 s y en corto se mantienen las 5 partes: el contexto se re
 - **Patrones:** están en `BRIDGE_PATTERNS`. Por ejemplo, "Si el problema es [X], ahí es donde hay que trabajar."
 - **Prohibido:** verbos de efecto (regula, equilibra, corrige, mejora, controla, normaliza), promesas y verbos de folleto.
 - **El test:** tiene que seguir siendo verdadera aunque borres el producto. El modelo lo explica en `bridgeTest`, y si la frase nombra el producto o el bote se rechaza como claim disfrazado.
-- **4b:** nombre, ingrediente relevante y sabor. Seco y corto.
+- **4b:** el producto en primera persona, como experiencia vivida (ver más abajo).
 
 ## Nivel de conciencia
 
@@ -81,7 +90,7 @@ Marca **Idea ya validada** y elige en qué formato se publicó. El guion conserv
 
 Nunca "como les conté", "parte 2", "ya saben que yo…" ni "en el video anterior". Cada guion se escribe como primer contacto, y estas frases son una falla crítica (`SERIES_PHRASES`).
 
-**El tiempo extra se llena con sustancia:** un segundo mecanismo o detalle concreto, una objeción resuelta, una consecuencia práctica o, en diálogo, una réplica más del personaje que no sabe. Nunca con repeticiones, muletillas, adjetivos decorativos, introducciones ni recapitulaciones. El prompt incluye como ejemplo de referencia el guion completo del "acné de la mandíbula" (HAC, 55 s, nivel 1, idea 6/8), con sus 5 partes y la frase puente.
+**El tiempo extra se llena con sustancia:** un segundo mecanismo o detalle concreto, una objeción resuelta, una consecuencia práctica o, en diálogo, una réplica más del personaje que no sabe. Nunca con repeticiones, muletillas, adjetivos decorativos, introducciones ni recapitulaciones. El prompt incluye como ejemplo de referencia el guion completo del "acné de la mandíbula" (HAC, 55 s, nivel 1, idea 6/8), con sus 5 partes y la frase puente. Su gancho se pasó a primera persona con la regla del gancho.
 
 Los rangos viven en `VIDEO_DURATIONS` (`lib/video/constants.ts`). La revisión muestra un resumen como `HAC 45-55s · 55s · rango 125-155 · 148 palabras ✓ · nivel 1 · idea 6/8`.
 
@@ -163,7 +172,6 @@ La tabla está en `PHONETIC_SPELLINGS` (`lib/video/constants.ts`). Al modelo se 
 - 5 escenas, que abran con gancho y cierren con CTA.
 - Gancho sin la marca ni tecnicismos (mg, myo, 80:1, monohidratada…).
 - El bote no aparece antes del aterrizaje.
-- El cierre usa el CTA fijo: **GLÚTEOS** (creatina) o **SOP** (inositol).
 - **Duración:** los segundos (escenas × 5) dentro del rango del formato y la duración elegidos.
 - **Extensión:** las palabras de locución dentro del rango de la tabla y máximo 18 por escena. Es una regla que se cumple, no un dato informativo: si el guion queda corto o largo, se reescribe con la instrucción exacta ("faltan 12 palabras; agrégalas con un segundo mecanismo, una objeción resuelta o una consecuencia práctica, nunca con relleno").
 - **Segundo dato nuevo:** obligatorio en los rangos de 40 s o más (`secondInsight`), distinto del primero.
@@ -181,7 +189,20 @@ La tabla está en `PHONETIC_SPELLINGS` (`lib/video/constants.ts`). Al modelo se 
 
 Todas estas reglas, salvo el número de palabras por escena y la segunda persona en anuncios, son **críticas**. Si una falla, el guion se reescribe solo hasta 2 veces con las fallas como instrucción. Si después de 3 intentos todavía no cumple, **no se entrega para aprobar**: queda como *Falló*, con el motivo y el guion a la vista, y desde ahí puedes **Reintentar** o **Pedir cambios**. Las listas (verbos de folleto y límites de palabras) están en `lib/video/constants.ts`; las expresiones de efectos, claims y plazos, en `lib/video/script.ts`. Las reglas de escritura y el ejemplo de tono que recibe el modelo están en `lib/video/prompt.ts`.
 
-**CTA y OpenReply.** El CTA del cierre está fijo en `VIDEO_CTA` (`lib/video/constants.ts`). Para que funcione, crea en **Campaigns** una campaña con la palabra clave **GLÚTEOS** o **SOP** que mande el link del producto por DM.
+**CTA dinámico.** Cada video escribe su propio CTA con el patrón **"Si [contexto del dolor], escríbeme PALABRA y te digo [micro-solución]"**. Por ejemplo: "Si la dejaste por lo mismo, escríbeme CREATINA y te digo cómo tomarla bien".
+- **La entrada «Si…»** conecta con quien llegó hasta ahí.
+- **La palabra clave** es específica al tema (una palabra en mayúsculas de 3 a 14 letras).
+- **La micro-solución** resuelve exactamente el dolor del gancho y suena a consejo, no a venta. Nunca un link, "info" ni el producto (`CTA_FORBIDDEN_OFFERS`).
+- **Palabra fija para un video:** escríbela en **Palabra clave del CTA** del formulario.
+- **Validaciones críticas:** la palabra clave se dice en la última escena, el CTA abre con «Si…», la palabra tiene formato válido y coincide con la que fijaste, y la oferta no es link, info ni producto.
+- **Antes de publicar:** en **Campaigns** necesitas una campaña con esa palabra clave cuyo DM entregue de verdad la micro-solución prometida (el consejo, y después, si quieres, el link). OpenReply compara sin importar mayúsculas ni tildes.
+
+**El producto (4b) como testimonio.** En primera persona y conectado con el dolor del gancho: cuándo lo toma, cómo lo metió a su rutina y el resultado que ella vivió, plazo incluido. Por ejemplo: "Yo llevo seis semanas tomando esta creatina sabor limonada rosa, una vez al día, y mis glúteos por fin están respondiendo al entrenamiento". El producto es el medio, no el mensaje.
+- **Nunca características técnicas:** gramos, mg, monohidratada, proporciones, ingredientes o certificaciones. Es una regla crítica.
+- **Se siguen rechazando:**
+  - Los efectos prometidos a quien ve ("te ayuda a…", "regula…").
+  - Las promesas con plazo dirigidas a ella ("vas a ver en 8 semanas").
+  - Los claims médicos ("cura", "regulariza", "previene").
 
 ## Editar el contexto
 

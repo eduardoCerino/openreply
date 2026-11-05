@@ -2,7 +2,14 @@ import { describe, it, expect } from "vitest";
 import { VIDEO_DURATIONS, getBrandContext } from "../lib/video/config";
 import { scoreIdeaCheck } from "../lib/video/idea-check";
 import { buildScriptInput, buildScriptInstructions, type VideoScript } from "../lib/video/prompt";
-import { normalizeScript, runFormatChecks, runScriptChecks, toSpoken, toWritten } from "../lib/video/script";
+import {
+  normalizeCtaKeyword,
+  normalizeScript,
+  runFormatChecks,
+  runScriptChecks,
+  toSpoken,
+  toWritten,
+} from "../lib/video/script";
 
 type Section = VideoScript["scenes"][number]["section"];
 
@@ -25,8 +32,9 @@ function scene(section: Section, text: string | string[], productVisible = false
 
 const INSIGHT = "Ese patrón es la pista: no empieza en tu piel, empieza en tus hormonas.";
 const FELT = "Y tú cambiando de crema cada mes, pensando que eras tú la que lo hacía mal.";
-const BRIDGE = "Si viene de adentro, ahí es donde hay que trabajar.";
-const PRODUCT = "Mi bote: myo-inositol, limonada rosa.";
+const BRIDGE = "Si viene de adentro, ahí hay que trabajar.";
+const PRODUCT = "Yo ahora lo tomo cada mañana, limonada rosa.";
+const CTA = "Si te pasa, escríbeme SOP y te digo por qué.";
 
 /** A 30-second (corto) HAC script in the five parts. */
 function script(overrides: Partial<VideoScript> = {}): VideoScript {
@@ -39,26 +47,27 @@ function script(overrides: Partial<VideoScript> = {}): VideoScript {
     targetSeconds: 30,
     awarenessLevel: "1",
     hookMold: "propio",
-    hook: "¿Por qué siempre en la mandíbula, la semana antes de que te baje?",
+    hook: "Cambié de crema tres veces y el acné de la mandíbula volvió. Siempre ahí.",
     symptom: "acné en la mandíbula que no se va con skincare",
     newInsight: INSIGHT,
     secondInsight: "",
     feltLine: FELT,
+    ctaKeyword: "SOP",
     bridgeLine: BRIDGE,
     productLine: PRODUCT,
     bridgeTest: "Sin el producto sigue diciendo dónde está el problema.",
     character: "",
     visualStyle: "",
     scenes: [
-      scene("gancho", "¿Por qué siempre en la mandíbula, la semana antes de que te baje?"),
-      scene("contexto", "Ya cambiaste tres veces de crema y vuelve."),
+      scene("gancho", "Cambié de crema tres veces y el acné de la mandíbula volvió. Siempre ahí."),
+      scene("contexto", "No era la crema."),
       scene("moraleja", INSIGHT),
       scene("moraleja", FELT),
       scene("solucion", [BRIDGE, PRODUCT], true),
-      scene("cta", "Escríbeme SOP y te paso la fórmula completa."),
+      scene("cta", CTA),
     ],
-    cta: "Escríbeme SOP y te paso la fórmula completa",
-    caption: "",
+    cta: CTA,
+    caption: CTA,
     hashtags: ["sop", "#acne hormonal"],
     storyFollowUps: [],
     ...overrides,
@@ -74,14 +83,17 @@ function acneExample(): VideoScript {
   return {
     ...script(),
     durationTier: "estandar",
-    hook: "Llevas dos años cambiando de skincare por un acné que no está en tu piel.",
+    hook: "Dos años cambiando de skincare por un acné que no estaba en mi piel. Nadie me avisó.",
     newInsight: "Mandíbula y barbilla. Siempre ahí, y casi siempre la misma semana del mes.",
     secondInsight: "Eso no es un patrón de limpieza, es un patrón hormonal",
     feltLine: "Y mientras tanto te sentiste sucia o descuidada por algo que nunca fue tu culpa.",
     bridgeLine: "Si viene de adentro, ahí es donde hay que trabajar. No en la cara.",
-    productLine: "Por eso mi bote lleva myo-inositol con zinc, sabor limonada rosa, de Peach Perfect.",
+    productLine: "Por eso yo ahora tomo el inositol de Peach Perfect, limonada rosa, todas las mañanas.",
+    ctaKeyword: "MANDÍBULA",
+    cta: "Si te pasa igual, escríbeme MANDÍBULA y te digo dónde buscar.",
+    caption: "Si te pasa igual, escríbeme MANDÍBULA y te digo dónde buscar.",
     scenes: [
-      scene("gancho", "Llevas dos años cambiando de skincare por un acné que no está en tu piel."),
+      scene("gancho", "Dos años cambiando de skincare por un acné que no estaba en mi piel. Nadie me avisó."),
       scene("contexto", "Y ya probaste todo. Ácido salicílico, niacinamida, la rutina coreana de diez pasos,"),
       scene("contexto", "cambiar la funda de la almohada cada tercer día. Te mejora un poco"),
       scene("contexto", "y a las dos semanas vuelve. Siempre vuelve. Pero fíjate dónde."),
@@ -90,8 +102,8 @@ function acneExample(): VideoScript {
       scene("moraleja", "en la superficie lo va a tocar. Lo estabas atacando en el lugar equivocado."),
       scene("moraleja", "Y mientras tanto te sentiste sucia o descuidada por algo que nunca fue tu culpa."),
       scene("solucion", "Si viene de adentro, ahí es donde hay que trabajar. No en la cara."),
-      scene("solucion", "Por eso mi bote lleva myo-inositol con zinc, sabor limonada rosa, de Peach Perfect.", true),
-      scene("cta", "Escríbeme SOP y te paso la fórmula completa."),
+      scene("solucion", "Por eso yo ahora tomo el inositol de Peach Perfect, limonada rosa, todas las mañanas.", true),
+      scene("cta", "Si te pasa igual, escríbeme MANDÍBULA y te digo dónde buscar."),
     ],
   };
 }
@@ -162,7 +174,7 @@ describe("base rules", () => {
 describe("five-part structure", () => {
   it("requires every part in order", () => {
     const missing = script();
-    missing.scenes[1] = scene("moraleja", "Ya cambiaste tres veces de crema y vuelve.");
+    missing.scenes[1] = scene("moraleja", "Y no era la crema.");
     expect(check(run(missing), "structure")?.ok).toBe(false);
 
     const shuffled = script();
@@ -173,7 +185,7 @@ describe("five-part structure", () => {
   it("keeps the reveal out of the context", () => {
     const early = script();
     early.scenes[1] = scene("contexto", INSIGHT);
-    early.scenes[2] = scene("moraleja", "Ya cambiaste tres veces de crema y vuelve.");
+    early.scenes[2] = scene("moraleja", "Y no era la crema.");
     const checks = run(early);
     expect(check(checks, "intrigue")?.ok).toBe(false);
     expect(check(checks, "insight")?.ok).toBe(false);
@@ -307,8 +319,8 @@ describe("video formats", () => {
 
   it("requires two speakers in dialogue formats, with roles split", () => {
     expect(check(runFormatChecks(normalizeScript(script(), "personaje")), "dialogue")?.ok).toBe(false);
-    const duo = script({ format: "personaje", hook: "¿Otra crema nueva?" });
-    duo.scenes[0] = scene("gancho", "¿Otra crema nueva? Ya van tres este mes.", false, "Amiga");
+    const duo = script({ format: "personaje", hook: "Me compré otra crema." });
+    duo.scenes[0] = scene("gancho", "Me compré otra crema. Ya van tres este mes.", false, "Amiga");
     duo.scenes[2] = scene("moraleja", INSIGHT, false, "La que sabe");
     duo.scenes[3] = scene("moraleja", FELT, false, "Amiga");
     const checks = runFormatChecks(normalizeScript(duo));
@@ -328,7 +340,7 @@ describe("duration ranges", () => {
   it("passes the 55-second acne example from the brief on every check", () => {
     const normalized = normalizeScript(acneExample(), "hac", "estandar", "1");
     expect(normalized.targetSeconds).toBe(55);
-    expect(normalized.scenes[9].voiceover).toContain("sabor limonada rosa, de pich pérfect.");
+    expect(normalized.scenes[9].voiceover).toContain("el inositol de pich pérfect, limonada rosa");
     const failing = runScriptChecks(normalized, "inositol", "organico").filter((c) => !c.ok);
     expect(failing).toEqual([]);
   });
@@ -364,7 +376,8 @@ describe("script prompt", () => {
     expect(instructions).toContain("Si el problema es [X], ahí es donde hay que trabajar.");
     expect(instructions).toContain("CADA PIEZA ES INDEPENDIENTE");
     expect(instructions).toContain("NIVEL DE CONCIENCIA");
-    expect(instructions).toContain("Llevas dos años cambiando de skincare");
+    expect(instructions).toContain("Dos años cambiando de skincare por un acné que no estaba en mi piel. Nadie me avisó.");
+    expect(instructions).toContain("EL GANCHO: EXPERIENCIA VIVIDA, NUNCA PREGUNTA");
     expect(instructions).not.toContain("Si dejaste la creatina a las tres semanas porque no viste nada");
   });
 
@@ -383,6 +396,159 @@ describe("script prompt", () => {
     expect(input).toContain("30-40 s y 70-95 palabras");
     expect(input).toContain("IDEA VALIDADA");
     expect(input).toContain("usa un formato distinto a hac");
-    expect(buildScriptInput({ idea: "x", product: "inositol", channel: "pagado" })).toContain("Escríbeme SOP");
+    expect(buildScriptInput({ idea: "x", product: "inositol", channel: "pagado" })).toContain(
+      "CTA: crea el de este video"
+    );
+    expect(
+      buildScriptInput({ idea: "x", product: "inositol", channel: "organico", ctaKeyword: "mandíbula" })
+    ).toContain("palabra clave MANDÍBULA");
   });
 });
+
+describe("dynamic CTA", () => {
+  const withCta = (keyword: string, line: string, overrides: Partial<VideoScript> = {}) => {
+    const value = script({ ctaKeyword: keyword, cta: line, caption: line, ...overrides });
+    value.scenes[5] = scene("cta", line);
+    return value;
+  };
+
+  it("accepts a keyword tied to the video", () => {
+    const checks = run(withCta("MANDÍBULA", "Si te pasa, escríbeme MANDÍBULA y te digo por qué."));
+    expect(checks.filter((c) => !c.ok)).toEqual([]);
+  });
+
+  it("requires the keyword to be said in the CTA scene", () => {
+    const value = withCta("ANTOJO", "Si te pasa, escríbeme ANTOJO y te digo por qué.");
+    value.scenes[5] = scene("cta", "Si te pasa, escríbeme y te digo por qué.");
+    expect(check(run(value), "cta")?.hard).toBe(true);
+  });
+
+  it("rejects keywords that are not one short word", () => {
+    expect(check(run(withCta("MI SOP", "Si te pasa, escríbeme MI SOP y te digo por qué.")), "ctaKeyword")?.ok).toBe(false);
+    expect(check(run(withCta("SOP2", "Si te pasa, escríbeme SOP2 y te digo por qué.")), "ctaKeyword")?.ok).toBe(false);
+  });
+
+  it("rejects offers the DM cannot deliver", () => {
+    const checks = run(withCta("SOP", "Si te pasa, comenta SOP y te mando un cupón de descuento."));
+    expect(check(checks, "ctaOffer")?.hard).toBe(true);
+  });
+
+  it("enforces a keyword pinned by the reviewer", () => {
+    const normalized = normalizeScript(withCta("ACNE", "Si te pasa, escríbeme ACNE y te digo por qué."), "hac", "corto", "1", "mandíbula");
+    expect(normalized.ctaKeyword).toBe("MANDÍBULA");
+    const checks = runScriptChecks(
+      normalizeScript(withCta("ACNE", "Si te pasa, escríbeme ACNE y te digo por qué.")),
+      "inositol",
+      "organico",
+      { requiredCtaKeyword: "mandíbula" }
+    );
+    expect(check(checks, "ctaKeywordRequested")?.hard).toBe(true);
+  });
+
+  it("normalizes keywords to one uppercase word", () => {
+    expect(normalizeCtaKeyword(" #glúteos ")).toBe("GLÚTEOS");
+  });
+});
+
+describe("story hook", () => {
+  it("rejects rhetorical-question hooks", () => {
+    for (const hook of ["¿Te pasa que tus glúteos no crecen?", "Te ha pasado que entrenas y nada cambia."]) {
+      const bad = script({ hook });
+      bad.scenes[0] = scene("gancho", hook);
+      expect(check(run(bad), "hookStory")?.hard).toBe(true);
+    }
+  });
+
+  it("accepts the brief's lived-experience hooks", () => {
+    for (const hook of [
+      "Tomé creatina un mes, no vi nada y la tiré a la basura. Ahora sé por qué no funcionó.",
+      "Tres meses tomando inositol sin ver nada. Luego descubrí que lo tomaba en el momento equivocado.",
+      "Llevas meses haciendo sentadillas y tus glúteos siguen exactamente igual. No es tu culpa.",
+    ]) {
+      const value = script({ hook });
+      const checks = run(value);
+      expect(check(checks, "hookStory")?.ok).toBe(true);
+      expect(check(checks, "hookVoice")?.ok).toBe(true);
+      expect(check(checks, "hookCuriosity")?.ok).toBe(true);
+    }
+  });
+
+  it("lets the reaction comment be a question", () => {
+    const reaction = script({ format: "reaccion", hook: "¿Y si ya probé todo el skincare?", onScreenComment: "¿Y si ya probé todo el skincare?" });
+    expect(check(run(reaction), "hookStory")).toBeUndefined();
+  });
+});
+
+describe("CTA micro-solution and product as experience", () => {
+  it("rejects a CTA that offers the link or info", () => {
+    for (const line of ["Comenta SOP y te mando el link.", "Si te pasa, comenta SOP y te mando info."]) {
+      const value = script({ cta: line, caption: line });
+      value.scenes[5] = scene("cta", line);
+      expect(check(run(value), "ctaOffer")?.ok).toBe(false);
+    }
+  });
+
+  it("requires the «Si…» opening", () => {
+    const line = "Escríbeme SOP y te digo por qué vuelve.";
+    const value = script({ cta: line, caption: line });
+    value.scenes[5] = scene("cta", line);
+    expect(check(run(value), "ctaOpening")?.hard).toBe(true);
+  });
+
+  it("accepts the brief's CTA examples", () => {
+    for (const [keyword, line] of [
+      ["GLÚTEOS", "Si quieres empezar, escríbeme GLÚTEOS aquí abajo y te digo cómo."],
+      ["DULCE", "Si sientes eso, escríbeme DULCE y te explico por qué."],
+    ]) {
+      const value = script({ ctaKeyword: keyword, cta: line, caption: line });
+      value.scenes[5] = scene("cta", line);
+      const checks = run(value);
+      expect(check(checks, "ctaOffer")?.ok).toBe(true);
+      expect(check(checks, "ctaOpening")?.ok).toBe(true);
+    }
+  });
+
+  it("rejects spec-sheet product lines", () => {
+    const spec = "La creatina de Peach Perfect es monohidratada, cinco gramos por scoop.";
+    const specScript = script({ productLine: spec });
+    specScript.scenes[4] = scene("solucion", [BRIDGE, spec], true);
+    expect(check(run(specScript), "productSpecs")?.hard).toBe(true);
+  });
+
+  it("accepts a first-person testimonial with her result and time frame", () => {
+    for (const line of [
+      "Yo llevo seis semanas tomando esta creatina y mis glúteos por fin están respondiendo.",
+      "Llevo tres semanas tomándola, limonada rosa, y se me quitó el acné.",
+    ]) {
+      const value = script({ productLine: line });
+      value.scenes[4] = scene("solucion", [BRIDGE, line], true);
+      const checks = run(value, "creatina");
+      expect(check(checks, "productEffect")?.ok).toBe(true);
+      expect(check(checks, "productSpecs")?.ok).toBe(true);
+      expect(check(checks, "productVoice")?.ok).toBe(true);
+    }
+  });
+
+  it("still rejects effects promised to her and medical claims", () => {
+    const promised = "Esta creatina te ayuda a que crezcan tus glúteos.";
+    const promisedScript = script({ productLine: promised });
+    promisedScript.scenes[4] = scene("solucion", [BRIDGE, promised], true);
+    expect(check(run(promisedScript, "creatina"), "productEffect")?.ok).toBe(false);
+
+    const claim = "Yo lo tomo diario y me regularizó el ciclo.";
+    const claimScript = script({ productLine: claim });
+    claimScript.scenes[4] = scene("solucion", [BRIDGE, claim], true);
+    expect(check(run(claimScript), "claims")?.ok).toBe(false);
+  });
+
+  it("accepts a lived-experience product line", () => {
+    const line = "Yo la tomo diario, sabor limonada rosa, y ya no la dejo.";
+    const value = script({ productLine: line });
+    value.scenes[4] = scene("solucion", [BRIDGE, line], true);
+    const checks = run(value, "creatina");
+    expect(check(checks, "productSpecs")?.ok).toBe(true);
+    expect(check(checks, "productEffect")?.ok).toBe(true);
+    expect(check(checks, "productVoice")?.ok).toBe(true);
+  });
+});
+
