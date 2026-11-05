@@ -7,22 +7,31 @@ import {
   type VideoProduct,
 } from "@/lib/video/constants";
 
-// The winning-idea checklist, run before any script is written. It is its own
-// call so a weak idea costs one short evaluation instead of a full script.
+// The winning-idea checklist, applied behind the scenes before writing. The
+// reviewer sends a short idea (a few words), not a finished angle, so the
+// checklist does not reject it: it scores the raw idea, develops it into an
+// angle that meets the filters, and the script is written from that angle.
+
+type FilterResults = Record<IdeaFilterId, { passed: boolean; reason: string }>;
 
 export interface IdeaCheck {
-  filters: Record<IdeaFilterId, { passed: boolean; reason: string }>;
+  /** The raw idea as the reviewer wrote it. */
+  filters: FilterResults;
   score: number;
+  /** The idea developed into an angle that meets the filters; the script uses it. */
+  angle: string;
+  angleFilters: FilterResults;
+  angleScore: number;
+  /** The developed angle reaches IDEA_MIN_SCORE. Never blocks writing. */
   passed: boolean;
-  /** Two rewrites of the same idea that would pass, shown when it fails. */
-  reformulations: string[];
   /** A comparable idea that already worked in another language or niche. */
   viralReference: string;
 }
 
 interface IdeaCheckOutput {
-  filters: Record<IdeaFilterId, { passed: boolean; reason: string }>;
-  reformulations: string[];
+  filters: FilterResults;
+  angle: string;
+  angleFilters: FilterResults;
   viralReference: string;
 }
 
@@ -36,23 +45,25 @@ const filterSchema = {
   },
 };
 
+const filtersSchema = {
+  type: "object",
+  additionalProperties: false,
+  required: IDEA_FILTERS.map((filter) => filter.id),
+  properties: Object.fromEntries(IDEA_FILTERS.map((filter) => [filter.id, filterSchema])),
+};
+
 const IDEA_CHECK_SCHEMA = {
   type: "object",
   additionalProperties: false,
-  required: ["filters", "reformulations", "viralReference"],
+  required: ["filters", "angle", "angleFilters", "viralReference"],
   properties: {
-    filters: {
-      type: "object",
-      additionalProperties: false,
-      required: IDEA_FILTERS.map((filter) => filter.id),
-      properties: Object.fromEntries(IDEA_FILTERS.map((filter) => [filter.id, filterSchema])),
-    },
-    reformulations: {
-      type: "array",
-      items: { type: "string" },
+    filters: { ...filtersSchema, description: "Evaluación de la idea tal como la escribió la revisora." },
+    angle: {
+      type: "string",
       description:
-        "Exactamente 2 reformulaciones de la MISMA idea de fondo, escritas como un título de video con las palabras de ella, que sí pasarían al menos 5 de los 8 filtros.",
+        "La idea desarrollada en un ángulo de video concreto (1-2 oraciones, con las palabras de ella) que conserva la idea de la revisora y cumple al menos 5 de los 8 filtros.",
     },
+    angleFilters: { ...filtersSchema, description: "Evaluación honesta del ángulo desarrollado." },
     viralReference: {
       type: "string",
       description:
@@ -62,25 +73,27 @@ const IDEA_CHECK_SCHEMA = {
 } as const;
 
 function instructions(): string {
-  return `Evalúas ideas de video corto (Reels/TikTok) para Peach Perfect, una marca mexicana de suplementos para mujeres (creatina para glúteos e inositol para hormonas y SOP). La regla del método: video viral = idea ganadora, siempre. Ningún formato, cámara ni edición salva una idea mala.
+  return `Trabajas para Peach Perfect, una marca mexicana de suplementos para mujeres (creatina para glúteos e inositol para hormonas y SOP). La revisora te manda una IDEA corta, de unas cuantas palabras: todavía no es un ángulo ni un guion. Tu trabajo es convertirla en una idea ganadora. La regla del método: video viral = idea ganadora, siempre.
 
-Pasa la idea por estos 8 filtros. Sé estricta y honesta: un filtro solo pasa si lo cumple con claridad.
+Los 8 filtros:
 ${IDEA_FILTERS.map((filter, index) => `${index + 1}. ${filter.id} (${filter.label}): ${filter.test}`).join("\n")}
+
+Pasos:
+1. Evalúa la idea tal cual (filters). Sé honesta: una idea de pocas palabras normalmente no pasa todos.
+2. Desarróllala en un ángulo (angle) que CONSERVE la idea de la revisora y la lleve a cumplir al menos ${IDEA_MIN_SCORE} filtros: encuentra la creencia que contradice, el síntoma cotidiano con las palabras de ella, lo que la hace polémica y aplicable a cualquier mujer. No cambies de tema.
+3. Evalúa el ángulo con la misma honestidad (angleFilters).
 
 Notas:
 - referencia: solo pasa si de verdad conoces un ángulo parecido que funcionó en otro idioma o nicho; descríbelo en viralReference. Nunca lo inventes.
-- Una idea que explica qué es un ingrediente, habla de fórmula, dosis o certificaciones, o compara marcas le habla al ~5% del mercado (niveles de conciencia 3-4): falla 5-50, unicidad y aplicable.
-- La idea entra por el síntoma que ella vive, no por el producto.
+- Un ángulo que explica qué es un ingrediente, habla de fórmula, dosis o certificaciones, o compara marcas le habla al ~5% del mercado (niveles de conciencia 3-4): falla 5-50, unicidad y aplicable.
+- El ángulo entra por el síntoma que ella vive, no por el producto.
 
-Niveles de conciencia válidos para reels (para orientar las reformulaciones):
+Niveles de conciencia válidos para reels (para orientar el ángulo):
 ${Object.entries(AWARENESS_LEVELS).map(([level, info]) => `- ${level}: ${info.state}. Ejemplo: "${info.example}"`).join("\n")}
 
 Ejemplos:
-- "Qué es el myo-inositol y para qué sirve" → falla contracorriente, 5-50, unicidad y aplicable. No se escribe.
-- "Tu acné no está en tu piel" → cumple contracorriente, 5-50, aplicable, polémico y formato. 5/8, procede.
-- "La creatina no te infla: lo que sentiste no es lo que crees" → 6/8.
-
-Las 2 reformulaciones conservan la idea de fondo y la reescriben para que pase al menos ${IDEA_MIN_SCORE} filtros.`;
+- Idea "qué es el myo-inositol" → como está falla contracorriente, 5-50, unicidad y aplicable. Ángulo: "Tu acné de la mandíbula no está en tu piel: por qué vuelve siempre la misma semana del mes" (6/8).
+- Idea "creatina inflama" → ángulo: "La creatina no te infla: lo que sentiste las primeras semanas no es lo que crees" (6/8).`;
 }
 
 export async function checkIdea(
@@ -96,14 +109,20 @@ export async function checkIdea(
   return { check: scoreIdeaCheck(value), model };
 }
 
+function countPassed(filters: FilterResults | undefined): number {
+  return IDEA_FILTERS.filter((filter) => filters?.[filter.id]?.passed).length;
+}
+
 /** Score in code: the model reports each filter, it does not do the math. */
 export function scoreIdeaCheck(output: IdeaCheckOutput): IdeaCheck {
-  const score = IDEA_FILTERS.filter((filter) => output.filters[filter.id]?.passed).length;
+  const angleScore = countPassed(output.angleFilters);
   return {
     filters: output.filters,
-    score,
-    passed: score >= IDEA_MIN_SCORE,
-    reformulations: (output.reformulations ?? []).slice(0, 2),
+    score: countPassed(output.filters),
+    angle: (output.angle ?? "").trim(),
+    angleFilters: output.angleFilters,
+    angleScore,
+    passed: angleScore >= IDEA_MIN_SCORE,
     viralReference: output.viralReference ?? "",
   };
 }

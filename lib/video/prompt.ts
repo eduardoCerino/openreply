@@ -12,8 +12,10 @@ import {
   VIDEO_DURATIONS,
   VIDEO_FORMATS,
   VIDEO_FORMAT_IDS,
+  HOOK_VOICES,
   type AwarenessLevel,
   type AwarenessParam,
+  type HookVoiceParam,
   type DurationTier,
   type VideoChannel,
   type VideoDuration,
@@ -432,6 +434,9 @@ export interface ScriptBrief {
   duration?: VideoDuration | null;
   awareness?: AwarenessParam | null;
   ctaKeyword?: string | null;
+  /** The idea developed by the checklist into an angle that meets the filters. */
+  angle?: string | null;
+  hookVoice?: HookVoiceParam | null;
   ideaValidated?: boolean;
   previousFormat?: VideoFormat | null;
   hookMold?: string | null;
@@ -444,6 +449,19 @@ function awarenessInstruction(brief: ScriptBrief): string {
   }
   const info = AWARENESS_LEVELS[level];
   return `Nivel de conciencia: ${level} (${info.state}). ${info.content} awarenessLevel=${level}.`;
+}
+
+function hookVoiceInstruction(brief: ScriptBrief): string {
+  const voice = brief.hookVoice ?? "auto";
+  if (voice === "auto") {
+    return "Voz del gancho: auto. Segunda persona por defecto; primera solo si el ángulo es una experiencia que ella vivió y ya resolvió. Repórtala en hookVoice.";
+  }
+  const info = HOOK_VOICES[voice];
+  return `Voz del gancho: ${voice} persona (elegida por la revisora). ${info.when} Ejemplo de patrón: "${info.example}" hookVoice=${voice}.${
+    voice === "segunda" && brief.channel === "pagado"
+      ? " Como es anuncio pagado, en segunda persona no nombres la condición de salud (SOP, acné, ciclo, hormonas): habla del síntoma cotidiano."
+      : ""
+  }`;
 }
 
 function validatedIdeaInstruction(brief: ScriptBrief): string | null {
@@ -479,7 +497,10 @@ export function buildScriptInput(
   revision?: { previous: VideoScript; feedback: string }
 ): string {
   const lines = [
-    `Idea: ${brief.idea}`,
+    `Idea de la revisora: ${brief.idea}`,
+    brief.angle
+      ? `Ángulo desarrollado con la checklist de idea ganadora (escribe el guion desde este ángulo, sin perder la idea de la revisora): ${brief.angle}`
+      : null,
     `Producto de la solución: ${
       brief.product === "creatina"
         ? "la creatina de Peach Perfect, sabor limonada rosa (glúteos)"
@@ -496,6 +517,7 @@ export function buildScriptInput(
       : "Formato: auto. Elige con la tabla de selección el que mejor comunique esta idea y explica por qué en formatReason.",
     durationInstruction(brief),
     awarenessInstruction(brief),
+    hookVoiceInstruction(brief),
     validatedIdeaInstruction(brief),
     brief.hookMold
       ? `Usa este molde de gancho: ${brief.hookMold}`

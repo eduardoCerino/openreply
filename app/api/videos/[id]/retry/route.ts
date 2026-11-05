@@ -21,6 +21,8 @@ export async function POST(_request: NextRequest, ctx: RouteProps) {
       id,
       OR: [
         { status: "FAILED" },
+        // Rejected by the old blocking checklist: write it now from its angle.
+        { status: "IDEA_REJECTED" },
         { status: "GENERATING_SCRIPT", updatedAt: { lt: new Date(Date.now() - STALE_SCRIPT_MS) } },
       ],
     },

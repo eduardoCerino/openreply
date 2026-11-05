@@ -14,6 +14,7 @@ const createSchema = z.object({
   format: z.enum(["auto", ...VIDEO_FORMAT_IDS] as [string, ...string[]]).default("auto"),
   duration: z.enum(["auto", "estandar", "corto"]).default("auto"),
   awareness: z.enum(["0", "1", "2", "auto"]).default("1"),
+  hookVoice: z.enum(["auto", "segunda", "primera"]).default("auto"),
   ideaValidated: z.boolean().default(false),
   ctaKeyword: z
     .string()

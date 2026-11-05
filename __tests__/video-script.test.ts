@@ -273,12 +273,34 @@ describe("idea checklist", () => {
       )
     ) as Parameters<typeof scoreIdeaCheck>[0]["filters"];
 
-  it("passes at 5 of 8 and blocks below", () => {
-    expect(scoreIdeaCheck({ filters: filters(5), reformulations: ["a", "b"], viralReference: "" }).passed).toBe(true);
-    const failed = scoreIdeaCheck({ filters: filters(4), reformulations: ["a", "b", "c"], viralReference: "" });
-    expect(failed.passed).toBe(false);
-    expect(failed.score).toBe(4);
-    expect(failed.reformulations).toEqual(["a", "b"]);
+  it("scores the raw idea and the developed angle separately", () => {
+    const check = scoreIdeaCheck({
+      filters: filters(2),
+      angle: "  Tu acné de la mandíbula no está en tu piel.  ",
+      angleFilters: filters(6),
+      viralReference: "",
+    });
+    expect(check.score).toBe(2);
+    expect(check.angleScore).toBe(6);
+    expect(check.angle).toBe("Tu acné de la mandíbula no está en tu piel.");
+    expect(check.passed).toBe(true);
+  });
+
+  it("never blocks: a weak angle only reports passed=false", () => {
+    const check = scoreIdeaCheck({ filters: filters(1), angle: "x", angleFilters: filters(4), viralReference: "" });
+    expect(check.passed).toBe(false);
+  });
+
+  it("writes the script from the developed angle", () => {
+    const input = buildScriptInput({
+      idea: "glúteos no crecen",
+      product: "creatina",
+      channel: "organico",
+      angle: "Haces más sentadillas y no crecen porque nadie te habló de la progresión.",
+    });
+    expect(input).toContain("Idea de la revisora: glúteos no crecen");
+    expect(input).toContain("Ángulo desarrollado con la checklist");
+    expect(input).toContain("nadie te habló de la progresión");
   });
 });
 
@@ -606,6 +628,29 @@ describe("review of a generated sentadillas script", () => {
     expect(check(checks, "productResult")?.ok).toBe(true);
     expect(check(checks, "claims")?.ok).toBe(true);
     expect(check(checks, "productEffect")?.ok).toBe(true);
+  });
+});
+
+describe("hook voice parameter", () => {
+  it("forces the voice the reviewer picked", () => {
+    expect(normalizeScript(script({ hookVoice: "primera" }), "hac", "corto", "1", null, "segunda").hookVoice).toBe("segunda");
+  });
+
+  it("makes a mismatch a requirement only when the voice was picked", () => {
+    const firstPersonHook = script({ hookVoice: "segunda", hook: "Tomé creatina un mes y la dejé. Ahora sé por qué." });
+    firstPersonHook.scenes[0] = scene("gancho", firstPersonHook.hook);
+    const picked = runScriptChecks(normalizeScript(firstPersonHook), "inositol", "organico", { requiredHookVoice: "segunda" });
+    expect(check(picked, "hookVoice")?.hard).toBe(true);
+    const auto = runScriptChecks(normalizeScript(firstPersonHook), "inositol", "organico");
+    expect(check(auto, "hookVoice")?.ok).toBe(false);
+    expect(check(auto, "hookVoice")?.hard).toBe(false);
+  });
+
+  it("tells the model the chosen voice, with the paid-ad caveat", () => {
+    const paid = buildScriptInput({ idea: "x", product: "inositol", channel: "pagado", hookVoice: "segunda" });
+    expect(paid).toContain("Voz del gancho: segunda persona (elegida por la revisora)");
+    expect(paid).toContain("no nombres la condición de salud");
+    expect(buildScriptInput({ idea: "x", product: "inositol", channel: "organico" })).toContain("Voz del gancho: auto");
   });
 });
 

@@ -300,6 +300,25 @@ export const AWARENESS_LEVELS: Record<
 };
 export const DEFAULT_AWARENESS: AwarenessParam = "1";
 
+// ─── Hook voice ─────────────────────────────────────────────────────────────
+// "auto" keeps the rule: second person by default, first person only for a
+// story she already lived and resolved.
+export type HookVoice = "segunda" | "primera";
+export type HookVoiceParam = HookVoice | "auto";
+
+export const HOOK_VOICES: Record<HookVoice, { label: string; when: string; example: string }> = {
+  segunda: {
+    label: "Segunda persona",
+    when: "Le habla a quien ve y nombra su problema. Ataca el problema.",
+    example: "Haces más y más sentadillas y tus glúteos siguen igual. Nadie te dijo que sin esto el músculo no puede crecer.",
+  },
+  primera: {
+    label: "Primera persona",
+    when: "Cuenta una experiencia que ella vivió y ya resolvió.",
+    example: "Tomé creatina un mes, no vi nada, la tiré a la basura. Ahora sé por qué no funcionó.",
+  },
+};
+
 // ─── Independent piece ──────────────────────────────────────────────────────
 // Every video reaches people who never saw the account: nothing that assumes a
 // previous video. Matched on accent-free lowercase text.

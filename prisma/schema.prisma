@@ -572,6 +572,8 @@ model VideoProject {
   ideaCheck   Json?
   // CTA keyword pinned by the reviewer; null lets each script pick its own.
   ctaKeyword  String?
+  // "auto", "segunda" or "primera" (lib/video/constants HookVoiceParam).
+  hookVoice   String?
   hookMold    String?
   // Free-text change request for the next regeneration, cleared once used.
   feedback    String?

@@ -10,7 +10,6 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import {
   IDEA_FILTERS,
-  IDEA_MIN_SCORE,
   STALE_SCRIPT_MS,
   VIDEO_DURATIONS,
   VIDEO_FORMATS,
@@ -72,12 +71,17 @@ interface Project {
   awareness: string | null;
   hookMold: string | null;
   ctaKeyword: string | null;
+  hookVoice: string | null;
   ideaValidated: boolean;
   ideaCheck: {
     filters: Record<string, { passed: boolean; reason: string }>;
     score: number;
+    /** The idea developed into an angle; absent on projects checked before. */
+    angle?: string;
+    angleFilters?: Record<string, { passed: boolean; reason: string }>;
+    angleScore?: number;
     passed: boolean;
-    reformulations: string[];
+    reformulations?: string[];
     viralReference: string;
   } | null;
   script: Script | null;
@@ -153,11 +157,11 @@ function durationSummary(script: Script, ideaScore?: number): string {
   }${ideaScore != null ? ` · idea ${ideaScore}/8` : ""}`;
 }
 
-function IdeaChecklist({ check }: { check: NonNullable<Project["ideaCheck"]> }) {
+function IdeaChecklist({ filters }: { filters: Record<string, { passed: boolean; reason: string }> }) {
   return (
     <ul className="space-y-1.5">
       {IDEA_FILTERS.map((filter) => {
-        const result = check.filters[filter.id];
+        const result = filters[filter.id];
         return (
           <li key={filter.id} className="flex items-start gap-2 text-sm">
             <span className={result?.passed ? "text-success" : "text-error"}>{result?.passed ? "✓" : "✗"}</span>
@@ -259,33 +263,6 @@ export default function VideoScriptPage() {
     </button>
   );
 
-  async function writeWithIdea(idea: string) {
-    if (!project) return;
-    setBusy(true);
-    setActionError(null);
-    const response = await fetch("/api/videos", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        idea,
-        product: project.product,
-        channel: project.channel,
-        format: project.format ?? "auto",
-        duration: project.duration ?? "auto",
-        awareness: project.awareness ?? "1",
-        hookMold: project.hookMold ?? undefined,
-        ctaKeyword: project.ctaKeyword ?? undefined,
-      }),
-    });
-    const payload = await response.json();
-    setBusy(false);
-    if (!payload.success) {
-      setActionError(payload.error);
-      return;
-    }
-    router.push(`/videos/${payload.data.id}`);
-  }
-
   function discard() {
     if (!window.confirm("¿Descartar este guion?")) return;
     void act(`/api/videos/${params.id}`, { method: "DELETE" }, () => router.push("/videos"));
@@ -304,47 +281,27 @@ export default function VideoScriptPage() {
   const script = project.script;
   const generating = project.status === "GENERATING_SCRIPT";
 
-  if (project.status === "IDEA_REJECTED" && project.ideaCheck) {
-    const check = project.ideaCheck;
+  // Left over from when the checklist blocked short ideas: it no longer does,
+  // so these can simply be written now.
+  if (project.status === "IDEA_REJECTED") {
     return (
       <div className="mx-auto max-w-3xl space-y-4">
         <Link href="/videos" className="text-sm text-muted hover:text-foreground">← Videos</Link>
-        <div className="panel space-y-4 rounded p-6">
-          <div>
-            <p className="text-base font-semibold text-foreground">
-              Esta idea no pasa la checklist: {check.score}/8 (mínimo {IDEA_MIN_SCORE})
-            </p>
-            <p className="mt-1 text-sm text-muted">
-              “{project.idea}”. Video viral = idea ganadora; ningún formato salva una idea mala, así que no se escribió
-              el guion.
-            </p>
-          </div>
-          <IdeaChecklist check={check} />
-          {check.reformulations.length > 0 && (
-            <div className="space-y-2 border-t border-border pt-4">
-              <p className="text-xs font-semibold uppercase text-muted">La misma idea, reformulada para que pase</p>
-              {check.reformulations.map((reformulation) => (
-                <div
-                  key={reformulation}
-                  className="flex flex-col gap-2 rounded border border-border bg-background p-3 sm:flex-row sm:items-center sm:justify-between"
-                >
-                  <p className="text-sm text-foreground">{reformulation}</p>
-                  <button
-                    type="button"
-                    onClick={() => void writeWithIdea(reformulation)}
-                    disabled={busy}
-                    className={`${primaryButton} shrink-0`}
-                  >
-                    Escribir con esta
-                  </button>
-                </div>
-              ))}
-            </div>
-          )}
+        <div className="panel space-y-3 rounded p-6">
+          <p className="text-base font-semibold text-foreground">Este guion quedó detenido por la checklist anterior</p>
+          <p className="text-sm text-muted">
+            “{project.idea}”. La checklist ya no bloquea: desarrolla tu idea en un ángulo que cumpla los filtros y escribe
+            el guion desde ahí.
+          </p>
           {actionError && <p className="text-sm text-error">{actionError}</p>}
-          <button type="button" onClick={discard} disabled={busy} className={secondaryButton}>
-            Descartar
-          </button>
+          <div className="flex gap-2">
+            <button type="button" onClick={retry} disabled={busy} className={primaryButton}>
+              Escribir el guion
+            </button>
+            <button type="button" onClick={discard} disabled={busy} className={secondaryButton}>
+              Descartar
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -521,6 +478,7 @@ export default function VideoScriptPage() {
                 <p className="mt-1 text-xs text-muted">
                   Molde: {script.hookMold}
                   {script.hookVoice ? ` · ${script.hookVoice} persona` : ""}
+                  {project.hookVoice && project.hookVoice !== "auto" ? " (elegida por ti)" : ""}
                 </p>
               </div>
               <div>
@@ -530,7 +488,7 @@ export default function VideoScriptPage() {
               {script.format && script.durationTier && (
                 <div>
                   <p className="text-xs font-semibold uppercase text-muted">Duración</p>
-                  <p className="mt-1 font-mono text-xs text-foreground">{durationSummary(script, project.ideaCheck?.score)}</p>
+                  <p className="mt-1 font-mono text-xs text-foreground">{durationSummary(script, project.ideaCheck?.angleScore ?? project.ideaCheck?.score)}</p>
                 </div>
               )}
               {script.newInsight && (
@@ -619,11 +577,18 @@ export default function VideoScriptPage() {
             {project.ideaCheck && (
               <details className="panel rounded p-4">
                 <summary className="cursor-pointer text-xs font-semibold uppercase text-muted">
-                  Checklist de idea · {project.ideaCheck.score}/8
+                  Checklist de idea · tu idea {project.ideaCheck.score}/8
+                  {project.ideaCheck.angleScore != null ? ` → ángulo ${project.ideaCheck.angleScore}/8` : ""}
                   {project.ideaValidated ? " · idea validada" : ""}
                 </summary>
-                <div className="mt-3">
-                  <IdeaChecklist check={project.ideaCheck} />
+                <div className="mt-3 space-y-3">
+                  {project.ideaCheck.angle && (
+                    <div>
+                      <p className="text-[11px] font-semibold uppercase text-muted">Ángulo con el que se escribió</p>
+                      <p className="mt-1 text-sm text-foreground">{project.ideaCheck.angle}</p>
+                    </div>
+                  )}
+                  <IdeaChecklist filters={project.ideaCheck.angleFilters ?? project.ideaCheck.filters} />
                   {project.ideaCheck.viralReference && (
                     <p className="mt-2 text-xs text-muted">Referencia: {project.ideaCheck.viralReference}</p>
                   )}

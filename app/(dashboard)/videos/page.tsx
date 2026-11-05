@@ -12,10 +12,12 @@ import { useEffect, useState } from "react";
 import {
   AWARENESS_LEVELS,
   HOOK_MOLDS,
+  HOOK_VOICES,
   VIDEO_DURATIONS,
   VIDEO_FORMATS,
   VIDEO_FORMAT_IDS,
   type AwarenessParam,
+  type HookVoiceParam,
   type VideoDuration,
   type VideoFormat,
 } from "@/lib/video/constants";
@@ -38,7 +40,7 @@ interface ProjectRow {
 
 const STATUS_LABEL: Record<string, string> = {
   GENERATING_SCRIPT: "Escribiendo guion",
-  IDEA_REJECTED: "Idea rechazada",
+  IDEA_REJECTED: "Detenido (reintentar)",
   SCRIPT_READY: "Guion listo para revisar",
   SCRIPT_APPROVED: "Guion aprobado",
   FAILED: "Falló",
@@ -60,6 +62,7 @@ export default function VideosPage() {
   const [format, setFormat] = useState<VideoFormat | "auto">("auto");
   const [duration, setDuration] = useState<VideoDuration>("auto");
   const [awareness, setAwareness] = useState<AwarenessParam>("1");
+  const [hookVoice, setHookVoice] = useState<HookVoiceParam>("auto");
   const [ideaValidated, setIdeaValidated] = useState(false);
   const [previousFormat, setPreviousFormat] = useState<VideoFormat>("hac");
   const [ctaKeyword, setCtaKeyword] = useState("");
@@ -94,6 +97,7 @@ export default function VideosPage() {
         format,
         duration,
         awareness,
+        hookVoice,
         ideaValidated,
         previousFormat: ideaValidated ? previousFormat : undefined,
         ctaKeyword: ctaKeyword.trim() || undefined,
@@ -181,6 +185,29 @@ export default function VideosPage() {
                   const range = VIDEO_DURATIONS[format][duration === "corto" ? "corto" : "estandar"];
                   return `${VIDEO_FORMATS[format].label}: ${range.seconds[0]}-${range.seconds[1]} s · ${range.words[0]}-${range.words[1]} palabras habladas.`;
                 })()}
+          </p>
+        </div>
+        <div>
+          <label htmlFor="video-hook-voice" className="mb-1 block text-sm font-medium text-foreground">
+            Voz del gancho
+          </label>
+          <select
+            id="video-hook-voice"
+            value={hookVoice}
+            onChange={(event) => setHookVoice(event.target.value as HookVoiceParam)}
+            className={inputClass}
+          >
+            <option value="auto">Auto: segunda persona, o primera si es una experiencia resuelta</option>
+            <option value="segunda">{HOOK_VOICES.segunda.label}: {HOOK_VOICES.segunda.when}</option>
+            <option value="primera">{HOOK_VOICES.primera.label}: {HOOK_VOICES.primera.when}</option>
+          </select>
+          <p className="mt-1 text-xs text-muted">
+            {hookVoice === "auto"
+              ? "La IA decide según el ángulo. Nunca es una pregunta retórica."
+              : `Ej.: «${HOOK_VOICES[hookVoice].example}»`}
+            {hookVoice === "segunda" && channel === "pagado"
+              ? " En anuncios, la segunda persona no nombra la condición de salud."
+              : ""}
           </p>
         </div>
         <div className="grid gap-4 sm:grid-cols-2">
@@ -306,7 +333,8 @@ export default function VideosPage() {
             {submitting ? "Enviando…" : "Generar guion"}
           </button>
           <span className="text-xs text-muted">
-            Primero se evalúa la idea (8 filtros, mínimo 5); si pasa, se escribe el guion. 1-2 minutos.
+            Basta con unas palabras: la checklist de 8 filtros la desarrolla en un ángulo ganador y se escribe el
+            guion. 1-2 minutos.
           </span>
         </div>
       </form>

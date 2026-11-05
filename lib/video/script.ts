@@ -17,13 +17,15 @@ import {
   getBrandContext,
   type AwarenessLevel,
   type AwarenessParam,
+  type HookVoice,
+  type HookVoiceParam,
   type DurationTier,
   type VideoChannel,
   type VideoDuration,
   type VideoFormat,
   type VideoProduct,
 } from "@/lib/video/config";
-import { checkIdea } from "@/lib/video/idea-check";
+import { checkIdea, type IdeaCheck } from "@/lib/video/idea-check";
 import {
   SCENE_SECTIONS,
   SCRIPT_SCHEMA,
@@ -174,7 +176,8 @@ export function normalizeScript(
   requiredFormat?: VideoFormat,
   requiredTier?: DurationTier,
   requiredAwareness?: AwarenessLevel,
-  requiredCtaKeyword?: string | null
+  requiredCtaKeyword?: string | null,
+  requiredHookVoice?: HookVoice
 ): VideoScript {
   const format =
     requiredFormat ?? (VIDEO_FORMAT_IDS.includes(script.format) ? script.format : "hac");
@@ -196,7 +199,7 @@ export function normalizeScript(
     bridgeLine: toSpoken(script.bridgeLine ?? ""),
     productLine: toSpoken(script.productLine ?? ""),
     bridgeTest: toWritten(script.bridgeTest ?? ""),
-    hookVoice: script.hookVoice === "primera" ? "primera" : "segunda",
+    hookVoice: requiredHookVoice ?? (script.hookVoice === "primera" ? "primera" : "segunda"),
     title: toWritten(script.title),
     hook: toSpoken(script.hook),
     newInsight: toSpoken(script.newInsight ?? ""),
@@ -237,7 +240,12 @@ export function runScriptChecks(
   {
     previousFormat,
     requiredCtaKeyword,
-  }: { previousFormat?: VideoFormat | null; requiredCtaKeyword?: string | null } = {}
+    requiredHookVoice,
+  }: {
+    previousFormat?: VideoFormat | null;
+    requiredCtaKeyword?: string | null;
+    requiredHookVoice?: HookVoice;
+  } = {}
 ): QualityCheck[] {
   const scenes = script.scenes;
   const first = scenes[0];
@@ -293,6 +301,8 @@ export function runScriptChecks(
   const hookLine = script.format === "reaccion" ? "" : script.hook ?? "";
   const hookNormalized = normalizeText(hookLine);
   const hookIsQuestion = /[¿?]/.test(hookLine) || HOOK_RHETORICAL.test(hookNormalized);
+  const hookVoiceMatches =
+    script.hookVoice === "primera" ? FIRST_PERSON.test(hookNormalized) : SECOND_PERSON.test(hookNormalized);
   const hookSentences = hookLine.split(/(?<=[.!…])\s+/).map((part) => part.trim()).filter(Boolean);
   const brochureHits = voice
     .map((text, index) => ({ index, match: text.match(BROCHURE)?.[1] }))
@@ -354,10 +364,10 @@ export function runScriptChecks(
               script.hookVoice === "primera"
                 ? "Gancho en primera persona (experiencia resuelta)"
                 : "Gancho en segunda persona (nombra su problema)",
-            ok:
-              script.hookVoice === "primera"
-                ? FIRST_PERSON.test(hookNormalized)
-                : SECOND_PERSON.test(hookNormalized),
+            ok: hookVoiceMatches,
+            detail: requiredHookVoice ? `pedida por ti: ${requiredHookVoice} persona` : undefined,
+            // Only a requirement when the reviewer picked the voice.
+            hard: Boolean(requiredHookVoice) && !hookVoiceMatches,
           } satisfies QualityCheck,
           {
             id: "hookSpecific",
@@ -723,28 +733,26 @@ export async function generateVideoScript(projectId: string): Promise<VideoProje
   const awareness = (project.awareness as AwarenessParam | null) ?? "1";
   const requiredAwareness: AwarenessLevel | undefined = awareness === "auto" ? undefined : awareness;
   const previousFormat = project.ideaValidated ? ((project.previousFormat as VideoFormat | null) ?? null) : null;
+  const hookVoice = (project.hookVoice as HookVoiceParam | null) ?? "auto";
+  const requiredHookVoice: HookVoice | undefined = hookVoice === "auto" ? undefined : hookVoice;
   const previous = project.script as VideoScript | null;
 
   try {
-    // Step 0, blocking: video viral = winning idea. The checklist runs once per
-    // project, before the first script; a validated idea already proved itself
-    // and is not blocked.
-    if (!previous && !project.ideaCheck) {
+    // Step 0, behind the scenes: video viral = winning idea. The reviewer
+    // sends a few words, so the checklist develops them into an angle that
+    // meets the filters and the script is written from it. It runs once per
+    // project and never blocks writing.
+    let ideaCheck = project.ideaCheck as (Partial<IdeaCheck> & { reformulations?: string[] }) | null;
+    if (!ideaCheck) {
       const { check } = await checkIdea(project.idea, product);
+      ideaCheck = check;
       await prisma.videoProject.update({
         where: { id: project.id },
         data: { ideaCheck: check as unknown as object },
       });
-      if (!check.passed && !project.ideaValidated) {
-        return await prisma.videoProject.update({
-          where: { id: project.id },
-          data: {
-            status: "IDEA_REJECTED",
-            error: `La idea cumple ${check.score}/8 filtros (mínimo 5). No se escribió el guion.`,
-          },
-        });
-      }
     }
+    // Projects checked before the checklist developed angles kept rewrites instead.
+    const angle = ideaCheck.angle || ideaCheck.reformulations?.[0] || "";
 
     const instructions = buildScriptInstructions(getBrandContext());
     const brief = {
@@ -758,6 +766,8 @@ export async function generateVideoScript(projectId: string): Promise<VideoProje
       previousFormat,
       hookMold: project.hookMold,
       ctaKeyword: project.ctaKeyword,
+      angle,
+      hookVoice,
     };
     let feedback = project.feedback && previous ? project.feedback : undefined;
     let result: { script: VideoScript; checks: QualityCheck[]; model: string } | null = null;
@@ -780,11 +790,13 @@ export async function generateVideoScript(projectId: string): Promise<VideoProje
         requiredFormat,
         requiredTier,
         requiredAwareness,
-        project.ctaKeyword
+        project.ctaKeyword,
+        requiredHookVoice
       );
       const checks = runScriptChecks(script, product, channel, {
         previousFormat,
         requiredCtaKeyword: project.ctaKeyword,
+        requiredHookVoice,
       });
       result = { script, checks, model: generated.model };
       const failedHard = checks.filter((check) => check.hard && !check.ok);

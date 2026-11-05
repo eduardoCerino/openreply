@@ -29,22 +29,17 @@ El parámetro **Duración** del formulario tiene tres opciones:
 - **Corto:** 25-30 s en cualquier formato.
 - **Auto:** el rango estándar, pero si la IA no encuentra un segundo dato real, baja a corto en vez de inflar el guion.
 
-## Paso previo: checklist de idea (bloqueante)
+## Paso previo: checklist de idea (por detrás)
 
-Video viral = idea ganadora, siempre. Antes de escribir, la idea pasa por 8 filtros en una llamada aparte (`lib/video/idea-check.ts`):
+Video viral = idea ganadora, siempre. Tú mandas una **idea** corta, de unas cuantas palabras, no un guion. Antes de escribir, una llamada aparte (`lib/video/idea-check.ts`) hace tres cosas:
 
-1. Contracorriente.
-2. Filtro 5-50.
-3. Unicidad.
-4. Aplicable a gente común.
-5. Polémico.
-6. Formato adecuado.
-7. Personaje de marca congruente.
-8. Referencia viral existente.
+1. **Evalúa tu idea tal cual** con los 8 filtros: contracorriente, filtro 5-50, unicidad, aplicable a gente común, polémico, formato adecuado, personaje de marca congruente y referencia viral existente.
+2. **La desarrolla en un ángulo** que conserva tu idea y cumple al menos 5 de 8 (`IDEA_MIN_SCORE`).
+3. **Evalúa ese ángulo.**
 
-Necesita **mínimo 5 de 8** (`IDEA_MIN_SCORE`). Si saca menos, **no se escribe el guion**: el proyecto queda como *Idea rechazada* y muestra qué filtros falló, por qué, y **2 reformulaciones** de la misma idea con un botón **Escribir con esta**. Si la idea pasa, la checklist aparece en la revisión del guion. Los filtros se editan en `IDEA_FILTERS` (`lib/video/constants.ts`).
+El guion se escribe **desde el ángulo**. **La checklist nunca bloquea**: no aparece ninguna pantalla de rechazo. En la revisión, la sección *Checklist de idea* muestra "tu idea X/8 → ángulo Y/8", el ángulo con el que se escribió y los filtros. El resumen del guion dice `idea Y/8`. Los filtros se editan en `IDEA_FILTERS` (`lib/video/constants.ts`).
 
-Una **idea validada** (ya funcionó) no se bloquea: se evalúa igual, pero solo para el reporte.
+Los guiones que se quedaron detenidos con la versión anterior (cuando la checklist sí bloqueaba) muestran un botón **Escribir el guion**.
 
 ## El gancho: segunda persona por defecto, nunca pregunta
 
@@ -52,7 +47,11 @@ Una **idea validada** (ya funcionó) no se bloquea: se evalúa igual, pero solo 
 - **Primera persona (solo cuando conviene):** cuando el ángulo es una experiencia que ella vivió y ya resolvió, contada como historia. Ejemplo: "Tomé creatina un mes, no vi nada, la tiré a la basura. Ahora sé por qué no funcionó."
 - **Estructura (en las dos voces):** una oración con el problema o la experiencia, más una segunda oración corta que abre la curiosidad sin revelar la solución.
 - **La segunda oración es específica:** anuncia una pieza concreta que falta ("Nadie me dijo que sin esto el músculo no puede crecer"). Las frases vagas como "El problema era otro", "Es otra cosa" o "No es lo que crees" se rechazan (`VAGUE_HOOK` en `lib/video/script.ts`).
-- **El guion declara su voz** en `hookVoice`, y la revisión la muestra junto al molde.
+- **Voz del gancho (formulario):**
+  - **Auto** (por defecto): segunda persona, o primera si el ángulo es una experiencia resuelta.
+  - **Segunda persona** o **Primera persona**: si eliges una, el gancho tiene que estar en esa voz. Si no lo está, el guion se reescribe.
+  - En anuncios pagados con segunda persona, el gancho no nombra la condición de salud.
+- **El guion declara su voz** en `hookVoice`, y la revisión la muestra junto al molde, con "(elegida por ti)" si la fijaste. Las voces y sus ejemplos están en `HOOK_VOICES` (`lib/video/constants.ts`).
 - **Validaciones:**
   - Nunca una pregunta retórica ("¿te pasa esto?", "¿sabías que…?"). Es una regla crítica.
   - Nunca una segunda oración vaga. También es crítica.
@@ -140,6 +139,7 @@ El formato es la puesta en escena. Lo eliges tú, o con **Auto** la IA elige el 
 1. **Videos** en el menú lateral.
 2. Escribe la idea desde el síntoma que ella vive (no desde el producto) y elige:
    - **Formato:** Auto o uno de los 7.
+   - **Duración**, **Voz del gancho**, **Nivel de conciencia** y, si aplica, **Idea ya validada** y **Palabra clave del CTA**.
    - **Producto de aterrizaje:** creatina o inositol.
    - **Canal:** *Orgánico* deja el dolor en segunda persona. *Anuncio pagado* lo reformula en tercera persona, para no chocar con las políticas de salud de Meta/TikTok.
    - **Molde de gancho:** uno de los 8 del método, o deja que la IA elija.
