@@ -91,6 +91,14 @@ interface Project {
   revision: number;
   error: string | null;
   updatedAt: string;
+  frames?: Array<{
+    id: string;
+    sceneIndex: number;
+    position: "inicio" | "final";
+    status: "PENDING" | "GENERATING" | "READY" | "FAILED";
+    error: string | null;
+    updatedAt: string;
+  }>;
 }
 
 const SECTION_LABEL: Record<Scene["section"], string> = {
@@ -218,7 +226,10 @@ export default function VideoScriptPage() {
         payload.data.status === "GENERATING_SCRIPT" &&
           Date.now() - Date.parse(payload.data.updatedAt) > STALE_SCRIPT_MS
       );
-      if (payload.data.status === "GENERATING_SCRIPT") {
+      const framesBusy = (payload.data.frames ?? []).some(
+        (frame: { status: string }) => frame.status === "PENDING" || frame.status === "GENERATING"
+      );
+      if (payload.data.status === "GENERATING_SCRIPT" || framesBusy) {
         timer = setTimeout(() => void poll(), 3000);
       }
     }
@@ -283,6 +294,10 @@ export default function VideoScriptPage() {
 
   const script = project.script;
   const generating = project.status === "GENERATING_SCRIPT";
+  const frames = project.frames ?? [];
+  const framesTotal = frames.length;
+  const framesReady = frames.filter((frame) => frame.status === "READY").length;
+  const framesBusy = frames.some((frame) => frame.status === "PENDING" || frame.status === "GENERATING");
 
   // Left over from when the checklist blocked short ideas: it no longer does,
   // so these can simply be written now.
@@ -380,9 +395,25 @@ export default function VideoScriptPage() {
         </div>
       )}
       {project.status === "SCRIPT_APPROVED" && (
-        <div className="rounded-lg border border-success/30 bg-success/10 p-4 text-sm text-foreground">
-          Guion aprobado. Siguiente paso: generar las {(script?.scenes.length ?? 0) * 2} imágenes (inicial y final de
-          cada escena) y los {script?.scenes.length ?? 0} clips de video. Esa fase todavía no está disponible.
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-lg border border-success/30 bg-success/10 p-4 text-sm text-foreground">
+          <span>
+            Guion aprobado.{" "}
+            {framesReady === framesTotal && framesTotal > 0
+              ? `Las ${framesTotal} imágenes están listas. Siguiente fase: los clips de video (todavía no disponible).`
+              : framesBusy
+                ? `Generando imágenes: ${framesReady} de ${(script?.scenes.length ?? 0) * 2} listas…`
+                : `Genera las ${(script?.scenes.length ?? 0) * 2} imágenes (inicial y final de cada escena) con las fotos de referencia.`}
+          </span>
+          {!framesBusy && framesReady < (script?.scenes.length ?? 0) * 2 && (
+            <button
+              type="button"
+              onClick={() => void act(`/api/videos/${params.id}/frames`, { method: "POST" })}
+              disabled={busy}
+              className={primaryButton}
+            >
+              {framesTotal > 0 ? "Generar las que faltan" : "Generar imágenes"}
+            </button>
+          )}
         </div>
       )}
       {(project.error || actionError) && (
@@ -455,6 +486,45 @@ export default function VideoScriptPage() {
                   </>
                 )}
                 <p className="mt-2 text-sm text-muted">{scene.visual}</p>
+                {frames.some((frame) => frame.sceneIndex === index) && (
+                  <div className="mt-3 grid grid-cols-2 gap-2">
+                    {(["inicio", "final"] as const).map((position) => {
+                      const frame = frames.find((item) => item.sceneIndex === index && item.position === position);
+                      if (!frame) return <div key={position} />;
+                      return (
+                        <div key={position} className="space-y-1">
+                          <p className="text-[11px] font-semibold uppercase text-muted">Imagen {position}</p>
+                          {frame.status === "READY" ? (
+                            // eslint-disable-next-line @next/next/no-img-element -- private image served by the API
+                            <img
+                              src={`/api/videos/frames/${frame.id}?v=${encodeURIComponent(frame.updatedAt)}`}
+                              alt={`Escena ${index + 1}, imagen ${position}`}
+                              className="aspect-[9/16] w-full rounded object-cover"
+                            />
+                          ) : (
+                            <div className="flex aspect-[9/16] w-full items-center justify-center rounded bg-background p-2 text-center text-xs text-muted">
+                              {frame.status === "FAILED"
+                                ? frame.error ?? "Falló"
+                                : frame.status === "GENERATING"
+                                  ? "Generando…"
+                                  : "En cola"}
+                            </div>
+                          )}
+                          {(frame.status === "READY" || frame.status === "FAILED") && (
+                            <button
+                              type="button"
+                              onClick={() => void act(`/api/videos/frames/${frame.id}/regenerate`, { method: "POST" })}
+                              disabled={busy}
+                              className="text-xs text-accent hover:underline"
+                            >
+                              Regenerar
+                            </button>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
                 {scene.shots && scene.shots.length > 0 && (
                   <ul className="mt-1 space-y-0.5 text-xs text-muted">
                     {scene.shots.map((shot) => (

@@ -10,7 +10,15 @@ export async function GET(_request: NextRequest, ctx: RouteProps) {
   const { error } = await requireBlogAdmin();
   if (error) return error;
   const { id } = await ctx.params;
-  const project = await prisma.videoProject.findUnique({ where: { id } });
+  const project = await prisma.videoProject.findUnique({
+    where: { id },
+    include: {
+      frames: {
+        select: { id: true, sceneIndex: true, position: true, status: true, error: true, updatedAt: true },
+        orderBy: [{ sceneIndex: "asc" }, { position: "desc" }],
+      },
+    },
+  });
   if (!project) {
     return NextResponse.json({ success: false, error: "Not found" }, { status: 404 });
   }

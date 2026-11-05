@@ -230,9 +230,21 @@ El modelo queda guardado en el proyecto, así que **Reescribir** y **Reintentar*
 
 Lo genera el worker de Railway, en la cola `video-generation` (`lib/video/jobs.ts`). Usa `OPENAI_API_KEY`, la misma que el blog. El modelo se elige en el formulario. Los proyectos se guardan en la tabla `VideoProject` (migración `20261104120000_video_projects`).
 
+## Fase 2: imágenes (fotogramas)
+
+**Fotos de referencia.** En **Videos**, la sección *Fotos de referencia* tiene 4 espacios: modelo de creatina, bote de creatina, modelo de inositol y bote de inositol. Las fotos se reducen a WebP de máximo 1536 px y se guardan en la base de datos (`VideoReference`), **no en el repositorio**: el fork es público y son personas reales. Solo se pueden ver desde el panel con sesión de admin. La modelo de un producto nunca se usa en videos del otro. **Usa solo fotos de personas que dieron su consentimiento** para el uso de su imagen con IA.
+
+**Generación.** En un guion aprobado, **Generar imágenes** crea los 22 fotogramas (inicial y final de cada una de las 11 escenas) en el worker, uno por uno, con `images/edits` de OpenAI (`gpt-image-2.5-flare`, 864×1536, 9:16):
+- **Fotograma inicial:** foto de la modelo, más la del bote si el producto aparece en esa escena, más el prompt de la escena y su primer plano.
+- **Fotograma final:** lo mismo, más el fotograma inicial como referencia, para que sea el mismo plano después del movimiento.
+- **Lo que se le pide al modelo de imágenes:** misma cara, cabello y cuerpo que la modelo de referencia, el bote idéntico a su foto, encuadres de buen gusto y sin texto ni logos extra.
+
+Tarda unos 10-15 minutos por video. La pantalla muestra el avance y cada imagen se puede **Regenerar** por separado. Si falla alguna, **Generar las que faltan** solo repite esas. El código está en `lib/video/frames.ts` y los fotogramas en la tabla `VideoFrame`.
+
+**Costo:** 22 ediciones de imagen por video, más las que regeneres.
+
 ## Pendiente (siguientes fases)
 
-1. Generar las imágenes (inicial y final de cada escena: 2 por cada 5 s) con el modelo de imágenes de OpenAI, usando `startFramePrompt`/`endFramePrompt`, la protagonista y el estilo visual.
-2. Generar los clips (uno por escena) con el modelo de video a partir de cada par de imágenes y `motionPrompt`.
-3. Unir los clips en un solo video (por ejemplo con ffmpeg en el worker) y agregar voz y texto en pantalla.
-4. Cron de publicación, igual que el blog.
+1. Generar los clips (uno por escena) con el modelo de video a partir de cada par de fotogramas y `motionPrompt`.
+2. Unir los clips en un solo video (ffmpeg en el worker) y agregar voz (TTS de la locución) y texto en pantalla.
+3. Cron de publicación, igual que el blog.

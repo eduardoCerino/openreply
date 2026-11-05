@@ -226,7 +226,7 @@ export const SCRIPT_SCHEMA = {
           },
           productVisible: { type: "boolean", description: "true solo si el bote aparece en esta escena." },
           startFramePrompt: str(
-            "Prompt en inglés para la imagen del PRIMER fotograma de la escena (vertical 9:16, fotorrealista). Repite la descripción de la protagonista."
+            "Prompt en inglés para la imagen del PRIMER fotograma de la escena (vertical 9:16, fotorrealista). Llama a la protagonista \"the woman from the model reference\" y describe ropa, acción, lugar y encuadre."
           ),
           endFramePrompt: str(
             "Prompt en inglés para la imagen del ÚLTIMO fotograma de la escena. Debe ser el mismo plano después del movimiento y servir de puente visual a la escena siguiente."
@@ -434,10 +434,11 @@ PROHIBIDO EN TODO EL GUION
 - Datos de producto que no estén en la ficha del documento. Inositol siempre 80:1.
 
 IMÁGENES (para la fase siguiente)
-- Las mismas personas en todo el video (campo character, una descripción por personaje) y un estilo visual fijo (campo visualStyle): mujeres mexicanas reales de 20-40 años, en situaciones cotidianas creíbles (casa, baño, cocina, gym de barrio, recámara), luz natural, tonos rosa y durazno sutiles. Nada clínico.
+- La protagonista es la MODELO DE REFERENCIA del producto: su foto real se pasa al generar cada imagen, así que en character NO describas su cara ni su cuerpo; describe solo su ropa, peinado del día y estilo (y, si hay otro personaje, a ese sí descríbelo completo). En los prompts de fotograma llámala "the woman from the model reference".
+- Un estilo visual fijo (campo visualStyle): situaciones cotidianas creíbles (casa, baño, cocina, gym, recámara, auto), luz natural, tonos rosa y durazno sutiles. Nada clínico. Encuadres de buen gusto, sin poses sexualizadas.
 - Los fotogramas siguen el formato: hac a cámara fija; vof b-roll de manos, detalle y producto; pov desde la mano de quien graba; personaje con el cambio de ropa o encuadre de cada personaje; vlog en movimiento; dinamico con encuadres variados; reaccion con ella frente a cámara (la captura del comentario se superpone en edición).
-- Cada prompt de fotograma es autosuficiente: repite la descripción de la protagonista y el estilo, en inglés, fotorrealista, vertical 9:16.
-- Sin texto, letras ni logos dentro de las imágenes (el texto en pantalla se agrega en edición). Cuando aparezca el bote, descríbelo como un bote rosa de suplemento en polvo sin etiqueta legible.
+- Cada prompt de fotograma es autosuficiente: ropa, acción, lugar, encuadre y estilo, en inglés, fotorrealista, vertical 9:16; la protagonista es "the woman from the model reference".
+- Sin texto, letras ni logos dentro de las imágenes (el texto en pantalla se agrega en edición). Cuando aparezca el bote, descríbelo como "the Peach Perfect tub from the product reference" (su foto real se pasa al generar la imagen).
 - El fotograma final de una escena y el inicial de la siguiente deben conectar visualmente.
 
 GUARDRAILS (sección 11 del documento)

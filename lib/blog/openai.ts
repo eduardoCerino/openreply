@@ -92,6 +92,46 @@ export async function generateStructured<T>({
   return { value: JSON.parse(text) as T, model: textModel };
 }
 
+/**
+ * Image edit with reference images (Images API, JSON body): the references
+ * keep a person and a product consistent across frames. Returns WebP.
+ */
+export async function generateWithReferences({
+  prompt,
+  references,
+  size,
+}: {
+  prompt: string;
+  references: Array<{ data: Buffer | Uint8Array; mimeType: string }>;
+  size: string;
+}): Promise<{ data: Buffer; mimeType: string }> {
+  const { imageModel } = getBlogConfig();
+  const result = await withRetry(
+    "OpenAI image edit",
+    () =>
+      openaiPost<{ data?: Array<{ b64_json?: string }> }>(
+        "/images/edits",
+        {
+          model: imageModel,
+          prompt,
+          images: references.map((reference) => ({
+            image_url: `data:${reference.mimeType};base64,${Buffer.from(reference.data).toString("base64")}`,
+          })),
+          size,
+          quality: "medium",
+          output_format: "webp",
+          output_compression: 85,
+          n: 1,
+        },
+        240_000
+      ),
+    { attempts: 3, baseDelayMs: 5000 }
+  );
+  const b64 = result.data?.[0]?.b64_json;
+  if (!b64) throw new Error("OpenAI image edit response had no image data");
+  return { data: Buffer.from(b64, "base64"), mimeType: "image/webp" };
+}
+
 // Covers are 16:9. The image model needs sides divisible by 16, so it renders
 // 1536x864 and sharp scales it down to a light 1200x675 WebP.
 const GENERATE_SIZE = "1536x864";

@@ -586,6 +586,50 @@ model VideoProject {
   createdById String?
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
+  frames      VideoFrame[]
 
   @@index([status, createdAt])
+}
+
+// Reference photos the frame generator keeps the video consistent with: the
+// model (one per product, used with her consent) and the product tub.
+model VideoReference {
+  id        String   @id @default(cuid())
+  product   String
+  // "modelo" or "producto" (lib/video/constants REFERENCE_KINDS).
+  kind      String
+  data      Bytes
+  mimeType  String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([product, kind])
+}
+
+enum VideoFrameStatus {
+  PENDING
+  GENERATING
+  READY
+  FAILED
+}
+
+// The start and end image of each 5-second scene: the video model renders a
+// clip between the two.
+model VideoFrame {
+  id         String           @id @default(cuid())
+  projectId  String
+  sceneIndex Int
+  // "inicio" or "final".
+  position   String
+  status     VideoFrameStatus @default(PENDING)
+  prompt     String?
+  data       Bytes?
+  mimeType   String?
+  error      String?
+  createdAt  DateTime         @default(now())
+  updatedAt  DateTime         @updatedAt
+  project    VideoProject     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, sceneIndex, position])
+  @@index([projectId])
 }

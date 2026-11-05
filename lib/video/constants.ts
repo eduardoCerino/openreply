@@ -21,6 +21,16 @@ export type VideoTextModel = (typeof VIDEO_TEXT_MODELS)[number]["id"];
 export const VIDEO_TEXT_MODEL_IDS = VIDEO_TEXT_MODELS.map((model) => model.id) as VideoTextModel[];
 export const DEFAULT_VIDEO_TEXT_MODEL: VideoTextModel = "gpt-6.1-terra";
 
+// ─── Frames ─────────────────────────────────────────────────────────────────
+// Reference photos per product: the model (used with her consent, never in the
+// other product's videos) and the product tub.
+export const REFERENCE_KINDS = ["modelo", "producto"] as const;
+export type ReferenceKind = (typeof REFERENCE_KINDS)[number];
+export const FRAME_POSITIONS = ["inicio", "final"] as const;
+export type FramePosition = (typeof FRAME_POSITIONS)[number];
+// Vertical 9:16; the image model needs sides divisible by 16.
+export const FRAME_SIZE = "864x1536";
+
 // A script normally takes under a minute. After this long in "writing" it is
 // treated as lost (usually a worker restart) and can be retried from the panel.
 export const STALE_SCRIPT_MS = 4 * 60_000;

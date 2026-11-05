@@ -1,14 +1,20 @@
 import { Queue, Worker, type Job } from "bullmq";
 import { getRedisConnection } from "@/lib/queue/client";
+import { generateFrame, generatePendingFrames } from "@/lib/video/frames";
 import { generateVideoScript } from "@/lib/video/script";
 
-// Video work runs in the worker like the blog. Phase 1 only writes scripts;
-// frame images and clips will be added as further job kinds.
+// Video work runs in the worker like the blog: scripts (phase 1) and the
+// scene frames (phase 2). Clips will be added as a further job kind.
 
 export const VIDEO_QUEUE_NAME = "video-generation";
 export const SCRIPT_JOB = "video-script";
+export const FRAMES_JOB = "video-frames";
+export const FRAME_JOB = "video-frame";
 
-export type VideoJob = { kind: typeof SCRIPT_JOB; projectId: string; revision: number };
+export type VideoJob =
+  | { kind: typeof SCRIPT_JOB; projectId: string; revision: number }
+  | { kind: typeof FRAMES_JOB; projectId: string }
+  | { kind: typeof FRAME_JOB; frameId: string };
 
 let videoQueue: Queue<VideoJob> | null = null;
 
@@ -38,6 +44,14 @@ export async function enqueueScriptJob(
   return getVideoQueue().add(SCRIPT_JOB, { kind: SCRIPT_JOB, projectId, revision }, { jobId });
 }
 
+export async function enqueueFramesJob(projectId: string) {
+  return getVideoQueue().add(FRAMES_JOB, { kind: FRAMES_JOB, projectId }, { jobId: `${FRAMES_JOB}_${projectId}_${Date.now()}` });
+}
+
+export async function enqueueFrameJob(frameId: string) {
+  return getVideoQueue().add(FRAME_JOB, { kind: FRAME_JOB, frameId }, { jobId: `${FRAME_JOB}_${frameId}_${Date.now()}` });
+}
+
 async function processVideoJob(job: Job<VideoJob>) {
   const startedAt = Date.now();
   console.log(`[Video Worker] ${job.name} ${job.id} started`);
@@ -50,6 +64,18 @@ async function processVideoJob(job: Job<VideoJob>) {
         }`
       );
       return project.status;
+    }
+    case FRAMES_JOB: {
+      const result = await generatePendingFrames(job.data.projectId);
+      console.log(
+        `[Video Worker] ${job.name} ${job.id} finished in ${Math.round((Date.now() - startedAt) / 1000)}s: ${result.ready}/${result.total} frames`
+      );
+      return result;
+    }
+    case FRAME_JOB: {
+      const frame = await generateFrame(job.data.frameId);
+      console.log(`[Video Worker] ${job.name} ${job.id}: ${frame.status}${frame.error ? ` (${frame.error.slice(0, 300)})` : ""}`);
+      return frame.status;
     }
   }
 }
