@@ -587,6 +587,7 @@ model VideoProject {
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
   frames      VideoFrame[]
+  clips       VideoClip[]
 
   @@index([status, createdAt])
 }
@@ -631,5 +632,32 @@ model VideoFrame {
   project    VideoProject     @relation(fields: [projectId], references: [id], onDelete: Cascade)
 
   @@unique([projectId, sceneIndex, position])
+  @@index([projectId])
+}
+
+enum VideoClipStatus {
+  PENDING
+  GENERATING
+  READY
+  FAILED
+}
+
+// One 5-second clip per scene, animated by Pruna's P-Video from the scene's
+// start frame (always draft mode at 720p), with the audio Pruna generates.
+model VideoClip {
+  id           String          @id @default(cuid())
+  projectId    String
+  sceneIndex   Int
+  status       VideoClipStatus @default(PENDING)
+  prompt       String?
+  predictionId String?
+  data         Bytes?
+  mimeType     String?
+  error        String?
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+  project      VideoProject    @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@unique([projectId, sceneIndex])
   @@index([projectId])
 }

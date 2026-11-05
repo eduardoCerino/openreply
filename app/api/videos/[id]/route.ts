@@ -17,6 +17,10 @@ export async function GET(_request: NextRequest, ctx: RouteProps) {
         select: { id: true, sceneIndex: true, position: true, status: true, error: true, updatedAt: true },
         orderBy: [{ sceneIndex: "asc" }, { position: "desc" }],
       },
+      clips: {
+        select: { id: true, sceneIndex: true, status: true, error: true, updatedAt: true },
+        orderBy: { sceneIndex: "asc" },
+      },
     },
   });
   if (!project) {

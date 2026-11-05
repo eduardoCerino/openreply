@@ -1,16 +1,18 @@
 import { prisma } from "@/lib/db/client";
 import { generateWithReferences } from "@/lib/blog/openai";
 import {
-  FRAME_POSITIONS,
   FRAME_SIZE,
   type FramePosition,
   type VideoProduct,
 } from "@/lib/video/constants";
 import type { VideoScene, VideoScript } from "@/lib/video/prompt";
 
-// Phase 2: the start and end frame of every scene, generated from the model's
-// and the product's reference photos so the same woman and the same tub
-// appear across the whole video.
+// Phase 2: the start frame of every scene, generated from the model's and the
+// product's reference photos so the same woman and the same tub appear across
+// the whole video. P-Video animates each clip from this one image, so no end
+// frame is generated (it would double the image cost).
+
+const GENERATED_POSITIONS: FramePosition[] = ["inicio"];
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -70,14 +72,14 @@ async function loadReferences(product: VideoProduct) {
   };
 }
 
-/** Creates the 2 frames per scene (missing or failed ones) as PENDING. */
+/** Creates the start frame of each scene (missing or failed ones) as PENDING. */
 export async function prepareFrames(projectId: string): Promise<number> {
   const project = await prisma.videoProject.findUniqueOrThrow({ where: { id: projectId } });
   const script = project.script as VideoScript | null;
   if (!script?.scenes?.length) throw new Error("El proyecto no tiene guion");
   let queued = 0;
   for (let sceneIndex = 0; sceneIndex < script.scenes.length; sceneIndex++) {
-    for (const position of FRAME_POSITIONS) {
+    for (const position of GENERATED_POSITIONS) {
       const existing = await prisma.videoFrame.findUnique({
         where: { projectId_sceneIndex_position: { projectId, sceneIndex, position } },
         select: { status: true },

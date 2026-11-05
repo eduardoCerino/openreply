@@ -230,21 +230,30 @@ El modelo queda guardado en el proyecto, así que **Reescribir** y **Reintentar*
 
 Lo genera el worker de Railway, en la cola `video-generation` (`lib/video/jobs.ts`). Usa `OPENAI_API_KEY`, la misma que el blog. El modelo se elige en el formulario. Los proyectos se guardan en la tabla `VideoProject` (migración `20261104120000_video_projects`).
 
-## Fase 2: imágenes (fotogramas)
+## Fase 2: imágenes iniciales
 
-**Fotos de referencia.** En **Videos**, la sección *Fotos de referencia* tiene 4 espacios: modelo de creatina, bote de creatina, modelo de inositol y bote de inositol. Las fotos se reducen a WebP de máximo 1536 px y se guardan en la base de datos (`VideoReference`), **no en el repositorio**: el fork es público y son personas reales. Solo se pueden ver desde el panel con sesión de admin. La modelo de un producto nunca se usa en videos del otro. **Usa solo fotos de personas que dieron su consentimiento** para el uso de su imagen con IA.
+**Fotos de referencia.**
+- En **Videos**, la sección *Fotos de referencia* tiene 4 espacios: modelo de creatina, bote de creatina, modelo de inositol y bote de inositol.
+- Las fotos se reducen a WebP de máximo 1536 px y se guardan en la base de datos (`VideoReference`), **no en el repositorio**, porque el fork es público y son personas reales. Solo se pueden ver desde el panel con sesión de admin.
+- La modelo de un producto nunca se usa en los videos del otro.
+- **Usa solo fotos de personas que dieron su consentimiento** para el uso de su imagen con IA.
 
-**Generación.** En un guion aprobado, **Generar imágenes** crea los 22 fotogramas (inicial y final de cada una de las 11 escenas) en el worker, uno por uno, con `images/edits` de OpenAI (`gpt-image-2.5-flare`, 864×1536, 9:16):
-- **Fotograma inicial:** foto de la modelo, más la del bote si el producto aparece en esa escena, más el prompt de la escena y su primer plano.
-- **Fotograma final:** lo mismo, más el fotograma inicial como referencia, para que sea el mismo plano después del movimiento.
-- **Lo que se le pide al modelo de imágenes:** misma cara, cabello y cuerpo que la modelo de referencia, el bote idéntico a su foto, encuadres de buen gusto y sin texto ni logos extra.
+**Generación.** En un guion aprobado, **Generar imágenes** crea **la imagen inicial de cada escena** (11 en total). No se genera imagen final: P-Video anima cada clip a partir de una sola imagen, y así el costo de imágenes queda a la mitad.
+- **Modelo:** el worker usa `images/edits` de OpenAI (`gpt-image-2.5-flare`, 864×1536, 9:16) con la foto de la modelo, más la del bote si el producto aparece en esa escena.
+- **Lo que se le pide:** la misma cara, cabello y cuerpo que la referencia, el bote idéntico a su foto, encuadres de buen gusto y sin texto.
+- **Regenerar:** cada imagen se puede regenerar por separado. El código está en `lib/video/frames.ts`.
 
-Tarda unos 10-15 minutos por video. La pantalla muestra el avance y cada imagen se puede **Regenerar** por separado. Si falla alguna, **Generar las que faltan** solo repite esas. El código está en `lib/video/frames.ts` y los fotogramas en la tabla `VideoFrame`.
+## Fase 3: clips con P-Video (Pruna)
 
-**Costo:** 22 ediciones de imagen por video, más las que regeneres.
+Cuando las 11 imágenes están listas, **Generar clips** anima cada escena con **P-Video** de Pruna (`lib/video/pruna.ts` y `lib/video/clips.ts`):
+- **Imagen:** la imagen inicial se sube a `/v1/files` y se pasa como `image`.
+- **Configuración:** **siempre `draft: true` y `720p`** (`CLIP_SETTINGS`), con 5 s por clip y `save_audio: true`. **El audio lo genera Pruna:** el prompt incluye la locución de la escena (en grafía fonética), el movimiento (`motionPrompt`), los planos y las pausas, y pide que ella hable en español de México sincronizado con los labios, sin música.
+- **Proceso:** el worker crea la predicción, consulta su estado cada 5 s y descarga el MP4. Guarda el video en la base de datos (`VideoClip`), porque el link de Pruna caduca en 24 horas. Genera 3 clips a la vez.
+- **Revisión:** cada clip se ve en su escena y se puede **Regenerar clip**. Si Pruna bloquea un clip por moderación, el motivo aparece en la escena.
+- **Costo:** 11 clips × 5 s × $0.005 = **≈ $0.28 USD por video** (draft 720p).
+- **Variable nueva:** `PRUNA_API_KEY`, en **Vercel y en el worker de Railway**.
 
 ## Pendiente (siguientes fases)
 
-1. Generar los clips (uno por escena) con el modelo de video a partir de cada par de fotogramas y `motionPrompt`.
-2. Unir los clips en un solo video (ffmpeg en el worker) y agregar voz (TTS de la locución) y texto en pantalla.
-3. Cron de publicación, igual que el blog.
+1. Unir los 11 clips en un solo video de 55 s (ffmpeg en el worker) y agregar el texto en pantalla.
+2. Cron de publicación, igual que el blog.
