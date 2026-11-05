@@ -42,6 +42,7 @@ interface Script {
   secondInsight?: string;
   onScreenComment?: string;
   hookMold: string;
+  hookVoice?: "segunda" | "primera";
   hook: string;
   symptom: string;
   newInsight?: string;
@@ -517,7 +518,10 @@ export default function VideoScriptPage() {
               <div>
                 <p className="text-xs font-semibold uppercase text-muted">Gancho</p>
                 <p className="mt-1 font-medium text-foreground">{script.hook}</p>
-                <p className="mt-1 text-xs text-muted">Molde: {script.hookMold}</p>
+                <p className="mt-1 text-xs text-muted">
+                  Molde: {script.hookMold}
+                  {script.hookVoice ? ` · ${script.hookVoice} persona` : ""}
+                </p>
               </div>
               <div>
                 <p className="text-xs font-semibold uppercase text-muted">Síntoma</p>

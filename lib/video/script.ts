@@ -100,8 +100,18 @@ const BRIDGE_PROMISE = /\b(vas a ver|veras|vas a notar|notaras|te va a|te van a|
 const HOOK_RHETORICAL = /\b(te pasa|te ha pasado|te paso|sabias que|alguna vez|te suena|eres de las)\b/;
 // First-person markers: what she did or felt, said by her.
 const FIRST_PERSON = /\b(yo|me|mi|mis|tome|deje|llevo|llevaba|estaba|pense|empece|probe|compre|hice|tire|descubri|tuve|senti|vi|fui|era|cambie|gaste|segui)\b/;
-// A lived experience said to her ("llevas meses…") also reads as a story.
-const LIVED_SECOND_PERSON = /^(llevas|llevabas|tomaste|dejaste|probaste|gastaste|cambiaste|hiciste)\b/;
+// Second person: talks to her about her problem ("haces", "tus glúteos").
+const SECOND_PERSON = /\b(tu|tus|te|ti|contigo|haces|llevas|llevabas|tienes|sientes|estas|eres|quieres|tomas|tomaste|dejaste|probaste|entrenas|comes|gastaste|cambiaste|hiciste|sigues|buscas)\b/;
+
+// A hook's second sentence must announce a concrete missing piece; these
+// stock phrases tease nothing and do not stop the scroll.
+const VAGUE_HOOK = /\b(el problema (era|es|podria ser|puede ser) otro|es otra cosa|era otra cosa|no es lo que (crees|piensas|imaginas)|hay algo mas|la respuesta te va a sorprender)\b/;
+
+// The testimonial must carry a physical result: a body area or outcome plus a
+// change ("mis glúteos por fin empezaron a responder"). A change of mind alone
+// ("dejé de pensar que…") is not a result.
+const BODY_OUTCOME = /\b(gluteos?|musculos?|fuerza|serie|series|piernas?|piel|acne|granos|mandibula|barbilla|ciclo|regla|periodo|antojos?|hambre|energia|cansancio|cuerpo|cadera|abdomen|hinchazon|cabello|vello)\b/;
+const CHANGE_MARKER = /\b(por fin|empez\w*|ya no|ya se|ahora|cambi\w*|respond\w*|crec\w*|not\w*|se ve\w*|se siente\w*|dejo de|dejaron de|mas (fuerte|firmes?|tranquila|estable|redond\w*))\b/;
 
 // Talking to the 3-4 awareness levels (brand vs brand, certifications).
 const LEVEL_34 = /\b(vs|versus|otras marcas|otra marca|la competencia|certificad[ao]s?|nsf|gmp)\b/;
@@ -186,6 +196,7 @@ export function normalizeScript(
     bridgeLine: toSpoken(script.bridgeLine ?? ""),
     productLine: toSpoken(script.productLine ?? ""),
     bridgeTest: toWritten(script.bridgeTest ?? ""),
+    hookVoice: script.hookVoice === "primera" ? "primera" : "segunda",
     title: toWritten(script.title),
     hook: toSpoken(script.hook),
     newInsight: toSpoken(script.newInsight ?? ""),
@@ -339,8 +350,23 @@ export function runScriptChecks(
           } satisfies QualityCheck,
           {
             id: "hookVoice",
-            label: "Gancho en primera persona (experiencia vivida)",
-            ok: FIRST_PERSON.test(hookNormalized) || LIVED_SECOND_PERSON.test(hookNormalized),
+            label:
+              script.hookVoice === "primera"
+                ? "Gancho en primera persona (experiencia resuelta)"
+                : "Gancho en segunda persona (nombra su problema)",
+            ok:
+              script.hookVoice === "primera"
+                ? FIRST_PERSON.test(hookNormalized)
+                : SECOND_PERSON.test(hookNormalized),
+          } satisfies QualityCheck,
+          {
+            id: "hookSpecific",
+            label: "Segunda oración del gancho específica, no vaga",
+            ok: !VAGUE_HOOK.test(hookNormalized),
+            detail: VAGUE_HOOK.test(hookNormalized)
+              ? `«${hookNormalized.match(VAGUE_HOOK)?.[0]}» no genera curiosidad: anuncia la pieza concreta que falta`
+              : undefined,
+            hard: VAGUE_HOOK.test(hookNormalized),
           } satisfies QualityCheck,
           {
             id: "hookCuriosity",
@@ -473,6 +499,16 @@ export function runScriptChecks(
       ok: !productSpec,
       detail: productSpec ? `«${productSpec}» es ficha técnica` : undefined,
       hard: Boolean(productSpec),
+    },
+    {
+      id: "productResult",
+      label: "El testimonio trae un resultado físico",
+      ok: BODY_OUTCOME.test(productLine) && CHANGE_MARKER.test(productLine),
+      detail:
+        BODY_OUTCOME.test(productLine) && CHANGE_MARKER.test(productLine)
+          ? undefined
+          : "solo un cambio mental o una mención; agrega el beneficio en el cuerpo que prometió el gancho",
+      hard: !(BODY_OUTCOME.test(productLine) && CHANGE_MARKER.test(productLine)),
     },
     {
       id: "productVoice",

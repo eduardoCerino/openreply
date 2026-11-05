@@ -32,8 +32,8 @@ function scene(section: Section, text: string | string[], productVisible = false
 
 const INSIGHT = "Ese patrón es la pista: no empieza en tu piel, empieza en tus hormonas.";
 const FELT = "Y tú cambiando de crema cada mes, pensando que eras tú la que lo hacía mal.";
-const BRIDGE = "Si viene de adentro, ahí hay que trabajar.";
-const PRODUCT = "Yo ahora lo tomo cada mañana, limonada rosa.";
+const BRIDGE = "Eso se trabaja por dentro.";
+const PRODUCT = "Yo lo tomo cada mañana y mi piel por fin está tranquila.";
 const CTA = "Si te pasa, escríbeme SOP y te digo por qué.";
 
 /** A 30-second (corto) HAC script in the five parts. */
@@ -47,6 +47,7 @@ function script(overrides: Partial<VideoScript> = {}): VideoScript {
     targetSeconds: 30,
     awarenessLevel: "1",
     hookMold: "propio",
+    hookVoice: "primera",
     hook: "Cambié de crema tres veces y el acné de la mandíbula volvió. Siempre ahí.",
     symptom: "acné en la mandíbula que no se va con skincare",
     newInsight: INSIGHT,
@@ -83,27 +84,28 @@ function acneExample(): VideoScript {
   return {
     ...script(),
     durationTier: "estandar",
-    hook: "Dos años cambiando de skincare por un acné que no estaba en mi piel. Nadie me avisó.",
+    hookVoice: "segunda",
+    hook: "Dos años cambiando de skincare por un acné que no está en tu piel. Nadie te dijo dónde.",
     newInsight: "Mandíbula y barbilla. Siempre ahí, y casi siempre la misma semana del mes.",
     secondInsight: "Eso no es un patrón de limpieza, es un patrón hormonal",
     feltLine: "Y mientras tanto te sentiste sucia o descuidada por algo que nunca fue tu culpa.",
     bridgeLine: "Si viene de adentro, ahí es donde hay que trabajar. No en la cara.",
-    productLine: "Por eso yo ahora tomo el inositol de Peach Perfect, limonada rosa, todas las mañanas.",
+    productLine: "Yo ahora tomo el inositol de Peach Perfect cada mañana, y mi mandíbula por fin está tranquila.",
     ctaKeyword: "MANDÍBULA",
-    cta: "Si te pasa igual, escríbeme MANDÍBULA y te digo dónde buscar.",
-    caption: "Si te pasa igual, escríbeme MANDÍBULA y te digo dónde buscar.",
+    cta: "Si te pasa, escríbeme MANDÍBULA y te digo dónde buscar.",
+    caption: "Si te pasa, escríbeme MANDÍBULA y te digo dónde buscar.",
     scenes: [
-      scene("gancho", "Dos años cambiando de skincare por un acné que no estaba en mi piel. Nadie me avisó."),
+      scene("gancho", "Dos años cambiando de skincare por un acné que no está en tu piel. Nadie te dijo dónde."),
       scene("contexto", "Y ya probaste todo. Ácido salicílico, niacinamida, la rutina coreana de diez pasos,"),
-      scene("contexto", "cambiar la funda de la almohada cada tercer día. Te mejora un poco"),
+      scene("contexto", "Te mejora un poco"),
       scene("contexto", "y a las dos semanas vuelve. Siempre vuelve. Pero fíjate dónde."),
       scene("moraleja", "Mandíbula y barbilla. Siempre ahí, y casi siempre la misma semana del mes. Eso no es"),
       scene("moraleja", "un patrón de limpieza, es un patrón hormonal, y por eso ningún producto que se queda"),
       scene("moraleja", "en la superficie lo va a tocar. Lo estabas atacando en el lugar equivocado."),
       scene("moraleja", "Y mientras tanto te sentiste sucia o descuidada por algo que nunca fue tu culpa."),
       scene("solucion", "Si viene de adentro, ahí es donde hay que trabajar. No en la cara."),
-      scene("solucion", "Por eso yo ahora tomo el inositol de Peach Perfect, limonada rosa, todas las mañanas.", true),
-      scene("cta", "Si te pasa igual, escríbeme MANDÍBULA y te digo dónde buscar."),
+      scene("solucion", "Yo ahora tomo el inositol de Peach Perfect cada mañana, y mi mandíbula por fin está tranquila.", true),
+      scene("cta", "Si te pasa, escríbeme MANDÍBULA y te digo dónde buscar."),
     ],
   };
 }
@@ -340,7 +342,7 @@ describe("duration ranges", () => {
   it("passes the 55-second acne example from the brief on every check", () => {
     const normalized = normalizeScript(acneExample(), "hac", "estandar", "1");
     expect(normalized.targetSeconds).toBe(55);
-    expect(normalized.scenes[9].voiceover).toContain("el inositol de pich pérfect, limonada rosa");
+    expect(normalized.scenes[9].voiceover).toContain("el inositol de pich pérfect cada mañana");
     const failing = runScriptChecks(normalized, "inositol", "organico").filter((c) => !c.ok);
     expect(failing).toEqual([]);
   });
@@ -376,8 +378,8 @@ describe("script prompt", () => {
     expect(instructions).toContain("Si el problema es [X], ahí es donde hay que trabajar.");
     expect(instructions).toContain("CADA PIEZA ES INDEPENDIENTE");
     expect(instructions).toContain("NIVEL DE CONCIENCIA");
-    expect(instructions).toContain("Dos años cambiando de skincare por un acné que no estaba en mi piel. Nadie me avisó.");
-    expect(instructions).toContain("EL GANCHO: EXPERIENCIA VIVIDA, NUNCA PREGUNTA");
+    expect(instructions).toContain("Dos años cambiando de skincare por un acné que no está en tu piel. Nadie te dijo dónde.");
+    expect(instructions).toContain("EL GANCHO: SEGUNDA PERSONA POR DEFECTO, NUNCA PREGUNTA");
     expect(instructions).not.toContain("Si dejaste la creatina a las tres semanas porque no viste nada");
   });
 
@@ -459,13 +461,14 @@ describe("story hook", () => {
     }
   });
 
-  it("accepts the brief's lived-experience hooks", () => {
-    for (const hook of [
-      "Tomé creatina un mes, no vi nada y la tiré a la basura. Ahora sé por qué no funcionó.",
-      "Tres meses tomando inositol sin ver nada. Luego descubrí que lo tomaba en el momento equivocado.",
-      "Llevas meses haciendo sentadillas y tus glúteos siguen exactamente igual. No es tu culpa.",
-    ]) {
-      const value = script({ hook });
+  it("accepts second-person problem hooks and first-person resolved stories", () => {
+    for (const [hookVoice, hook] of [
+      ["segunda", "Haces más y más sentadillas y tus glúteos siguen igual. El problema podría ser otro."],
+      ["segunda", "Llevas meses haciendo sentadillas y tus glúteos siguen exactamente igual. No es tu culpa."],
+      ["primera", "Tomé creatina un mes, no vi nada y la tiré a la basura. Ahora sé por qué no funcionó."],
+      ["primera", "Tres meses tomando inositol sin ver nada. Luego descubrí que lo tomaba en el momento equivocado."],
+    ] as const) {
+      const value = script({ hook, hookVoice });
       const checks = run(value);
       expect(check(checks, "hookStory")?.ok).toBe(true);
       expect(check(checks, "hookVoice")?.ok).toBe(true);
@@ -549,6 +552,60 @@ describe("CTA micro-solution and product as experience", () => {
     expect(check(checks, "productSpecs")?.ok).toBe(true);
     expect(check(checks, "productEffect")?.ok).toBe(true);
     expect(check(checks, "productVoice")?.ok).toBe(true);
+  });
+});
+
+describe("hook voice", () => {
+  it("defaults to second person when the model omits the voice", () => {
+    const value = { ...script() } as Partial<VideoScript>;
+    delete value.hookVoice;
+    expect(normalizeScript(value as VideoScript).hookVoice).toBe("segunda");
+  });
+
+  it("warns when the hook does not match its declared voice", () => {
+    const value = script({ hookVoice: "segunda", hook: "Tomé creatina un mes y la dejé. Ahora sé por qué." });
+    expect(check(run(value), "hookVoice")?.ok).toBe(false);
+  });
+});
+
+describe("review of a generated sentadillas script", () => {
+  // The script the generator produced, and the brief's two corrections.
+  const sentadillas = (hook: string, productLine: string): VideoScript => {
+    const value = script({
+      ctaKeyword: "SENTADILLAS",
+      hookVoice: "primera",
+      hook,
+      productLine,
+      bridgeLine: "Si el problema es cómo entreno y descanso, ahí es donde tengo que trabajar.",
+      cta: "Si tus glúteos siguen igual, escríbeme SENTADILLAS y te digo cómo empezar.",
+      caption: "Si tus glúteos siguen igual, escríbeme SENTADILLAS y te digo cómo empezar.",
+    });
+    value.scenes[0] = scene("gancho", hook);
+    value.scenes[4] = scene("solucion", [value.bridgeLine, productLine], true);
+    value.scenes[5] = scene("cta", value.cta);
+    return value;
+  };
+
+  it("flags the vague hook and the product line without a physical result", () => {
+    const original = sentadillas(
+      "Hice más y más sentadillas y mis glúteos seguían igual. El problema era otro.",
+      "Yo sumé la creatina de pich pérfect a mi rutina y dejé de pensar que necesitaba hacer sentadillas sin parar."
+    );
+    const checks = run(original, "creatina");
+    expect(check(checks, "hookSpecific")?.hard).toBe(true);
+    expect(check(checks, "productResult")?.hard).toBe(true);
+  });
+
+  it("passes both checks with the corrections", () => {
+    const corrected = sentadillas(
+      "Hice más y más sentadillas y mis glúteos seguían igual. Nadie me dijo que sin esto el músculo no puede crecer.",
+      "Yo sumé la creatina de Peach Perfect a mi rutina y en unas semanas mis glúteos por fin empezaron a responder."
+    );
+    const checks = run(corrected, "creatina");
+    expect(check(checks, "hookSpecific")?.ok).toBe(true);
+    expect(check(checks, "productResult")?.ok).toBe(true);
+    expect(check(checks, "claims")?.ok).toBe(true);
+    expect(check(checks, "productEffect")?.ok).toBe(true);
   });
 });
 

@@ -46,14 +46,21 @@ Necesita **mínimo 5 de 8** (`IDEA_MIN_SCORE`). Si saca menos, **no se escribe e
 
 Una **idea validada** (ya funcionó) no se bloquea: se evalúa igual, pero solo para el reporte.
 
-## El gancho: experiencia vivida, nunca pregunta
+## El gancho: segunda persona por defecto, nunca pregunta
 
-El gancho se escribe como si fuera la propia clienta recordando algo que le pasó, de preferencia en primera persona. Así no suena a anuncio: suena a alguien que vivió lo mismo. Su estructura es una oración que ella podría decir en voz alta, más una segunda oración corta que abre la curiosidad sin revelar la solución. Por ejemplo: "Tomé creatina un mes, no vi nada y la tiré a la basura. Ahora sé por qué no funcionó."
-
+- **Segunda persona (por defecto):** le habla directo a quien ve y nombra su problema como afirmación, para que se identifique y para atacar el problema. Ejemplo: "Haces más y más sentadillas y tus glúteos siguen igual. Nadie te dijo que sin esto el músculo no puede crecer."
+- **Primera persona (solo cuando conviene):** cuando el ángulo es una experiencia que ella vivió y ya resolvió, contada como historia. Ejemplo: "Tomé creatina un mes, no vi nada, la tiré a la basura. Ahora sé por qué no funcionó."
+- **Estructura (en las dos voces):** una oración con el problema o la experiencia, más una segunda oración corta que abre la curiosidad sin revelar la solución.
+- **La segunda oración es específica:** anuncia una pieza concreta que falta ("Nadie me dijo que sin esto el músculo no puede crecer"). Las frases vagas como "El problema era otro", "Es otra cosa" o "No es lo que crees" se rechazan (`VAGUE_HOOK` en `lib/video/script.ts`).
+- **El guion declara su voz** en `hookVoice`, y la revisión la muestra junto al molde.
 - **Validaciones:**
-  - El gancho no puede ser una pregunta retórica ("¿te pasa esto?", "¿sabías que…?"). Es una regla crítica.
-  - Avisa si no suena a primera persona o si le falta la segunda oración corta.
-- **Por formato:** en POV y Personaje, el gancho es la primera línea de un personaje en primera persona. En Reacción, el gancho es el comentario de la seguidora, y ese sí puede ser pregunta.
+  - Nunca una pregunta retórica ("¿te pasa esto?", "¿sabías que…?"). Es una regla crítica.
+  - Nunca una segunda oración vaga. También es crítica.
+  - Avisa si el gancho no corresponde a la voz declarada o si le falta la segunda oración corta.
+- **Por formato y canal:**
+  - En POV y Personaje, el gancho es la primera línea de diálogo.
+  - En Reacción, el gancho es el comentario de la seguidora, y ese sí puede ser pregunta.
+  - En anuncios pagados no se usa segunda persona sobre la condición de salud: se usa primera o tercera persona.
 
 ## Las 5 partes del guion
 
@@ -90,7 +97,7 @@ Marca **Idea ya validada** y elige en qué formato se publicó. El guion conserv
 
 Nunca "como les conté", "parte 2", "ya saben que yo…" ni "en el video anterior". Cada guion se escribe como primer contacto, y estas frases son una falla crítica (`SERIES_PHRASES`).
 
-**El tiempo extra se llena con sustancia:** un segundo mecanismo o detalle concreto, una objeción resuelta, una consecuencia práctica o, en diálogo, una réplica más del personaje que no sabe. Nunca con repeticiones, muletillas, adjetivos decorativos, introducciones ni recapitulaciones. El prompt incluye como ejemplo de referencia el guion completo del "acné de la mandíbula" (HAC, 55 s, nivel 1, idea 6/8), con sus 5 partes y la frase puente. Su gancho se pasó a primera persona con la regla del gancho.
+**El tiempo extra se llena con sustancia:** un segundo mecanismo o detalle concreto, una objeción resuelta, una consecuencia práctica o, en diálogo, una réplica más del personaje que no sabe. Nunca con repeticiones, muletillas, adjetivos decorativos, introducciones ni recapitulaciones. El prompt incluye como ejemplo de referencia el guion completo del "acné de la mandíbula" (HAC, 55 s, nivel 1, idea 6/8), con sus 5 partes y la frase puente. Su gancho va en segunda persona, la voz por defecto.
 
 Los rangos viven en `VIDEO_DURATIONS` (`lib/video/constants.ts`). La revisión muestra un resumen como `HAC 45-55s · 55s · rango 125-155 · 148 palabras ✓ · nivel 1 · idea 6/8`.
 
@@ -199,6 +206,7 @@ Todas estas reglas, salvo el número de palabras por escena y la segunda persona
 
 **El producto (4b) como testimonio.** En primera persona y conectado con el dolor del gancho: cuándo lo toma, cómo lo metió a su rutina y el resultado que ella vivió, plazo incluido. Por ejemplo: "Yo llevo seis semanas tomando esta creatina sabor limonada rosa, una vez al día, y mis glúteos por fin están respondiendo al entrenamiento". El producto es el medio, no el mensaje.
 - **Nunca características técnicas:** gramos, mg, monohidratada, proporciones, ingredientes o certificaciones. Es una regla crítica.
+- **Siempre un resultado físico:** el beneficio en el cuerpo que prometió el gancho (glúteos, fuerza, piel, ciclo, antojos…). Un cambio mental ("dejé de pensar que necesitaba más sentadillas") no es un resultado y se rechaza. La línea tiene que nombrar una parte del cuerpo o un resultado y un cambio (`BODY_OUTCOME` y `CHANGE_MARKER` en `lib/video/script.ts`).
 - **Se siguen rechazando:**
   - Los efectos prometidos a quien ve ("te ayuda a…", "regula…").
   - Las promesas con plazo dirigidas a ella ("vas a ver en 8 semanas").

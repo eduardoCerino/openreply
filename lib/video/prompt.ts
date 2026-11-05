@@ -60,6 +60,8 @@ export interface VideoScript {
   targetSeconds: number;
   awarenessLevel: AwarenessLevel;
   hookMold: string;
+  /** "segunda" by default (names her problem); "primera" for a story she already resolved. */
+  hookVoice: "segunda" | "primera";
   hook: string;
   symptom: string;
   newInsight: string;
@@ -97,6 +99,7 @@ export const SCRIPT_SCHEMA = {
     "targetSeconds",
     "awarenessLevel",
     "hookMold",
+    "hookVoice",
     "hook",
     "symptom",
     "newInsight",
@@ -136,8 +139,13 @@ export const SCRIPT_SCHEMA = {
       description: "Nivel de conciencia para el que está escrito el guion.",
     },
     hookMold: str("Molde de gancho usado (copia el molde) o 'propio' si no encaja ninguno."),
+    hookVoice: {
+      type: "string",
+      enum: ["segunda", "primera"],
+      description: "Voz del gancho: segunda (por defecto, nombra el problema de quien ve) o primera (experiencia que ella vivió y resolvió).",
+    },
     hook: str(
-      "La frase exacta del gancho, en primera persona como experiencia vivida y sin preguntas: narración en formatos de una voz, primera línea de diálogo en POV/Personaje, el comentario en Reacción."
+      "La frase exacta del gancho, sin preguntas: en segunda persona por defecto o en primera si es una experiencia resuelta. Narración en formatos de una voz, primera línea de diálogo en POV/Personaje, el comentario en Reacción."
     ),
     symptom: str("El síntoma cotidiano del que parte el video, con las palabras de ella."),
     newInsight: str(
@@ -249,20 +257,20 @@ function selectionTable(): string {
 // method brief.
 const FEW_SHOT = `EJEMPLO (few-shot) · idea "el acné de la mandíbula" · formato hac · estandar · 55 s · 11 escenas · nivel 1 · checklist 6/8
 [1 · GANCHO]
-Dos años cambiando de skincare por un acné que no estaba en mi piel. Nadie me avisó.
+Dos años cambiando de skincare por un acné que no está en tu piel. Nadie te dijo dónde.
 [2 · CONTEXTO — intriga, sin revelar]
-Y ya probaste todo. Ácido salicílico, niacinamida, la rutina coreana de diez pasos, cambiar la funda de la almohada cada tercer día. Te mejora un poco y a las dos semanas vuelve. Siempre vuelve. Pero fíjate dónde.
+Y ya probaste todo. Ácido salicílico, niacinamida, la rutina coreana de diez pasos. Te mejora un poco y a las dos semanas vuelve. Siempre vuelve. Pero fíjate dónde.
 [3 · MORALEJA — aquí sí se revela]
 Mandíbula y barbilla. Siempre ahí, y casi siempre la misma semana del mes. Eso no es un patrón de limpieza, es un patrón hormonal, y por eso ningún producto que se queda en la superficie lo va a tocar. Lo estabas atacando en el lugar equivocado.
 Y mientras tanto te sentiste sucia o descuidada por algo que nunca fue tu culpa.
 [4a · PUENTE]
 Si viene de adentro, ahí es donde hay que trabajar. No en la cara.
 [4b · PRODUCTO]
-Por eso yo ahora tomo el inositol de pich pérfect, limonada rosa, todas las mañanas.
+Yo ahora tomo el inositol de pich pérfect cada mañana, y mi mandíbula por fin está tranquila.
 [5 · CTA]
-Si te pasa igual, escríbeme MANDÍBULA y te digo dónde buscar.
+Si te pasa, escríbeme MANDÍBULA y te digo dónde buscar.
 TEXTO EN PANTALLA: Peach Perfect · Inositol limonada rosa
-Por qué funciona: el gancho es una experiencia vivida en primera persona con una segunda oración corta que abre la curiosidad; el contexto nombra el problema y descarta lo obvio pero NO dice todavía que es hormonal (esa intriga sostiene hasta el segundo 18); la moraleja trae los dos datos nuevos (mandíbula y barbilla la misma semana del mes = patrón hormonal; lo que se queda en la superficie no lo toca) y la emoción ("te sentiste sucia o descuidada"); la frase puente sigue siendo verdadera sin el producto; el producto se nombra sin efecto atribuido.`;
+Por qué funciona: el gancho va en segunda persona y nombra el problema como afirmación, con una segunda oración corta que abre la curiosidad; el contexto nombra el problema y descarta lo obvio pero NO dice todavía que es hormonal (esa intriga sostiene hasta el segundo 18); la moraleja trae los dos datos nuevos (mandíbula y barbilla la misma semana del mes = patrón hormonal; lo que se queda en la superficie no lo toca) y la emoción ("te sentiste sucia o descuidada"); la frase puente sigue siendo verdadera sin el producto; el producto se nombra sin efecto atribuido.`;
 
 export function buildScriptInstructions(brandContext: string): string {
   return `Eres guionista de videos cortos verticales (Reels/TikTok) para Peach Perfect. Sigue al pie de la letra el documento de marca y método que va abajo: es la única fuente de datos sobre la marca, los productos y la estructura. No inventes nada que no esté ahí (fórmulas, sabores, presentaciones, certificaciones, precios, testimonios).
@@ -304,17 +312,22 @@ Tiempos para un video de ~55 s:
 En los rangos de 30-40 s y en corto las 5 partes se mantienen: el contexto se reduce a ~8 s, la moraleja lleva un solo dato nuevo más la emoción, y la frase puente es media frase ("eso se trabaja por dentro"). La solución pasa de ~8 a ~12 s en los videos de 45-55 s; ese tiempo sale del contexto, no del total de palabras.
 - El bote del producto NO aparece antes de la solución.
 
-EL GANCHO: EXPERIENCIA VIVIDA, NUNCA PREGUNTA
-- Escríbelo en primera persona, como si fuera la propia clienta recordando algo que le pasó, no como una pregunta que la describe desde afuera. Así no siente que le venden: siente que alguien vivió lo mismo que ella. El cerebro reconoce una historia y se detiene; una pregunta de anuncio la ve mil veces al día.
-- Prohibidas las preguntas retóricas ("¿te pasa esto?", "¿sabías que…?", "¿te ha pasado…?"): están quemadas. El gancho no lleva signos de interrogación.
-- Estructura: una primera oración que ella podría haber dicho en voz alta (lo que hizo, lo que pasó, cuánto tiempo), y una segunda oración CORTA que genera curiosidad sin revelar la solución.
-- Ejemplos de patrón (no los copies; adapta el patrón al tema, sea glúteos, piel, cabello o ciclo):
-  - "Tomé creatina un mes, no vi nada y la tiré a la basura. Ahora sé por qué no funcionó, y es que nadie me explicó esto."
-  - "Tres meses tomando inositol sin ver nada. Luego descubrí que lo estaba tomando en el momento equivocado."
-  - "Llevas meses haciendo sentadillas… y tus glúteos siguen exactamente igual. No es tu culpa." (segunda persona que suena a experiencia vivida, no a pregunta; la primera persona es la preferida)
-- Los moldes de gancho se adaptan a esta voz: el molde da el ángulo, la primera persona da la forma.
-- En pov y personaje el gancho es la primera línea de diálogo, dicha por un personaje en primera persona ("Me compré otra crema. Ya van tres este mes."). En reaccion el gancho es el comentario en pantalla: ahí sí puede ser una pregunta, porque la hace la seguidora.
-- En anuncio pagado la primera persona además evita hablarle a ella de su condición en segunda persona.
+EL GANCHO: SEGUNDA PERSONA POR DEFECTO, NUNCA PREGUNTA
+- Por defecto escríbelo en SEGUNDA PERSONA (hookVoice=segunda): le habla directo a quien está viendo y nombra su problema como afirmación, para que se identifique al instante. Ataca el problema.
+  Ejemplo: "Haces más y más sentadillas y tus glúteos siguen igual. Nadie te dijo que sin esto el músculo no puede crecer."
+- Usa PRIMERA PERSONA (hookVoice=primera) solo cuando el ángulo es una experiencia que ella vivió y ya resolvió: lo cuenta como historia, no como anuncio.
+  Ejemplo: "Tomé creatina un mes, no vi nada, la tiré a la basura. Ahora sé por qué no funcionó."
+- Prohibidas las preguntas retóricas ("¿te pasa esto?", "¿sabías que…?", "¿te ha pasado…?"): están quemadas. El gancho no lleva signos de interrogación, en ninguna de las dos voces.
+- Estructura: una primera oración con el problema o la experiencia, dicha como ella lo diría, y una segunda oración CORTA que genera curiosidad sin revelar la solución.
+- La segunda oración tiene que ser ESPECÍFICA: anuncia una pieza concreta que falta ("sin esto", "nadie me dijo que…", "lo que me faltaba"), algo que ella quiere saber ya. Una frase vaga no para el scroll.
+  - Mal (vaga): "El problema era otro." / "Es otra cosa." / "No es lo que crees."
+  - Bien (específica): "Hice más y más sentadillas y mis glúteos seguían igual. Nadie me dijo que sin esto el músculo no puede crecer."
+- Más ejemplos de patrón (no los copies; adapta el patrón al tema, sea glúteos, piel, cabello o ciclo):
+  - segunda: "Llevas meses haciendo sentadillas… y tus glúteos siguen exactamente igual. No es tu culpa."
+  - primera: "Tres meses tomando inositol sin ver nada. Luego descubrí que lo estaba tomando en el momento equivocado."
+- Los moldes de gancho se adaptan a la voz elegida: el molde da el ángulo, la voz da la forma.
+- En pov y personaje el gancho es la primera línea de diálogo, dicha por un personaje. En reaccion el gancho es el comentario en pantalla: ahí sí puede ser una pregunta, porque la hace la seguidora.
+- En anuncio pagado no uses segunda persona sobre la condición de salud (SOP, acné, ciclo, hormonas): usa primera persona o tercera ("hay mujeres que…").
 
 CTA (parte 5): dinámico, uno a la medida de cada video
 - Empieza con una frase de entrada natural, "Si [contexto del dolor del video]", para conectar con quien llegó hasta ahí, y después la instrucción: "Si [contexto], escríbeme [PALABRA] y te digo [micro-solución]".
@@ -337,15 +350,18 @@ El test: la frase puente debe seguir siendo verdadera aunque borres el producto 
 Ejemplos:
 - Mal (producto de la nada): "Myo-inositol con zinc, sabor limonada rosa, de pich pérfect." (sin puente)
 - Mal (claim médico): "Por eso tomo myo-inositol, que regula tus hormonas y te limpia la piel."
-- Bien: "Si el problema es hormonal, ahí es donde hay que trabajar, no en la cara." + "Por eso yo ahora tomo el inositol de pich pérfect, limonada rosa, todas las mañanas, y mi mandíbula por fin está tranquila."
-- Bien (creatina, dejó a las tres semanas): "Y si vas a darle las semanas que pide, por lo menos que sea una creatina que sí te tomes todos los días." + "Yo la tomo diario, sabor limonada rosa, y ya no la dejo a las tres semanas."
-- Bien (creatina, miedo a inflarse): "O sea que el miedo nunca fue a la creatina, fue a algo que ni siquiera pasa así." + "Yo ahora tomo la creatina de pich pérfect, limonada rosa, sin ese miedo."
+- Bien: "Si el problema es hormonal, ahí es donde hay que trabajar, no en la cara." + "Yo ahora tomo el inositol de pich pérfect cada mañana, y mi mandíbula por fin está tranquila."
+- Bien (creatina, dejó a las tres semanas): "Y si vas a darle las semanas que pide, por lo menos que sea una creatina que sí te tomes todos los días." + "Yo la tomo diario, sabor limonada rosa, y la última serie por fin dejó de sentirse imposible."
+- Bien (creatina, miedo a inflarse): "O sea que el miedo nunca fue a la creatina, fue a algo que ni siquiera pasa así." + "Yo ahora tomo la creatina de pich pérfect, limonada rosa, y mis piernas se ven más firmes, no infladas."
 
 EL PRODUCTO (parte 4b): TESTIMONIO EN PRIMERA PERSONA, NO FICHA
 - Nunca describas sus características técnicas: nada de gramos, mg, monohidratada, proporciones, ingredientes ni certificaciones. Eso es ficha de catálogo.
 - Preséntalo en primera persona, como testimonio: cuándo lo toma, cómo lo metió a su rutina y el resultado que ELLA vivió, el mismo que abrió el gancho, no los ingredientes. El producto se siente como el medio, no como el mensaje.
 - Mal: "La creatina de pich pérfect es monohidratada, sabor limonada rosa."
 - Bien: "Yo llevo seis semanas tomando esta creatina sabor limonada rosa, una vez al día, y mis glúteos por fin están respondiendo al entrenamiento."
+- El testimonio SIEMPRE trae un resultado FÍSICO, el beneficio en el cuerpo que prometió el gancho (glúteos, fuerza, piel, ciclo, antojos, energía). Un cambio mental no es un resultado.
+  - Mal (cambio mental): "Yo sumé la creatina de pich pérfect a mi rutina y dejé de pensar que necesitaba hacer sentadillas sin parar."
+  - Bien (resultado físico): "Yo sumé la creatina de pich pérfect a mi rutina y en unas semanas mis glúteos por fin empezaron a responder al entrenamiento."
 - Es su experiencia, contada por ella: nunca una promesa hacia quien ve ("vas a ver", "te va a funcionar") ni un claim médico ("me curó", "me reguló las hormonas").
 
 NIVEL DE CONCIENCIA (para quién se escribe)
