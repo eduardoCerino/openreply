@@ -79,6 +79,7 @@ model Workspace {
   members           WorkspaceMember[]
   invitations       WorkspaceInvitation[]
   instagramAccounts InstagramAccount[]
+  facebookPages     FacebookPage[]
   automations       Automation[]
   dmLogs            DmLog[]
   trackedLinks      TrackedLink[]
@@ -160,8 +161,31 @@ model InstagramAccount {
   dmLogs      DmLog[]
   linkClicks  LinkClick[]
   followerSnapshots FollowerSnapshot[]
+  facebookPages     FacebookPage[]
 
   @@index([workspaceId])
+}
+
+// A Facebook Page connected with Facebook Login. Its comments and Messenger
+// messages run the campaigns of the Instagram account it is linked to (when
+// the campaign has facebookEnabled), and final videos can be posted to it as
+// Reels. accessToken is the Page token, encrypted like the Instagram one.
+model FacebookPage {
+  id                 String   @id @default(cuid())
+  workspaceId        String
+  pageId             String   @unique
+  name               String
+  accessToken        String
+  instagramAccountId String?
+  webhookSubscribed  Boolean  @default(false)
+  connectedAt        DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  workspace        Workspace         @relation(fields: [workspaceId], references: [id], onDelete: Cascade)
+  instagramAccount InstagramAccount? @relation(fields: [instagramAccountId], references: [id], onDelete: SetNull)
+
+  @@index([workspaceId])
+  @@index([instagramAccountId])
 }
 
 /// Daily follower total for one account. Instagram only retains ~30 days of
@@ -217,6 +241,10 @@ model Automation {
   publicReplyEnabled Boolean @default(false)
   publicReplyMessage String?
   publicReplyMessages String[] @default([])
+  // Also run on the linked Facebook Page: comments on the matching Facebook
+  // post (the same video published from the panel) or any post when
+  // matchAnyPost, and Messenger messages when dmTriggerEnabled.
+  facebookEnabled Boolean @default(false)
   isActive       Boolean @default(true)
   wholeWordMatch Boolean @default(true)
   reportShareSlug    String? @unique
@@ -705,6 +733,10 @@ model VideoPublication {
   caption            String
   containerId        String?
   mediaId            String?
+  // Facebook: the Page post id of the Reel (mediaId is its video id), which
+  // is what comment webhooks carry.
+  externalPostId     String?
+  facebookPageId     String?
   permalink          String?
   error              String?
   publishedAt        DateTime?

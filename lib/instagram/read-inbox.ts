@@ -1,6 +1,6 @@
 import * as meta from "@/lib/meta/client";
 import { zernioRequest } from "@/lib/zernio/client";
-import type { InstagramContext } from "./context";
+import { facebookUnsupported, type InstagramContext } from "./context";
 
 export async function getConversations({
   context,
@@ -11,6 +11,7 @@ export async function getConversations({
 }): Promise<meta.InstagramConversation[]> {
   if (context.provider === "META")
     return meta.getConversations(context.accessToken, igUserId);
+  if (context.provider === "FACEBOOK") throw facebookUnsupported("This Instagram read");
   const result = await zernioRequest<{
     data: {
       id: string;
@@ -48,6 +49,7 @@ export async function getConversationMessages({
 }): Promise<meta.InstagramMessage[]> {
   if (context.provider === "META")
     return meta.getConversationMessages(context.accessToken, conversationId);
+  if (context.provider === "FACEBOOK") throw facebookUnsupported("This Instagram read");
   const result = await zernioRequest<{
     messages: {
       id: string;

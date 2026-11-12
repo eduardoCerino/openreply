@@ -261,7 +261,7 @@ Cuando los 11 clips están listos aparece **Video final y publicación** → **U
 - **Volver a unir:** si regeneras un clip, usa **Volver a unir**; el archivo anterior se borra del Blob.
 - **Variable nueva:** `BLOB_READ_WRITE_TOKEN`. En Vercel → *Storage* → *Create* → *Blob*, conecta el store al proyecto (Vercel agrega la variable sola) y **copia el mismo valor al worker de Railway**.
 
-## Fase 5: publicar en Instagram Reels
+## Fase 5: publicar en Instagram y Facebook Reels
 
 Con el video listo, eliges la cuenta y revisas el **caption** (viene del guion más los hashtags; máximo 2200 caracteres y 30 hashtags). Luego **Publicar en Reels** (`lib/video/publish.ts`):
 - **Flujo:** el worker crea el contenedor de Reel con `video_url`, revisa su estado cada 15 s (hasta 10 min) y lo publica con `media_publish`. Al final guarda el link del Reel (`VideoPublication`).
@@ -270,9 +270,10 @@ Con el video listo, eliges la cuenta y revisas el **caption** (viene del guion m
 - **Permiso nuevo:** `instagram_business_content_publish`. Ya se pide al conectar, pero **la cuenta conectada antes no lo tiene**: hay que agregar el permiso en la app de Meta (*Instagram → Permisos*) y **desconectar y volver a conectar** la cuenta en OpenReply. En modo Facebook Login el permiso es `instagram_content_publish`.
 - **Límite de Instagram:** 50 publicaciones por API cada 24 horas por cuenta.
 - La palabra del CTA debe tener su **automatización de OpenReply** para ese Reel (o la regla general) para que el DM con el link salga solo.
+- **Facebook:** si conectaste la Página (ver `docs/facebook.md`), puedes marcar también **Facebook Reels**. Se publica en la Página con el mismo caption. Las campañas del Reel de Instagram con **También en Facebook** responden también los comentarios de ese Reel en Facebook.
 
 ## Pendiente (siguientes fases)
 
 1. Texto en pantalla (`onScreenText`) quemado en el video.
-2. Publicar también en Facebook y TikTok (`VideoPublication.platform`).
+2. Publicar también en TikTok (`VideoPublication.platform`).
 3. Cron de publicación, igual que el blog.

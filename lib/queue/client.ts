@@ -24,6 +24,9 @@ export type CommentSource = "WEBHOOK" | "POLLING";
 
 export interface ProcessCommentJob {
   accountConnectionId?: string;
+  // Set when the event came from the linked Facebook Page (its Page id):
+  // the campaign answers through Messenger with the Page token.
+  facebookPageId?: string;
   instagramAccountId: string;
   commentId: string;
   commentText: string;
@@ -33,6 +36,9 @@ export interface ProcessCommentJob {
   // Set when the comment came from an ad: the organic post the ad was made
   // from. Campaigns are bound to that post, so both ids have to be matched.
   originalMediaId?: string;
+  // Facebook comments: the Instagram Reel ids this Facebook post maps to, so
+  // the Instagram campaign bound to that Reel also matches it.
+  matchPostIds?: string[];
   requeueAttempt?: number;
   // Which path enqueued this comment. It is not copied to ProcessedComment or
   // used for reconciliation dedup.
@@ -42,6 +48,9 @@ export interface ProcessCommentJob {
 // Delivered when a user taps an opening DM's button — carries the reveal target.
 export interface ProcessPostbackJob {
   accountConnectionId?: string;
+  // Set when the event came from the linked Facebook Page (its Page id):
+  // the campaign answers through Messenger with the Page token.
+  facebookPageId?: string;
   instagramAccountId: string;
   userId: string;
   payload: string;
@@ -61,6 +70,9 @@ export interface ProcessPostbackJob {
 // immediately.
 export interface ProcessFollowUpJob {
   accountConnectionId?: string;
+  // Set when the event came from the linked Facebook Page (its Page id):
+  // the campaign answers through Messenger with the Page token.
+  facebookPageId?: string;
   instagramAccountId: string;
   userId: string;
   automationId: string;
@@ -71,6 +83,9 @@ export interface ProcessFollowUpJob {
 // match the text reply to the sender.
 export interface ProcessMessageJob {
   accountConnectionId?: string;
+  // Set when the event came from the linked Facebook Page (its Page id):
+  // the campaign answers through Messenger with the Page token.
+  facebookPageId?: string;
   instagramAccountId: string;
   messageId: string;
   messageText: string;

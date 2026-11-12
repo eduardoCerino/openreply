@@ -2,13 +2,13 @@ import { Queue, Worker, type Job } from "bullmq";
 import { getRedisConnection } from "@/lib/queue/client";
 import { generateClip, generatePendingClips } from "@/lib/video/clips";
 import { generateFrame, generatePendingFrames } from "@/lib/video/frames";
-import { publishToInstagram } from "@/lib/video/publish";
+import { publishVideo } from "@/lib/video/publish";
 import { renderVideo } from "@/lib/video/render";
 import { generateVideoScript } from "@/lib/video/script";
 
 // Video work runs in the worker like the blog: scripts (phase 1), scene start
 // frames (phase 2), the P-Video clips (phase 3), the joined final video
-// (phase 4) and its Instagram Reel (phase 5).
+// (phase 4) and its Instagram and Facebook Reels (phase 5).
 
 export const VIDEO_QUEUE_NAME = "video-generation";
 export const SCRIPT_JOB = "video-script";
@@ -131,7 +131,7 @@ async function processVideoJob(job: Job<VideoJob>) {
       return render.status;
     }
     case PUBLISH_JOB: {
-      const publication = await publishToInstagram(job.data.publicationId);
+      const publication = await publishVideo(job.data.publicationId);
       console.log(
         `[Video Worker] ${job.name} ${job.id} finished in ${Math.round((Date.now() - startedAt) / 1000)}s: ${publication.status}${
           publication.error ? ` (${publication.error.slice(0, 300)})` : publication.permalink ? ` ${publication.permalink}` : ""

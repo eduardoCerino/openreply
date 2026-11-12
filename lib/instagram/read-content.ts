@@ -1,6 +1,6 @@
 import * as meta from "@/lib/meta/client";
 import { zernioRequest } from "@/lib/zernio/client";
-import type { InstagramContext } from "./context";
+import { facebookUnsupported, type InstagramContext } from "./context";
 
 type Comment = {
   id: string;
@@ -28,6 +28,7 @@ export async function getRecentMediaComments({
       sinceMs,
       max
     );
+  if (context.provider === "FACEBOOK") throw facebookUnsupported("This Instagram read");
   const results: meta.InstagramComment[] = [];
   const seen = new Set<string>();
   let cursor: string | undefined;
@@ -71,6 +72,7 @@ export async function getUserMedia({
 }): Promise<meta.InstagramMedia[]> {
   if (context.provider === "META")
     return meta.getUserMedia(context.accessToken, limit);
+  if (context.provider === "FACEBOOK") throw facebookUnsupported("This Instagram read");
   const result = await zernioRequest<{
     posts: {
       id: string;
@@ -115,6 +117,7 @@ export async function getAllUserMedia({
   context: InstagramContext;
   max?: number;
 }) {
+  if (context.provider === "FACEBOOK") throw facebookUnsupported("This Instagram read");
   return context.provider === "META"
     ? meta.getAllUserMedia(context.accessToken, max)
     : getUserMedia({ context, limit: max });
@@ -126,6 +129,7 @@ export async function getUserInfo({
   context: InstagramContext;
 }): Promise<meta.InstagramUser> {
   if (context.provider === "META") return meta.getUserInfo(context.accessToken);
+  if (context.provider === "FACEBOOK") throw facebookUnsupported("This Instagram read");
   const result = await zernioRequest<{
     accounts: {
       _id: string;

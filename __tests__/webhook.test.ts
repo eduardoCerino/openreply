@@ -445,10 +445,10 @@ describe("parseMessageEvents", () => {
     expect(parseMessageEvents(payload)).toHaveLength(0);
   });
 
-  it("should ignore non-instagram payloads", () => {
+  it("should ignore payloads that are neither Instagram nor a Facebook Page", () => {
     expect(
       parseMessageEvents({
-        object: "page",
+        object: "whatsapp_business_account",
         entry: [
           {
             id: "ig_456",

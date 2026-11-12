@@ -29,6 +29,7 @@ export async function GET(_request: NextRequest, ctx: RouteProps) {
           status: true,
           caption: true,
           instagramAccountId: true,
+          facebookPageId: true,
           permalink: true,
           error: true,
           publishedAt: true,
@@ -44,7 +45,12 @@ export async function GET(_request: NextRequest, ctx: RouteProps) {
     select: { id: true, username: true },
     orderBy: { connectedAt: "asc" },
   });
-  return NextResponse.json({ success: true, data: { ...project, instagramAccounts } });
+  const facebookPages = await prisma.facebookPage.findMany({
+    where: { workspaceId: context.workspaceId },
+    select: { id: true, name: true },
+    orderBy: { connectedAt: "asc" },
+  });
+  return NextResponse.json({ success: true, data: { ...project, instagramAccounts, facebookPages } });
 }
 
 export async function DELETE(_request: NextRequest, ctx: RouteProps) {

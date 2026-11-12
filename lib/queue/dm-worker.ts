@@ -35,6 +35,7 @@ import {
   sendPrivateReplyWithLinkButton,
 } from "@/lib/instagram/provider";
 import {
+  createFacebookContext,
   createInstagramContext,
   hasInstagramCredentials,
   type InstagramContext,
@@ -274,7 +275,24 @@ async function sendRevealDirectMessage({
 
 
 function connectionScope(data: DmQueueJob) {
-  return data.accountConnectionId ? { instagramAccountId: data.accountConnectionId } : {};
+  return {
+    ...(data.accountConnectionId ? { instagramAccountId: data.accountConnectionId } : {}),
+    // Facebook Page events only run campaigns with "También en Facebook".
+    ...(data.facebookPageId ? { facebookEnabled: true } : {}),
+  };
+}
+
+/**
+ * The send context for a job: the Instagram account's, or the linked
+ * Facebook Page's (Messenger, Page token) when the event came from the Page.
+ */
+async function channelContext(
+  account: Parameters<typeof createInstagramContext>[0],
+  operationId: string,
+  data: DmQueueJob
+): Promise<InstagramContext> {
+  if (data.facebookPageId) return createFacebookContext(data.facebookPageId);
+  return createInstagramContext(account, operationId);
 }
 
 async function processComment(job: Job<ProcessCommentJob>): Promise<void> {
@@ -288,6 +306,8 @@ async function processComment(job: Job<ProcessCommentJob>): Promise<void> {
     originalMediaId,
   } = job.data;
   const requeueAttempt = job.data.requeueAttempt ?? 0;
+  // Messenger and Instagram DMs have separate send limits.
+  const rateLimitKey = job.data.facebookPageId ? `fb_${job.data.facebookPageId}` : instagramAccountId;
 
   const automations = await prisma.automation.findMany({
     where: {
@@ -296,11 +316,18 @@ async function processComment(job: Job<ProcessCommentJob>): Promise<void> {
       // A comment left on an ad carries the ad's own media id, while the
       // campaign is bound to the post the ad was created from, so both ids
       // have to be considered or the comment is dropped without a trace.
-      OR: [
-        { postId: mediaId },
-        ...(originalMediaId ? [{ postId: originalMediaId }] : []),
-        { matchAnyPost: true },
-      ],
+      // A Facebook comment matches the Instagram Reel(s) published from the
+      // same video (matchPostIds), never a raw Facebook post id.
+      OR: job.data.facebookPageId
+        ? [
+            ...(job.data.matchPostIds?.length ? [{ postId: { in: job.data.matchPostIds } }] : []),
+            { matchAnyPost: true },
+          ]
+        : [
+            { postId: mediaId },
+            ...(originalMediaId ? [{ postId: originalMediaId }] : []),
+            { matchAnyPost: true },
+          ],
       isActive: true,
       instagramAccount: {
         instagramId: instagramAccountId,
@@ -398,10 +425,7 @@ async function processComment(job: Job<ProcessCommentJob>): Promise<void> {
 
     let accessToken: InstagramContext;
     try {
-      accessToken = await createInstagramContext(
-        automation.instagramAccount,
-        `${job.id}:${automation.id}`
-      );
+      accessToken = await channelContext(automation.instagramAccount, `${job.id}:${automation.id}`, job.data);
     } catch {
       await prisma.dmLog.upsert({
         where: {
@@ -550,7 +574,7 @@ async function processComment(job: Job<ProcessCommentJob>): Promise<void> {
 
     let rateLimit;
     try {
-      rateLimit = await reserveDMSlot(instagramAccountId, requeueAttempt);
+      rateLimit = await reserveDMSlot(rateLimitKey, requeueAttempt);
     } catch (error) {
       await releaseWorkspaceDMReservation(
         automation.workspaceId,
@@ -653,12 +677,12 @@ async function processComment(job: Job<ProcessCommentJob>): Promise<void> {
     try {
       claimed = await claimCommentDelivery(automation.id, commentId, "dm");
     } catch (error) {
-      if (rateLimit?.reserved) await releaseDMSlot(instagramAccountId);
+      if (rateLimit?.reserved) await releaseDMSlot(rateLimitKey);
       await releaseWorkspaceDMReservation(automation.workspaceId, usage.periodStart);
       throw error;
     }
     if (!claimed) {
-      if (rateLimit?.reserved) await releaseDMSlot(instagramAccountId);
+      if (rateLimit?.reserved) await releaseDMSlot(rateLimitKey);
       await releaseWorkspaceDMReservation(automation.workspaceId, usage.periodStart);
       continue;
     }
@@ -783,7 +807,7 @@ async function processComment(job: Job<ProcessCommentJob>): Promise<void> {
       const sendError = classifySendError(error);
       // Retain reservations if the provider may have delivered the message.
       if (isConfirmedSendRejection(sendError)) {
-        if (rateLimit?.reserved) await releaseDMSlot(instagramAccountId);
+        if (rateLimit?.reserved) await releaseDMSlot(rateLimitKey);
         await releaseWorkspaceDMReservation(automation.workspaceId, usage.periodStart);
       }
       await prisma.dmLog.update({
@@ -940,10 +964,7 @@ async function processPostback(job: Job<ProcessPostbackJob>): Promise<void> {
 
   let accessToken: InstagramContext;
   try {
-    accessToken = await createInstagramContext(
-      automation.instagramAccount,
-      `${job.id}:${automation.id}`,
-    );
+    accessToken = await channelContext(automation.instagramAccount, `${job.id}:${automation.id}`, job.data);
   } catch {
     return;
   }
@@ -1137,6 +1158,7 @@ async function processPostback(job: Job<ProcessPostbackJob>): Promise<void> {
         {
           instagramAccountId: automation.instagramAccount.instagramId,
           accountConnectionId: automation.instagramAccountId,
+          facebookPageId: job.data.facebookPageId,
           userId,
           automationId: automation.id,
           commenterName,
@@ -1243,10 +1265,7 @@ async function processFollowUp(job: Job<ProcessFollowUpJob>): Promise<void> {
 
   let accessToken: InstagramContext;
   try {
-    accessToken = await createInstagramContext(
-      automation.instagramAccount,
-      `${job.id}:${automation.id}`
-    );
+    accessToken = await channelContext(automation.instagramAccount, `${job.id}:${automation.id}`, job.data);
   } catch {
     return;
   }
@@ -1363,10 +1382,7 @@ async function processMessage(job: Job<ProcessMessageJob>): Promise<void> {
 
     let accessToken: InstagramContext;
     try {
-      accessToken = await createInstagramContext(
-        automation.instagramAccount,
-        `${job.id}:${automation.id}`
-      );
+      accessToken = await channelContext(automation.instagramAccount, `${job.id}:${automation.id}`, job.data);
     } catch {
       await prisma.dmLog.upsert({
         where: {
@@ -1471,6 +1487,7 @@ async function processMessage(job: Job<ProcessMessageJob>): Promise<void> {
             {
               instagramAccountId: automation.instagramAccount.instagramId,
               accountConnectionId: automation.instagramAccountId,
+              facebookPageId: job.data.facebookPageId,
               userId: senderId,
               automationId: automation.id,
               commenterName,

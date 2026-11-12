@@ -5,6 +5,7 @@ import {
   verifyWebhookSignature,
 } from "@/lib/meta/webhook";
 import { processInstagramWebhook } from "@/lib/queue/process-webhook";
+import { processFacebookWebhook } from "@/lib/queue/process-facebook-webhook";
 
 
 export async function GET(request: NextRequest) {
@@ -62,7 +63,11 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    await processInstagramWebhook({ payload: payload as Parameters<typeof parseCommentEvents>[0], provider: 'META' });
+    const body = payload as Parameters<typeof parseCommentEvents>[0];
+    // A connected Facebook Page's comments and Messenger events arrive as
+    // object "page" on the same callback URL.
+    if (body?.object === "page") await processFacebookWebhook(body);
+    else await processInstagramWebhook({ payload: body, provider: 'META' });
     return NextResponse.json({ success: true });
   } catch {
     return NextResponse.json({ success: false, error: 'Webhook processing failed' }, { status: 500 });

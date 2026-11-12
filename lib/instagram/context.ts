@@ -3,6 +3,9 @@ import { prisma } from "@/lib/db/client";
 
 export type InstagramContext =
   | { provider: "META"; accessToken: string }
+  // A Facebook Page reached through the Instagram account's campaigns: the
+  // Page token, and Messenger instead of Instagram DMs.
+  | { provider: "FACEBOOK"; accessToken: string; pageId: string }
   | {
       provider: "ZERNIO";
       apiKey: string;
@@ -50,3 +53,16 @@ export async function createInstagramContext(
 }
 
 export type ZernioContext = Extract<InstagramContext, { provider: "ZERNIO" }>;
+export type FacebookContext = Extract<InstagramContext, { provider: "FACEBOOK" }>;
+
+/** Context for a connected Facebook Page, by its Page id. */
+export async function createFacebookContext(pageId: string): Promise<FacebookContext> {
+  const page = await prisma.facebookPage.findUnique({ where: { pageId }, select: { accessToken: true } });
+  if (!page) throw new Error("Facebook Page is not connected");
+  return { provider: "FACEBOOK", accessToken: decryptToken(page.accessToken), pageId };
+}
+
+/** A read that only exists for Instagram, called with a Facebook Page context. */
+export function facebookUnsupported(action: string): Error {
+  return new Error(`${action} is not available for Facebook Pages`);
+}

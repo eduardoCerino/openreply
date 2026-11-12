@@ -39,6 +39,7 @@ interface LoadedCampaign {
   matchAnyWord: boolean;
   wholeWordMatch?: boolean;
   dmTriggerEnabled: boolean;
+  facebookEnabled?: boolean;
   dmMessage: string;
   openingDmEnabled: boolean;
   openingDmMessage: string | null;
@@ -162,6 +163,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
   const [keywordText, setKeywordText] = useState("");
   const [wholeWordMatch, setWholeWordMatch] = useState(true);
   const [dmTriggerEnabled, setDmTriggerEnabled] = useState(false);
+  const [facebookEnabled, setFacebookEnabled] = useState(false);
 
   const [publicReplyEnabled, setPublicReplyEnabled] = useState(false);
   const [publicReplyMessages, setPublicReplyMessages] = useState<string[]>([""]);
@@ -264,6 +266,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
         setKeywordText(c.keywords.join(", "));
         setWholeWordMatch(c.wholeWordMatch ?? true);
         setDmTriggerEnabled(c.dmTriggerEnabled ?? false);
+        setFacebookEnabled(c.facebookEnabled ?? false);
         setPublicReplyEnabled(c.publicReplyEnabled);
         setPublicReplyMessages(
           c.publicReplyMessages?.length
@@ -413,6 +416,7 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
       keywords: matchMode === "any" ? [] : keywords,
       wholeWordMatch,
       dmTriggerEnabled,
+      facebookEnabled,
       dmMessage,
       openingDmEnabled,
       openingDmMessage: openingDmEnabled ? openingDmMessage : null,
@@ -754,6 +758,17 @@ export default function CampaignBuilder({ mode, campaignId }: CampaignBuilderPro
               {matchMode === "any"
                 ? t("Every DM to this account gets the reply below — use with care.")
                 : t("A DM containing any of these words gets the same reply, no comment needed.")}
+            </p>
+          )}
+          <div className="flex items-center justify-between gap-3 rounded-lg border border-border px-3 py-2.5">
+            <span className="text-sm text-foreground">También en Facebook</span>
+            <Toggle on={facebookEnabled} onToggle={() => setFacebookEnabled(!facebookEnabled)} />
+          </div>
+          {facebookEnabled && (
+            <p className="text-xs text-muted">
+              Responde por Messenger en la Página de Facebook vinculada: en el mismo video si lo publicaste
+              desde el panel de videos, o en cualquier post si la campaña es para cualquier post. En Facebook no
+              se puede pedir que sigan la Página, así que ahí se manda el link directo.
             </p>
           )}
           <div className="flex items-center justify-between rounded-lg border border-border px-3 py-2.5">

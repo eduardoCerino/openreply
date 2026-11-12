@@ -24,6 +24,7 @@ interface Campaign {
   keywords: string[];
   matchAnyWord: boolean;
   dmTriggerEnabled: boolean;
+  facebookEnabled?: boolean;
   dmMessage: string;
   openingDmEnabled: boolean;
   openingDmMessage: string | null;
@@ -219,6 +220,9 @@ export default function CampaignDetailPage() {
               {t("Also replies when someone DMs")}{" "}
               {campaign.matchAnyWord ? t("anything") : t("these words")}.
             </p>
+          )}
+          {campaign.facebookEnabled && (
+            <p className="text-xs text-muted">También corre en la Página de Facebook vinculada (Messenger).</p>
           )}
           {publicReplies.length > 0 && (
             <div className="space-y-1.5">

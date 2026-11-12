@@ -296,3 +296,90 @@ export function decryptToken(encryptedBase64: string): string {
     "utf8"
   );
 }
+
+// ── Facebook Pages (alongside Instagram Login) ──────────────────────────────
+// Connects the Facebook Page linked to the Instagram account so campaigns can
+// also answer its comments by Messenger and videos can be posted to it.
+
+const FACEBOOK_PAGE_SCOPES = [
+  "pages_show_list",
+  "pages_read_engagement",
+  "pages_read_user_content",
+  "pages_manage_posts",
+  "pages_manage_engagement",
+  "pages_manage_metadata",
+  "pages_messaging",
+  "business_management",
+].join(",");
+
+export function getFacebookPagesAuthorizationUrl(redirectUri: string, state: string): string {
+  const params = new URLSearchParams({
+    client_id: requireEnv("FACEBOOK_APP_ID"),
+    redirect_uri: redirectUri,
+    response_type: "code",
+    state,
+  });
+  // Facebook Login for Business uses a configuration instead of scope.
+  const configId = process.env.FACEBOOK_PAGES_CONFIG_ID;
+  if (configId) {
+    params.set("config_id", configId);
+    params.set("override_default_response_type", "true");
+  } else {
+    params.set("scope", FACEBOOK_PAGE_SCOPES);
+  }
+  return `https://www.facebook.com/${getMetaGraphApiVersion()}/dialog/oauth?${params.toString()}`;
+}
+
+export interface FacebookPageGrant {
+  pageId: string;
+  name: string;
+  pageAccessToken: string;
+  instagramId?: string;
+}
+
+/**
+ * code -> user token -> long-lived user token -> every Page the user granted.
+ * A Page token read with a long-lived user token does not expire.
+ */
+export async function exchangeCodeForPages(code: string, redirectUri: string): Promise<FacebookPageGrant[]> {
+  const appId = requireEnv("FACEBOOK_APP_ID");
+  const appSecret = requireEnv("FACEBOOK_APP_SECRET");
+
+  const shortUrl = new URL(`${facebookGraphBase()}/oauth/access_token`);
+  shortUrl.searchParams.set("client_id", appId);
+  shortUrl.searchParams.set("client_secret", appSecret);
+  shortUrl.searchParams.set("redirect_uri", redirectUri);
+  shortUrl.searchParams.set("code", code);
+  const short = await readGraphJson<{ access_token: string }>(await fetch(shortUrl.toString()), "Token exchange");
+
+  const longUrl = new URL(`${facebookGraphBase()}/oauth/access_token`);
+  longUrl.searchParams.set("grant_type", "fb_exchange_token");
+  longUrl.searchParams.set("client_id", appId);
+  longUrl.searchParams.set("client_secret", appSecret);
+  longUrl.searchParams.set("fb_exchange_token", short.access_token);
+  const long = await readGraphJson<{ access_token: string }>(
+    await fetch(longUrl.toString()),
+    "Long-lived token exchange"
+  );
+
+  const pagesUrl = new URL(`${facebookGraphBase()}/me/accounts`);
+  pagesUrl.searchParams.set("fields", "id,name,access_token,instagram_business_account{id}");
+  pagesUrl.searchParams.set("limit", "100");
+  pagesUrl.searchParams.set("access_token", long.access_token);
+  const pages = await readGraphJson<{
+    data?: Array<{ id: string; name: string; access_token?: string; instagram_business_account?: { id: string } }>;
+  }>(await fetch(pagesUrl.toString()), "Listing Facebook Pages");
+
+  return (pages.data ?? []).flatMap((page) =>
+    page.access_token
+      ? [
+          {
+            pageId: page.id,
+            name: page.name,
+            pageAccessToken: page.access_token,
+            instagramId: page.instagram_business_account?.id,
+          },
+        ]
+      : []
+  );
+}

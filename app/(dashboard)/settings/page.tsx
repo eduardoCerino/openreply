@@ -6,6 +6,7 @@ import { Suspense, useEffect, useState } from "react";
 import type { AccountOption } from "@/components/account-select";
 import { ZernioConnection } from "@/components/zernio-connection";
 import { InstagramConnectNotice } from "@/components/instagram-connect-notice";
+import { FacebookConnection } from "@/components/facebook-connection";
 
 interface SettingsData {
   workspace: {
@@ -229,6 +230,10 @@ export default function SettingsPage() {
           </a>
         </div>
       </section>
+
+      <Suspense fallback={null}>
+        <FacebookConnection canManage={canManageMembers} />
+      </Suspense>
 
       <section className="panel rounded p-4 sm:p-6">
         <h2 className="text-base font-semibold mb-6">{t("Team")}</h2>

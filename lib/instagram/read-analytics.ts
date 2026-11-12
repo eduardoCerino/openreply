@@ -1,6 +1,7 @@
 import * as meta from "@/lib/meta/client";
+import { getFacebookUserName } from "@/lib/meta/facebook";
 import { zernioRequest } from "@/lib/zernio/client";
-import type { InstagramContext, ZernioContext } from "./context";
+import { facebookUnsupported, type InstagramContext, type ZernioContext } from "./context";
 
 export async function getUserFollowStatus({
   context,
@@ -11,6 +12,9 @@ export async function getUserFollowStatus({
 }): Promise<boolean | null> {
   if (context.provider === "META")
     return meta.getUserFollowStatus(context.accessToken, recipientId);
+  // Facebook has no "follows the Page" lookup, so the follow gate is skipped
+  // there: treat everyone as following and deliver the link.
+  if (context.provider === "FACEBOOK") return true;
   try {
     const result = await zernioRequest<{ isFollower: boolean | null }>({
       apiKey: context.apiKey,
@@ -35,6 +39,8 @@ export async function getRecipientUsername({
 }): Promise<string | null> {
   if (context.provider === "META")
     return meta.getUserUsername(context.accessToken, recipientId);
+  if (context.provider === "FACEBOOK")
+    return getFacebookUserName(context.accessToken, recipientId);
   return null;
 }
 
@@ -49,6 +55,7 @@ export async function getMediaInsights({
 }): Promise<meta.InstagramMediaInsights> {
   if (context.provider === "META")
     return meta.getMediaInsights(context.accessToken, mediaId, metrics);
+  if (context.provider === "FACEBOOK") throw facebookUnsupported("Media insights");
   const result = await zernioRequest<{
     platformAnalytics?: {
       platformPostId: string;

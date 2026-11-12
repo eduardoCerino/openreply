@@ -59,6 +59,7 @@ interface WebhookEntry {
       from?: {
         id?: string;
         username?: string;
+        name?: string;
       };
       media?: {
         id?: string;
@@ -69,6 +70,12 @@ interface WebhookEntry {
         media_product_type?: string;
       };
       media_id?: string;
+      // Facebook Page "feed" changes.
+      item?: string;
+      verb?: string;
+      post_id?: string;
+      message?: string;
+      from_name?: string;
     };
   }>;
   messaging?: Array<{
@@ -170,7 +177,8 @@ export function parsePostbackEvents(
 ): WebhookPostbackEvent[] {
   const events: WebhookPostbackEvent[] = [];
 
-  if (payload.object !== "instagram") return events;
+  // Messenger events of a connected Facebook Page share this shape.
+  if (payload.object !== "instagram" && payload.object !== "page") return events;
 
   for (const entry of payload.entry ?? []) {
     for (const messaging of entry.messaging ?? []) {
@@ -209,7 +217,8 @@ export function parseMessageEvents(
 ): WebhookMessageEvent[] {
   const events: WebhookMessageEvent[] = [];
 
-  if (payload.object !== "instagram") return events;
+  // Messenger events of a connected Facebook Page share this shape.
+  if (payload.object !== "instagram" && payload.object !== "page") return events;
 
   for (const entry of payload.entry ?? []) {
     for (const messaging of entry.messaging ?? []) {
@@ -248,7 +257,8 @@ export function parseMessageEvents(
 export function parseReadEvents(payload: WebhookPayload): WebhookReadEvent[] {
   const events: WebhookReadEvent[] = [];
 
-  if (payload.object !== "instagram") return events;
+  // Messenger events of a connected Facebook Page share this shape.
+  if (payload.object !== "instagram" && payload.object !== "page") return events;
 
   for (const entry of payload.entry ?? []) {
     for (const messaging of entry.messaging ?? []) {
@@ -268,5 +278,44 @@ export function parseReadEvents(payload: WebhookPayload): WebhookReadEvent[] {
     }
   }
 
+  return events;
+}
+
+export interface FacebookCommentEvent {
+  pageId: string;
+  commentId: string;
+  commentText: string;
+  commenterId: string;
+  commenterName?: string;
+  postId: string;
+}
+
+/**
+ * New comments on a connected Facebook Page's posts ("feed" changes with
+ * item "comment" and verb "add"). The Page's own comments are skipped.
+ */
+export function parseFacebookCommentEvents(payload: WebhookPayload): FacebookCommentEvent[] {
+  const events: FacebookCommentEvent[] = [];
+  if (payload.object !== "page") return events;
+  for (const entry of payload.entry ?? []) {
+    for (const change of entry.changes ?? []) {
+      if (change.field !== "feed") continue;
+      const value = change.value;
+      if (value?.item !== "comment" || value.verb !== "add") continue;
+      const commentId = value.comment_id;
+      const postId = value.post_id;
+      const commenterId = value.from?.id;
+      if (!entry.id || !commentId || !postId || !commenterId) continue;
+      if (commenterId === entry.id) continue;
+      events.push({
+        pageId: entry.id,
+        commentId,
+        commentText: value.message ?? "",
+        commenterId,
+        commenterName: value.from?.name,
+        postId,
+      });
+    }
+  }
   return events;
 }

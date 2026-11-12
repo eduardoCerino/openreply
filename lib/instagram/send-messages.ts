@@ -1,5 +1,6 @@
 import { createHash, randomUUID } from "node:crypto";
 import * as meta from "@/lib/meta/client";
+import * as facebook from "@/lib/meta/facebook";
 import {
   zernioRequest,
   ZernioApiError,
@@ -93,6 +94,8 @@ export async function sendPrivateReply({
       commentId,
       message
     );
+  if (context.provider === "FACEBOOK")
+    return facebook.sendFacebookText(context.accessToken, context.pageId, { comment_id: commentId }, message);
   return sendZernioMessage({ context, commentId, postId, text: message });
 }
 
@@ -118,6 +121,15 @@ export async function sendPrivateReplyWithButton({
       context.accessToken,
       instagramAccountId,
       commentId,
+      text,
+      buttonTitle,
+      payload
+    );
+  if (context.provider === "FACEBOOK")
+    return facebook.sendFacebookPostbackButton(
+      context.accessToken,
+      context.pageId,
+      { comment_id: commentId },
       text,
       buttonTitle,
       payload
@@ -155,6 +167,15 @@ export async function sendDirectMessageWithButton({
       buttonTitle,
       payload
     );
+  if (context.provider === "FACEBOOK")
+    return facebook.sendFacebookPostbackButton(
+      context.accessToken,
+      context.pageId,
+      { id: userId },
+      text,
+      buttonTitle,
+      payload
+    );
   return sendZernioMessage({
     context,
     recipientId: userId,
@@ -186,6 +207,8 @@ export async function sendPrivateReplyWithLinkButton({
       text,
       buttons
     );
+  if (context.provider === "FACEBOOK")
+    return facebook.sendFacebookLinkButtons(context.accessToken, context.pageId, { comment_id: commentId }, text, buttons);
   return sendZernioMessage({
     context,
     commentId,
@@ -213,6 +236,8 @@ export async function sendDirectMessage({
       userId,
       message
     );
+  if (context.provider === "FACEBOOK")
+    return facebook.sendFacebookText(context.accessToken, context.pageId, { id: userId }, message);
   return sendZernioMessage({ context, recipientId: userId, text: message });
 }
 
@@ -237,6 +262,8 @@ export async function sendDirectMessageWithLinkButton({
       text,
       buttons
     );
+  if (context.provider === "FACEBOOK")
+    return facebook.sendFacebookLinkButtons(context.accessToken, context.pageId, { id: userId }, text, buttons);
   return sendZernioMessage({
     context,
     recipientId: userId,
@@ -258,6 +285,8 @@ export async function sendCommentReply({
 }) {
   if (context.provider === "META")
     return meta.sendCommentReply(context.accessToken, commentId, message);
+  if (context.provider === "FACEBOOK")
+    return facebook.sendFacebookCommentReply(context.accessToken, commentId, message);
   const result = await zernioRequest<{ data: { commentId: string } }>({
     apiKey: context.apiKey,
     path: `/inbox/comments/${encodeURIComponent(postId ?? commentId)}`,
