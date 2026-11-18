@@ -9,7 +9,7 @@ import type { VideoScene, VideoScript } from "@/lib/video/prompt";
 
 // Phase 2: the start frame of every scene, generated from the model's and the
 // product's reference photos so the same woman and the same tub appear across
-// the whole video. P-Video animates each clip from this one image, so no end
+// the whole video. Grok Imagine animates each clip from this one image, so no end
 // frame is generated (it would double the image cost).
 
 const GENERATED_POSITIONS: FramePosition[] = ["inicio"];

@@ -1,11 +1,12 @@
 import { prisma } from "@/lib/db/client";
 import { CLIP_SECONDS } from "@/lib/video/constants";
 import type { VideoScene, VideoScript } from "@/lib/video/prompt";
-import { createVideoPrediction, downloadOutput, uploadFile, waitForPrediction } from "@/lib/video/pruna";
+import { CLIP_SETTINGS, generateClipVideo } from "@/lib/video/gateway-video";
 
-// Phase 3: one 5-second clip per scene, animated by Pruna's P-Video from the
-// scene's start frame. Pruna also generates the audio, so the prompt carries
-// the scene's voiceover (already in phonetic spelling for a Spanish voice).
+// Phase 3: one 5-second clip per scene, animated from the scene's start frame
+// by Grok Imagine Video 1.5 Lite through Vercel AI Gateway (720p). The model
+// also generates the audio, so the prompt carries the scene's voiceover
+// (already in phonetic spelling for a Spanish voice).
 
 const PARALLEL_CLIPS = 3;
 
@@ -92,12 +93,15 @@ export async function generateClip(clipId: string) {
     });
     if (frame?.status !== "READY" || !frame.data) throw new Error("Falta la imagen inicial de esta escena");
 
-    const image = await uploadFile(frame.data, frame.mimeType ?? "image/webp", `escena-${clip.sceneIndex + 1}.webp`);
     const prompt = buildClipPrompt(script, scene);
-    const prediction = await createVideoPrediction({ prompt, image, duration: CLIP_SECONDS });
-    await prisma.videoClip.update({ where: { id: clip.id }, data: { prompt, predictionId: prediction.id } });
-    const generationUrl = await waitForPrediction(prediction.getUrl);
-    const video = await downloadOutput(generationUrl);
+    await prisma.videoClip.update({ where: { id: clip.id }, data: { prompt, predictionId: CLIP_SETTINGS.model } });
+    const video = await generateClipVideo({
+      prompt,
+      frame: frame.data,
+      frameMimeType: frame.mimeType ?? "image/webp",
+      duration: CLIP_SECONDS,
+      name: `${clip.projectId}-escena-${clip.sceneIndex + 1}`,
+    });
     return await prisma.videoClip.update({
       where: { id: clip.id },
       data: { status: "READY", data: new Uint8Array(video), mimeType: "video/mp4", error: null },
@@ -110,7 +114,7 @@ export async function generateClip(clipId: string) {
   }
 }
 
-/** Every pending clip of a project, a few at a time (Pruna allows 250/min). */
+/** Every pending clip of a project, a few at a time. */
 export async function generatePendingClips(projectId: string) {
   const clips = await prisma.videoClip.findMany({
     where: { projectId, status: { in: ["PENDING", "GENERATING"] } },

@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
 import { buildClipPrompt } from "../lib/video/clips";
-import { CLIP_SETTINGS } from "../lib/video/pruna";
+import { CLIP_SETTINGS } from "../lib/video/gateway-video";
 import type { VideoScene, VideoScript } from "../lib/video/prompt";
 
 const scene = (lines: VideoScene["lines"]): VideoScene => ({
@@ -20,7 +20,7 @@ const scene = (lines: VideoScene["lines"]): VideoScene => ({
 const script = { visualStyle: "natural light" } as VideoScript;
 
 describe("buildClipPrompt", () => {
-  it("animates the frame and asks Pruna to voice the scene's lines", () => {
+  it("animates the frame and asks the model to voice the scene's lines", () => {
     const prompt = buildClipPrompt(
       script,
       scene([{ speaker: "Ella", text: "No era la crema. Era otra cosa.", direction: "pausa breve" }])
@@ -44,7 +44,7 @@ describe("buildClipPrompt", () => {
     expect(prompt).toContain('Amiga: "¿Otra vez pierna?" Ella: "Cinco días esta semana."');
   });
 
-  it("always renders in draft mode at 720p", () => {
-    expect(CLIP_SETTINGS).toEqual({ resolution: "720p", draft: true });
+  it("always renders with Grok Imagine 1.5 Lite at 720p", () => {
+    expect(CLIP_SETTINGS).toEqual({ model: "spacexai/grok-imagine-video-1.5-lite", resolution: "720p" });
   });
 });

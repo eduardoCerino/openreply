@@ -64,19 +64,11 @@ const REFERENCE_SLOTS = [
 ] as const;
 
 /**
- * The reference photos every frame is generated from, so the same woman and
- * the same tub appear across a video. Each model appears only in her product.
+ * Which reference photos are set. They are managed on their own page
+ * (/videos/referencias); every scene image is generated from them.
  */
-function ReferencesPanel() {
-  const [references, setReferences] = useState<Array<{ product: string; kind: string; updatedAt: string }>>([]);
-  const [busySlot, setBusySlot] = useState<string | null>(null);
-  const [message, setMessage] = useState<string | null>(null);
-
-  async function load() {
-    const response = await fetch("/api/videos/references");
-    const payload = await response.json();
-    if (payload.success) setReferences(payload.data);
-  }
+function ReferencesSummary() {
+  const [references, setReferences] = useState<Array<{ product: string; kind: string }> | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -90,80 +82,28 @@ function ReferencesPanel() {
     };
   }, []);
 
-  async function upload(product: string, kind: string, file: File | undefined) {
-    if (!file) return;
-    const slot = `${product}/${kind}`;
-    setBusySlot(slot);
-    setMessage(null);
-    const form = new FormData();
-    form.set("product", product);
-    form.set("kind", kind);
-    form.set("file", file);
-    const response = await fetch("/api/videos/references", { method: "POST", body: form });
-    const payload = await response.json();
-    setBusySlot(null);
-    if (!payload.success) setMessage(payload.error);
-    await load();
-  }
-
-  async function remove(product: string, kind: string) {
-    if (!window.confirm("¿Quitar esta foto de referencia?")) return;
-    await fetch(`/api/videos/references/${product}/${kind}`, { method: "DELETE" });
-    await load();
-  }
+  const has = (product: string, kind: string) =>
+    Boolean(references?.some((row) => row.product === product && row.kind === kind));
+  const missing = REFERENCE_SLOTS.filter((slot) => !has(slot.product, slot.kind));
 
   return (
-    <section className="panel space-y-3 rounded p-4 sm:p-6">
-      <div>
+    <section className="panel flex flex-wrap items-center justify-between gap-3 rounded p-4 sm:px-6">
+      <div className="min-w-0">
         <h2 className="text-base font-semibold text-foreground">Fotos de referencia</h2>
         <p className="mt-1 text-sm text-muted">
-          Cada imagen del video se genera a partir de estas fotos, para que salgan la misma modelo y el mismo bote. La
-          modelo de un producto nunca aparece en los videos del otro. Solo fotos de personas que dieron su consentimiento.
+          {references === null
+            ? "Revisando…"
+            : missing.length === 0
+              ? "Las 4 fotos están listas: la modelo y el bote de cada producto."
+              : `Faltan: ${missing.map((slot) => slot.label.toLowerCase()).join(", ")}.`}
         </p>
       </div>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-        {REFERENCE_SLOTS.map((slot) => {
-          const reference = references.find((row) => row.product === slot.product && row.kind === slot.kind);
-          const key = `${slot.product}/${slot.kind}`;
-          return (
-            <div key={key} className="space-y-2 rounded border border-border bg-background p-2">
-              <p className="text-xs font-semibold text-foreground">{slot.label}</p>
-              {reference ? (
-                // eslint-disable-next-line @next/next/no-img-element -- private image served by the API
-                <img
-                  src={`/api/videos/references/${key}?v=${encodeURIComponent(reference.updatedAt)}`}
-                  alt={slot.label}
-                  className="aspect-[3/4] w-full rounded object-cover"
-                />
-              ) : (
-                <div className="flex aspect-[3/4] w-full items-center justify-center rounded bg-surface text-xs text-muted">
-                  Sin foto
-                </div>
-              )}
-              <label className="block cursor-pointer text-center text-xs font-medium text-accent">
-                {busySlot === key ? "Subiendo…" : reference ? "Cambiar" : "Subir foto"}
-                <input
-                  type="file"
-                  accept="image/*"
-                  className="hidden"
-                  disabled={busySlot !== null}
-                  onChange={(event) => void upload(slot.product, slot.kind, event.target.files?.[0])}
-                />
-              </label>
-              {reference && (
-                <button
-                  type="button"
-                  onClick={() => void remove(slot.product, slot.kind)}
-                  className="block w-full text-center text-xs text-muted hover:text-error"
-                >
-                  Quitar
-                </button>
-              )}
-            </div>
-          );
-        })}
-      </div>
-      {message && <p className="text-sm text-error">{message}</p>}
+      <Link
+        href="/videos/referencias"
+        className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-surface-hover"
+      >
+        Configurar fotos
+      </Link>
     </section>
   );
 }
@@ -476,7 +416,22 @@ export default function VideosPage() {
         </div>
       </form>
 
-      <ReferencesPanel />
+      <section className="panel flex flex-wrap items-center justify-between gap-3 rounded p-4 sm:px-6">
+        <div className="min-w-0">
+          <h2 className="text-base font-semibold text-foreground">Video directo</h2>
+          <p className="mt-1 text-sm text-muted">
+            ¿Ya tienes el guion y el contexto escritos? Pégalos y se genera la imagen y el video (720p, vertical, con audio).
+          </p>
+        </div>
+        <Link
+          href="/videos/directo"
+          className="rounded-lg border border-border px-4 py-2 text-sm font-medium text-foreground hover:bg-surface-hover"
+        >
+          Crear video directo
+        </Link>
+      </section>
+
+      <ReferencesSummary />
 
       <section className="panel rounded p-4 sm:p-6">
         <h2 className="text-base font-semibold text-foreground">Guiones</h2>

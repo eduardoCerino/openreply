@@ -233,25 +233,26 @@ Lo genera el worker de Railway, en la cola `video-generation` (`lib/video/jobs.t
 ## Fase 2: imágenes iniciales
 
 **Fotos de referencia.**
-- En **Videos**, la sección *Fotos de referencia* tiene 4 espacios: modelo de creatina, bote de creatina, modelo de inositol y bote de inositol.
+- En **Videos → Fotos de referencia** (`/videos/referencias`, también en el menú) hay 4 espacios: modelo de creatina, bote de creatina, modelo de inositol y bote de inositol.
 - Las fotos se reducen a WebP de máximo 1536 px y se guardan en la base de datos (`VideoReference`), **no en el repositorio**, porque el fork es público y son personas reales. Solo se pueden ver desde el panel con sesión de admin.
 - La modelo de un producto nunca se usa en los videos del otro.
 - **Usa solo fotos de personas que dieron su consentimiento** para el uso de su imagen con IA.
 
-**Generación.** En un guion aprobado, **Generar imágenes** crea **la imagen inicial de cada escena** (11 en total). No se genera imagen final: P-Video anima cada clip a partir de una sola imagen, y así el costo de imágenes queda a la mitad.
+**Generación.** En un guion aprobado, **Generar imágenes** crea **la imagen inicial de cada escena** (11 en total). No se genera imagen final: Grok Imagine anima cada clip a partir de una sola imagen, y así el costo de imágenes queda a la mitad.
 - **Modelo:** el worker usa `images/edits` de OpenAI (`gpt-image-2.5-flare`, 864×1536, 9:16) con la foto de la modelo, más la del bote si el producto aparece en esa escena.
 - **Lo que se le pide:** la misma cara, cabello y cuerpo que la referencia, el bote idéntico a su foto, encuadres de buen gusto y sin texto.
 - **Regenerar:** cada imagen se puede regenerar por separado. El código está en `lib/video/frames.ts`.
 
-## Fase 3: clips con P-Video (Pruna)
+## Fase 3: clips con Grok Imagine (Vercel AI Gateway)
 
-Cuando las 11 imágenes están listas, **Generar clips** anima cada escena con **P-Video** de Pruna (`lib/video/pruna.ts` y `lib/video/clips.ts`):
-- **Imagen:** la imagen inicial se sube a `/v1/files` y se pasa como `image`.
-- **Configuración:** **siempre `draft: true` y `720p`** (`CLIP_SETTINGS`), con 5 s por clip y `save_audio: true`. **El audio lo genera Pruna:** el prompt incluye la locución de la escena (en grafía fonética), el movimiento (`motionPrompt`), los planos y las pausas, y pide que ella hable en español de México sincronizado con los labios, sin música.
-- **Proceso:** el worker crea la predicción, consulta su estado cada 5 s y descarga el MP4. Guarda el video en la base de datos (`VideoClip`), porque el link de Pruna caduca en 24 horas. Genera 3 clips a la vez.
-- **Revisión:** cada clip se ve en su escena y se puede **Regenerar clip**. Si Pruna bloquea un clip por moderación, el motivo aparece en la escena.
-- **Costo:** 11 clips × 5 s × $0.005 = **≈ $0.28 USD por video** (draft 720p).
-- **Variable nueva:** `PRUNA_API_KEY`, en **Vercel y en el worker de Railway**.
+Cuando las 11 imágenes están listas, **Generar clips** anima cada escena con **Grok Imagine Video 1.5 Lite** a través de **Vercel AI Gateway** (`lib/video/gateway-video.ts` y `lib/video/clips.ts`):
+- **Modelo:** `spacexai/grok-imagine-video-1.5-lite`, **siempre a 720p** (`CLIP_SETTINGS`) y 5 s por clip. El formato 9:16 sale de la imagen inicial.
+- **Imagen:** la imagen inicial se sube un momento a Vercel Blob y su URL se pasa como primer fotograma (`frameImages`, `first_frame`); se borra en cuanto vuelve el clip.
+- **Audio:** lo genera el modelo. El prompt incluye la locución de la escena (en grafía fonética), el movimiento (`motionPrompt`), los planos y las pausas, y pide que ella hable en español de México sincronizada con los labios, sin música.
+- **Proceso:** se usa `experimental_generateVideo` del AI SDK con `poll`, así que corre como trabajo en segundo plano de AI Gateway (revisa cada 8 s, hasta 12 min). El MP4 se guarda en la base de datos (`VideoClip`). Genera 3 clips a la vez.
+- **Revisión:** cada clip se ve en su escena y se puede **Regenerar clip**. Si el modelo lo rechaza, el motivo aparece en la escena.
+- **Costo:** se cobra de los créditos de AI Gateway. Vercel pide un saldo mínimo de **$10 USD** en créditos para generar video, y el modelo requiere plan Pro o créditos pagados.
+- **Variables:** `AI_GATEWAY_API_KEY` y `BLOB_READ_WRITE_TOKEN`, en **Vercel y en el worker de Railway**. `PRUNA_API_KEY` ya no se usa.
 
 ## Fase 4: video final
 
@@ -271,6 +272,27 @@ Con el video listo, eliges la cuenta y revisas el **caption** (viene del guion m
 - **Límite de Instagram:** 50 publicaciones por API cada 24 horas por cuenta.
 - La palabra del CTA debe tener su **automatización de OpenReply** para ese Reel (o la regla general) para que el DM con el link salga solo.
 - **Facebook:** si conectaste la Página (ver `docs/facebook.md`), puedes marcar también **Facebook Reels**. Se publica en la Página con el mismo caption. Las campañas del Reel de Instagram con **También en Facebook** responden también los comentarios de ese Reel en Facebook.
+
+## Video directo (guion y contexto propios)
+
+En **Videos → Video directo** (`/videos/directo`) pegas un guion ya escrito y su contexto, en lugar de que la IA escriba el guion (`lib/video/direct.ts`):
+- **Campos:**
+  - **Guion:** el diálogo exacto con tiempos, voz y requisitos de audio.
+  - **Contexto:** quién sale, dónde, cámara, expresiones y restricciones.
+  - **Duración:** 30 s por defecto, de 5 a 60.
+  - **Producto:** creatina, inositol o *ningún producto*.
+- **Fijo:** 720p, vertical 9:16 (TikTok y Reels) y audio siempre activado (`generateAudio: true`). El formato no se pide.
+- **Proceso** (solo, en el worker, `video-direct`):
+  1. **Plan:** la IA (`gpt-6.1-terra`) describe la imagen inicial a partir del contexto. Si el video dura más de 15 s, que es el máximo de Grok por clip, divide el guion en partes iguales: 30 s → 15 + 15, 25 s → 13 + 12. El diálogo se mantiene palabra por palabra y los tiempos se ajustan a cada parte.
+  2. **Imagen inicial:** con producto, usa la foto de la modelo de ese producto (y la del bote si sale en la imagen). Con *ningún producto*, se crea solo con el contexto.
+  3. **Partes:** cada parte se anima con Grok Imagine 1.5 Lite. La primera empieza en la imagen inicial y cada parte siguiente en el **último cuadro de la anterior** (sacado con ffmpeg), para que se vea como una sola toma.
+  4. **Video final:** se unen las partes, igual que en la fase 4, y aparece el panel para publicar en Instagram y Facebook.
+- **Revisión** (`/videos/directo/[id]`): la página va mostrando cada paso. Se puede:
+  - **Reintentar** si algo falla; retoma donde se quedó.
+  - **Regenerar imagen**, que rehace también las partes.
+  - **Regenerar parte N**, que rehace también las siguientes.
+  - **Volver a dividir** el guion.
+- **Variables:** `OPENAI_API_KEY`, `AI_GATEWAY_API_KEY` y `BLOB_READ_WRITE_TOKEN`, más ffmpeg en el worker.
 
 ## Pendiente (siguientes fases)
 

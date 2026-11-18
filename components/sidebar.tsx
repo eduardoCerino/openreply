@@ -21,6 +21,9 @@ const navItems = [
   { label: "DM Logs", href: "/logs" },
   { label: "Blog", href: "/blog" },
   { label: "Videos", href: "/videos" },
+  // Store-specific page with Spanish copy, outside the translation catalog.
+  { label: "Video directo", href: "/videos/directo", untranslated: true },
+  { label: "Fotos de referencia", href: "/videos/referencias", untranslated: true },
   { label: "Settings", href: "/settings" },
   { label: "API & MCP", href: "/integrations" },
   { label: "Diagnostics", href: "/diagnostics" },
@@ -39,6 +42,12 @@ export default function Sidebar({
 }: SidebarProps) {
   const { t } = useI18n();
   const pathname = usePathname();
+  // The longest matching href wins, so /videos/referencias highlights only
+  // its own item and not "Videos" too.
+  const activeHref = navItems
+    .map((item) => item.href as string)
+    .filter((href) => pathname === href || pathname.startsWith(href + "/"))
+    .sort((x, y) => y.length - x.length)[0];
 
   return (
     <>
@@ -72,7 +81,7 @@ export default function Sidebar({
         <nav className="flex-1 px-3 py-4 space-y-1 overflow-y-auto">
           {navItems.map((item) => {
             const isActive =
-              pathname === item.href || pathname.startsWith(item.href + "/");
+              item.href === activeHref;
             return (
               <Link
                 key={item.href}
@@ -88,7 +97,7 @@ export default function Sidebar({
                   }
                 `}
               >
-                {t(item.label)}
+                {"untranslated" in item ? item.label : t(item.label)}
               </Link>
             );
           })}

@@ -7,7 +7,7 @@ export const runtime = "nodejs";
 
 type RouteProps = { params: Promise<{ id: string }> };
 
-/** Regenerate a single clip with P-Video. */
+/** Regenerate a single clip (Grok Imagine via AI Gateway). */
 export async function POST(_request: NextRequest, ctx: RouteProps) {
   const { error } = await requireBlogAdmin();
   if (error) return error;

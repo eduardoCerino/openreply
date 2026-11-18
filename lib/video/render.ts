@@ -4,11 +4,23 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { del, put } from "@vercel/blob";
 import { prisma } from "@/lib/db/client";
+import { CLIP_SECONDS } from "@/lib/video/constants";
 import type { VideoScript } from "@/lib/video/prompt";
 
 // Phase 4: join the scene clips into the final 9:16 video with ffmpeg (in the
 // worker image) and store it in Vercel Blob. Instagram downloads Reels from a
 // public video_url, and a Vercel function cannot serve a file over 4.5 MB.
+
+/**
+ * Seconds of each clip, in order: the 5-second scenes of a scripted video, or
+ * the segments of a direct one (lib/video/direct DirectPlan).
+ */
+export function clipSeconds(project: { script: unknown; directPlan: unknown }): number[] {
+  const plan = project.directPlan as { segments?: Array<{ seconds: number }> } | null;
+  if (plan?.segments?.length) return plan.segments.map((segment) => segment.seconds);
+  const script = project.script as VideoScript | null;
+  return (script?.scenes ?? []).map(() => CLIP_SECONDS);
+}
 
 function errorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
@@ -80,10 +92,10 @@ export async function prepareRender(projectId: string) {
     where: { id: projectId },
     include: { clips: { where: { status: "READY" }, select: { sceneIndex: true } } },
   });
-  const script = project.script as VideoScript | null;
-  if (!script?.scenes?.length) throw new Error("El proyecto no tiene guion");
+  const seconds = clipSeconds(project);
+  if (!seconds.length) throw new Error("El proyecto no tiene guion");
   const ready = new Set(project.clips.map((clip) => clip.sceneIndex));
-  const missing = script.scenes.map((_, index) => index).filter((index) => !ready.has(index));
+  const missing = seconds.map((_, index) => index).filter((index) => !ready.has(index));
   if (missing.length) {
     throw new Error(`Faltan los clips de la escena ${missing.map((index) => index + 1).join(", ")}`);
   }
@@ -102,8 +114,8 @@ export async function renderVideo(projectId: string) {
   const dir = await mkdtemp(path.join(tmpdir(), "video-render-"));
   try {
     const project = await prisma.videoProject.findUniqueOrThrow({ where: { id: projectId } });
-    const script = project.script as VideoScript | null;
-    const sceneCount = script?.scenes?.length ?? 0;
+    const seconds = clipSeconds(project);
+    const sceneCount = seconds.length;
     const clips = await prisma.videoClip.findMany({
       where: { projectId, status: "READY", sceneIndex: { lt: sceneCount } },
       orderBy: { sceneIndex: "asc" },
@@ -134,7 +146,7 @@ export async function renderVideo(projectId: string) {
         status: "READY",
         videoUrl: blob.url,
         sizeBytes: video.length,
-        durationSeconds: sceneCount * 5,
+        durationSeconds: seconds.reduce((total, value) => total + value, 0),
         error: null,
       },
     });

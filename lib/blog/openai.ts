@@ -132,6 +132,30 @@ export async function generateWithReferences({
   return { data: Buffer.from(b64, "base64"), mimeType: "image/webp" };
 }
 
+/** Text-to-image at a given size (no reference photos). */
+export async function generateImage({
+  prompt,
+  size,
+}: {
+  prompt: string;
+  size: string;
+}): Promise<{ data: Buffer; mimeType: string }> {
+  const { imageModel } = getBlogConfig();
+  const result = await withRetry(
+    "OpenAI image",
+    () =>
+      openaiPost<{ data?: Array<{ b64_json?: string }> }>(
+        "/images/generations",
+        { model: imageModel, prompt, size, quality: "medium", output_format: "webp", output_compression: 85, n: 1 },
+        240_000
+      ),
+    { attempts: 3, baseDelayMs: 5000 }
+  );
+  const b64 = result.data?.[0]?.b64_json;
+  if (!b64) throw new Error("OpenAI image response had no image data");
+  return { data: Buffer.from(b64, "base64"), mimeType: "image/webp" };
+}
+
 // Covers are 16:9. The image model needs sides divisible by 16, so it renders
 // 1536x864 and sharp scales it down to a light 1200x675 WebP.
 const GENERATE_SIZE = "1536x864";

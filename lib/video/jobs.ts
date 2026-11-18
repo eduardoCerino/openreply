@@ -2,12 +2,13 @@ import { Queue, Worker, type Job } from "bullmq";
 import { getRedisConnection } from "@/lib/queue/client";
 import { generateClip, generatePendingClips } from "@/lib/video/clips";
 import { generateFrame, generatePendingFrames } from "@/lib/video/frames";
+import { runDirectVideo } from "@/lib/video/direct";
 import { publishVideo } from "@/lib/video/publish";
 import { renderVideo } from "@/lib/video/render";
 import { generateVideoScript } from "@/lib/video/script";
 
 // Video work runs in the worker like the blog: scripts (phase 1), scene start
-// frames (phase 2), the P-Video clips (phase 3), the joined final video
+// frames (phase 2), the Grok Imagine clips (phase 3), the joined final video
 // (phase 4) and its Instagram and Facebook Reels (phase 5).
 
 export const VIDEO_QUEUE_NAME = "video-generation";
@@ -18,6 +19,7 @@ export const CLIPS_JOB = "video-clips";
 export const CLIP_JOB = "video-clip";
 export const RENDER_JOB = "video-render";
 export const PUBLISH_JOB = "video-publish";
+export const DIRECT_JOB = "video-direct";
 
 export type VideoJob =
   | { kind: typeof SCRIPT_JOB; projectId: string; revision: number }
@@ -26,7 +28,8 @@ export type VideoJob =
   | { kind: typeof CLIPS_JOB; projectId: string }
   | { kind: typeof CLIP_JOB; clipId: string }
   | { kind: typeof RENDER_JOB; projectId: string }
-  | { kind: typeof PUBLISH_JOB; publicationId: string };
+  | { kind: typeof PUBLISH_JOB; publicationId: string }
+  | { kind: typeof DIRECT_JOB; projectId: string };
 
 let videoQueue: Queue<VideoJob> | null = null;
 
@@ -84,6 +87,10 @@ export async function enqueuePublishJob(publicationId: string) {
   );
 }
 
+export async function enqueueDirectJob(projectId: string) {
+  return getVideoQueue().add(DIRECT_JOB, { kind: DIRECT_JOB, projectId }, { jobId: `${DIRECT_JOB}_${projectId}_${Date.now()}` });
+}
+
 async function processVideoJob(job: Job<VideoJob>) {
   const startedAt = Date.now();
   console.log(`[Video Worker] ${job.name} ${job.id} started`);
@@ -129,6 +136,13 @@ async function processVideoJob(job: Job<VideoJob>) {
         }`
       );
       return render.status;
+    }
+    case DIRECT_JOB: {
+      const result = await runDirectVideo(job.data.projectId);
+      console.log(
+        `[Video Worker] ${job.name} ${job.id} finished in ${Math.round((Date.now() - startedAt) / 1000)}s: ${result}`
+      );
+      return result;
     }
     case PUBLISH_JOB: {
       const publication = await publishVideo(job.data.publicationId);

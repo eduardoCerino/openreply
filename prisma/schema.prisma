@@ -612,6 +612,15 @@ model VideoProject {
   error       String?
   approvedAt  DateTime?
   createdById String?
+  // "guion": the scripted 11-scene flow. "directo": a script and a context
+  // written by hand (/videos/directo), rendered as one take split into
+  // segments of up to 15 s (lib/video/direct.ts).
+  mode           String  @default("guion")
+  directScript   String?
+  directContext  String?
+  durationSeconds Int?
+  // lib/video/direct DirectPlan: first-frame prompt and the segment scripts.
+  directPlan     Json?
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
   frames      VideoFrame[]
@@ -672,8 +681,8 @@ enum VideoClipStatus {
   FAILED
 }
 
-// One 5-second clip per scene, animated by Pruna's P-Video from the scene's
-// start frame (always draft mode at 720p), with the audio Pruna generates.
+// One 5-second clip per scene, animated from the scene's start frame by Grok
+// Imagine Video 1.5 Lite (AI Gateway, 720p), with the audio the model generates.
 model VideoClip {
   id           String          @id @default(cuid())
   projectId    String

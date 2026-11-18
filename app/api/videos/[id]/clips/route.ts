@@ -8,13 +8,14 @@ export const runtime = "nodejs";
 
 type RouteProps = { params: Promise<{ id: string }> };
 
-/** Phase 3: animate every missing or failed scene clip with P-Video. */
+/** Phase 3: animate every missing or failed scene clip (Grok Imagine via AI Gateway). */
 export async function POST(_request: NextRequest, ctx: RouteProps) {
   const { error } = await requireBlogAdmin();
   if (error) return error;
-  if (!process.env.PRUNA_API_KEY) {
+  const missing = ["AI_GATEWAY_API_KEY", "BLOB_READ_WRITE_TOKEN"].filter((name) => !process.env[name]);
+  if (missing.length) {
     return NextResponse.json(
-      { success: false, error: "Falta la variable de entorno PRUNA_API_KEY (en Vercel y en el worker)" },
+      { success: false, error: `Falta ${missing.join(" y ")} (en Vercel y en el worker)` },
       { status: 400 }
     );
   }

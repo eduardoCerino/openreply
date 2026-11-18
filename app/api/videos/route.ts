@@ -38,7 +38,8 @@ export async function GET() {
   const { error } = await requireBlogAdmin();
   if (error) return error;
   const projects = await prisma.videoProject.findMany({
-    where: { status: { not: "DISCARDED" } },
+    // Direct videos have their own list (/api/videos/direct).
+    where: { status: { not: "DISCARDED" }, mode: "guion" },
     orderBy: { createdAt: "desc" },
     take: 40,
     select: {
