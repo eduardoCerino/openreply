@@ -31,6 +31,18 @@ export type FramePosition = (typeof FRAME_POSITIONS)[number];
 // Vertical 9:16; the image model needs sides divisible by 16.
 export const FRAME_SIZE = "864x1536";
 
+/**
+ * Image model for video frames. Picked in a side-by-side test (2026-11-18)
+ * against 2.6 Sunburst/Flare and 2.5 Flare: best scene fidelity and identity
+ * at about $0.022 per 864x1536 frame, half the 2.6 models. VIDEO_IMAGE_MODEL
+ * overrides it; blog covers keep OPENAI_IMAGE_MODEL.
+ */
+export const DEFAULT_VIDEO_IMAGE_MODEL = "gpt-image-2.5-sunburst-2026-09-08";
+
+export function videoImageModel(): string {
+  return process.env.VIDEO_IMAGE_MODEL || DEFAULT_VIDEO_IMAGE_MODEL;
+}
+
 // A script normally takes under a minute. After this long in "writing" it is
 // treated as lost (usually a worker restart) and can be retried from the panel.
 export const STALE_SCRIPT_MS = 4 * 60_000;

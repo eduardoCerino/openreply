@@ -100,12 +100,15 @@ export async function generateWithReferences({
   prompt,
   references,
   size,
+  model,
 }: {
   prompt: string;
   references: Array<{ data: Buffer | Uint8Array; mimeType: string }>;
   size: string;
+  /** Overrides OPENAI_IMAGE_MODEL (video frames use their own model). */
+  model?: string;
 }): Promise<{ data: Buffer; mimeType: string }> {
-  const { imageModel } = getBlogConfig();
+  const imageModel = model || getBlogConfig().imageModel;
   const result = await withRetry(
     "OpenAI image edit",
     () =>
@@ -136,11 +139,13 @@ export async function generateWithReferences({
 export async function generateImage({
   prompt,
   size,
+  model,
 }: {
   prompt: string;
   size: string;
+  model?: string;
 }): Promise<{ data: Buffer; mimeType: string }> {
-  const { imageModel } = getBlogConfig();
+  const imageModel = model || getBlogConfig().imageModel;
   const result = await withRetry(
     "OpenAI image",
     () =>

@@ -6,7 +6,7 @@ import { del } from "@vercel/blob";
 import { Prisma } from "@/app/generated/prisma/client";
 import { prisma } from "@/lib/db/client";
 import { generateImage, generateStructured, generateWithReferences } from "@/lib/blog/openai";
-import { DEFAULT_VIDEO_TEXT_MODEL, FRAME_SIZE } from "@/lib/video/constants";
+import { DEFAULT_VIDEO_TEXT_MODEL, FRAME_SIZE, videoImageModel } from "@/lib/video/constants";
 import { generateClipVideo } from "@/lib/video/gateway-video";
 import { prepareRender, renderVideo } from "@/lib/video/render";
 
@@ -202,8 +202,9 @@ async function generateFirstFrame(projectId: string, plan: DirectPlan, product: 
           prompt,
           references: references.map((row) => ({ data: row.data, mimeType: row.mimeType })),
           size: FRAME_SIZE,
+          model: videoImageModel(),
         })
-      : await generateImage({ prompt, size: FRAME_SIZE });
+      : await generateImage({ prompt, size: FRAME_SIZE, model: videoImageModel() });
     return await prisma.videoFrame.update({
       where: { projectId_sceneIndex_position: { projectId, sceneIndex: 0, position: "inicio" } },
       data: { status: "READY", prompt, data: new Uint8Array(image.data), mimeType: image.mimeType, error: null },

@@ -239,7 +239,7 @@ Lo genera el worker de Railway, en la cola `video-generation` (`lib/video/jobs.t
 - **Usa solo fotos de personas que dieron su consentimiento** para el uso de su imagen con IA.
 
 **Generación.** En un guion aprobado, **Generar imágenes** crea **la imagen inicial de cada escena** (11 en total). No se genera imagen final: Grok Imagine anima cada clip a partir de una sola imagen, y así el costo de imágenes queda a la mitad.
-- **Modelo:** el worker usa `images/edits` de OpenAI (`gpt-image-2.5-flare`, 864×1536, 9:16) con la foto de la modelo, más la del bote si el producto aparece en esa escena.
+- **Modelo:** el worker usa `images/edits` de OpenAI con **`gpt-image-2.5-sunburst-2026-09-08`** (864×1536, 9:16; unos $0.022 por imagen; se cambia con `VIDEO_IMAGE_MODEL`, y las portadas del blog siguen con `OPENAI_IMAGE_MODEL`) con la foto de la modelo, más la del bote si el producto aparece en esa escena.
 - **Lo que se le pide:** la misma cara, cabello y cuerpo que la referencia, el bote idéntico a su foto, encuadres de buen gusto y sin texto.
 - **Regenerar:** cada imagen se puede regenerar por separado. El código está en `lib/video/frames.ts`.
 

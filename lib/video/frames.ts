@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db/client";
 import { generateWithReferences } from "@/lib/blog/openai";
 import {
   FRAME_SIZE,
+  videoImageModel,
   type FramePosition,
   type VideoProduct,
 } from "@/lib/video/constants";
@@ -143,7 +144,7 @@ export async function generateFrame(frameId: string) {
       position: frame.position as FramePosition,
       references,
     });
-    const image = await generateWithReferences({ prompt, references, size: FRAME_SIZE });
+    const image = await generateWithReferences({ prompt, references, size: FRAME_SIZE, model: videoImageModel() });
     return await prisma.videoFrame.update({
       where: { id: frame.id },
       data: {
