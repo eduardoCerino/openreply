@@ -621,6 +621,9 @@ model VideoProject {
   durationSeconds Int?
   // lib/video/direct DirectPlan: first-frame prompt and the segment scripts.
   directPlan     Json?
+  // Direct videos stop after the first image until it is approved here;
+  // regenerating the image clears it.
+  imageApprovedAt DateTime?
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
   frames      VideoFrame[]

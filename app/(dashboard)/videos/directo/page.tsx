@@ -32,6 +32,9 @@ interface DirectRow {
   durationSeconds: number | null;
   error: string | null;
   createdAt: string;
+  imageApprovedAt: string | null;
+  frames: Array<{ status: string }>;
+  _count: { clips: number };
   render: { status: string } | null;
   publications: Array<{ platform: string; status: string }>;
 }
@@ -40,6 +43,9 @@ function rowStatus(row: DirectRow): { label: string; tone: string } {
   if (row.publications.some((item) => item.status === "PUBLISHED")) return { label: "Publicado", tone: "text-success" };
   if (row.error) return { label: "Falló (reintentar)", tone: "text-error" };
   if (row.render?.status === "READY") return { label: "Video listo", tone: "text-accent" };
+  if (row.frames[0]?.status === "READY" && !row.imageApprovedAt && row._count.clips === 0) {
+    return { label: "Aprobar imagen", tone: "text-accent" };
+  }
   return { label: "Generando…", tone: "text-muted" };
 }
 

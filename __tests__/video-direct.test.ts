@@ -54,6 +54,8 @@ describe("buildDirectFramePrompt", () => {
     expect(prompt).toContain("MODEL reference");
     expect(prompt).toContain("No supplement tub");
     expect(prompt).toContain("parked car");
+    expect(prompt).toContain("SAME person as in image 1");
+    expect(prompt).toContain("image 1 wins");
   });
 
   it("works from the context alone without references", () => {

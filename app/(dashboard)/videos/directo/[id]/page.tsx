@@ -3,7 +3,8 @@
 /**
  * Videos — one direct video: the plan (script split into parts), the first
  * frame, each part's clip and the final video with its publication. The
- * pipeline runs by itself; this page follows it and offers reruns.
+ * pipeline stops after the first image until it is approved here (or
+ * regenerated); then it runs by itself and this page follows it.
  */
 
 import Link from "next/link";
@@ -23,8 +24,11 @@ interface DirectProject extends PublishProject {
     firstFramePrompt: string;
     productVisible: boolean;
     segments: Array<{ seconds: number; script: string }>;
+    caption?: string;
+    hashtags?: string[];
   } | null;
   error: string | null;
+  imageApprovedAt: string | null;
   createdAt: string;
   frames?: Array<{ id: string; sceneIndex: number; position: string; status: RowStatus; error: string | null; updatedAt: string }>;
   clips?: Array<{ id: string; sceneIndex: number; status: RowStatus; error: string | null; updatedAt: string }>;
@@ -43,6 +47,12 @@ function StatusBox({ status, error, waiting }: { status?: RowStatus; error?: str
       {status === "FAILED" ? error ?? "Falló" : status === "GENERATING" ? "Generando…" : waiting}
     </div>
   );
+}
+
+/** The first image is ready and the pipeline waits for it to be approved. */
+function awaitingApproval(project: DirectProject): boolean {
+  const frame = (project.frames ?? []).find((row) => row.sceneIndex === 0 && row.position === "inicio");
+  return frame?.status === "READY" && !project.imageApprovedAt && (project.clips ?? []).length === 0;
 }
 
 export default function DirectVideoReviewPage() {
@@ -68,7 +78,7 @@ export default function DirectVideoReviewPage() {
       const data: DirectProject = payload.data;
       setProject(data);
       const publishing = (data.publications ?? []).some((row) => row.status === "PENDING" || row.status === "PUBLISHING");
-      const running = !data.error && data.render?.status !== "READY";
+      const running = !data.error && data.render?.status !== "READY" && !awaitingApproval(data);
       if (running || publishing) timer = setTimeout(() => void poll(), 4000);
     }
     void poll();
@@ -117,7 +127,8 @@ export default function DirectVideoReviewPage() {
   const segments = plan?.segments ?? [];
   const clipsReady = clips.filter((clip) => clip.status === "READY").length;
   const published = (project.publications ?? []).some((row) => row.status !== "FAILED");
-  const running = !project.error && project.render?.status !== "READY";
+  const awaiting = awaitingApproval(project);
+  const running = !project.error && project.render?.status !== "READY" && !awaiting;
   const locked = busy || running || published;
 
   const step = project.error
@@ -126,7 +137,9 @@ export default function DirectVideoReviewPage() {
       ? "Preparando: dividiendo el guion y describiendo la imagen inicial…"
       : frame?.status !== "READY"
         ? "Generando la imagen inicial…"
-        : clipsReady < segments.length
+        : awaiting
+          ? "Revisa la imagen inicial. Si te gusta, apruébala para generar el video; si no, genera otra."
+          : clipsReady < segments.length
           ? `Generando el video: parte ${Math.min(clipsReady + 1, segments.length)} de ${segments.length}…`
           : project.render?.status !== "READY"
             ? "Uniendo las partes en el video final…"
@@ -146,7 +159,7 @@ export default function DirectVideoReviewPage() {
 
       <div
         className={`flex flex-wrap items-center justify-between gap-3 rounded-lg border p-4 text-sm text-foreground ${
-          project.error ? "border-error/30 bg-error/10" : running ? "border-accent/30 bg-accent/10" : "border-success/30 bg-success/10"
+          project.error ? "border-error/30 bg-error/10" : running || awaiting ? "border-accent/30 bg-accent/10" : "border-success/30 bg-success/10"
         }`}
       >
         <span>{step}</span>
@@ -154,6 +167,16 @@ export default function DirectVideoReviewPage() {
           <button type="button" onClick={() => rerun({ action: "retry" })} disabled={busy} className={primaryButton}>
             Reintentar
           </button>
+        )}
+        {awaiting && !project.error && (
+          <div className="flex flex-wrap gap-2">
+            <button type="button" onClick={() => rerun({ action: "regenerate-image" })} disabled={busy} className={secondaryButton}>
+              Reintentar imagen
+            </button>
+            <button type="button" onClick={() => rerun({ action: "approve-image" })} disabled={busy} className={primaryButton}>
+              Aprobar y generar video
+            </button>
+          </div>
         )}
       </div>
       {(project.error || actionError) && (
@@ -196,7 +219,7 @@ export default function DirectVideoReviewPage() {
       <section className="panel space-y-3 rounded-lg p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="text-base font-semibold text-foreground">Imagen inicial</h2>
-          {frame && (frame.status === "READY" || frame.status === "FAILED") && (
+          {frame && !awaiting && (frame.status === "READY" || frame.status === "FAILED") && (
             <button
               type="button"
               onClick={() => rerun({ action: "regenerate-image" }, "¿Regenerar la imagen? También se rehacen todos los clips.")}
@@ -218,7 +241,14 @@ export default function DirectVideoReviewPage() {
           ) : (
             <StatusBox status={frame?.status} error={frame?.error} waiting={plan ? "En cola" : "Esperando el plan"} />
           )}
-          {plan && <p className="text-xs text-muted whitespace-pre-line">{plan.firstFramePrompt}</p>}
+          <div className="space-y-2">
+            <p className={`text-xs font-medium ${project.product === "ninguno" ? "text-error" : "text-foreground"}`}>
+              {project.product === "ninguno"
+                ? "Sin foto de modelo: con «Ningún producto» la persona se inventa a partir del contexto."
+                : `Con la foto de la modelo de ${PRODUCT_LABEL[project.product] ?? project.product} (Fotos de referencia).`}
+            </p>
+            {plan && <p className="text-xs text-muted whitespace-pre-line">{plan.firstFramePrompt}</p>}
+          </div>
         </div>
       </section>
 
@@ -279,7 +309,7 @@ export default function DirectVideoReviewPage() {
       {project.render && (
         <PublishPanel
           key={(project.publications ?? []).map((row) => `${row.id}:${row.status}`).join("|") || "new"}
-          project={project}
+          project={{ ...project, script: plan?.caption ? { caption: plan.caption, hashtags: plan.hashtags } : null }}
           busy={busy}
           act={act}
           allowRender={false}

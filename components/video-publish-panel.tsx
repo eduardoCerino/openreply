@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 // The final video and its publication on Instagram / Facebook Reels, shared by
 // the scripted review page (/videos/[id]) and direct videos (/videos/directo/[id]).
@@ -107,6 +107,28 @@ export function PublishPanel({
   const hashtagCount = (caption.match(/#[^\s#]+/g) ?? []).length;
   const everythingPosted =
     (accounts.length === 0 || instagram?.status === "PUBLISHED") && (pages.length === 0 || facebook?.status === "PUBLISHED");
+  const [writingCaption, setWritingCaption] = useState(false);
+  const [captionError, setCaptionError] = useState<string | null>(null);
+  const autoCaptionTried = useRef(false);
+
+  async function writeCaption() {
+    setWritingCaption(true);
+    setCaptionError(null);
+    const response = await fetch(`/api/videos/${project.id}/caption`, { method: "POST" });
+    const payload = await response.json().catch(() => ({ success: false, error: "Error de red" }));
+    setWritingCaption(false);
+    if (payload.success) setCaption(payload.data.caption);
+    else setCaptionError(payload.error ?? "No se pudo generar el caption");
+  }
+
+  // Nothing to start from (direct videos): write it with AI as soon as the video is ready.
+  const canEditCaption = render?.status === "READY" && !everythingPosted && accounts.length + pages.length > 0;
+  useEffect(() => {
+    if (!canEditCaption || autoCaptionTried.current || caption.trim()) return;
+    autoCaptionTried.current = true;
+    void writeCaption();
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- runs once, when the video becomes publishable
+  }, [canEditCaption]);
 
   function renderVideo() {
     void act(`/api/videos/${project.id}/render`, { method: "POST" });
@@ -204,23 +226,41 @@ export function PublishPanel({
                     )}
                   </div>
                 )}
-                <label className="block space-y-1">
-                  <span className="text-xs font-semibold uppercase text-muted">Caption</span>
+                <div className="block space-y-1">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <label htmlFor={`caption-${project.id}`} className="text-xs font-semibold uppercase text-muted">
+                      Caption
+                    </label>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (caption.trim() && !window.confirm("¿Reemplazar el caption actual por uno nuevo escrito con IA?")) return;
+                        void writeCaption();
+                      }}
+                      disabled={publishing || writingCaption}
+                      className="text-xs text-accent hover:underline disabled:opacity-50"
+                    >
+                      {writingCaption ? "Escribiendo con IA…" : caption.trim() ? "Reescribir con IA" : "Escribir con IA"}
+                    </button>
+                  </div>
                   <textarea
+                    id={`caption-${project.id}`}
                     value={caption}
                     onChange={(event) => setCaption(event.target.value)}
-                    disabled={publishing}
+                    disabled={publishing || writingCaption}
+                    placeholder={writingCaption ? "Escribiendo el texto y los hashtags…" : ""}
                     rows={6}
                     className={select}
                   />
+                  {captionError && <span className="block text-xs text-error">{captionError}</span>}
                   <span className={`text-xs ${caption.length > 2200 || hashtagCount > 30 ? "text-error" : "text-muted"}`}>
-                    {caption.length}/2200 caracteres · {hashtagCount}/30 hashtags
+                    {caption.length}/2200 caracteres · {hashtagCount}/30 hashtags · puedes editarlo antes de publicar
                   </span>
-                </label>
+                </div>
                 <button
                   type="button"
                   onClick={publish}
-                  disabled={busy || publishing || !caption.trim() || pendingTargets.length === 0}
+                  disabled={busy || publishing || writingCaption || !caption.trim() || pendingTargets.length === 0}
                   className={primaryButton}
                 >
                   {publishing

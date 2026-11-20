@@ -30,6 +30,9 @@ export interface DirectPlan {
   firstFramePrompt: string;
   productVisible: boolean;
   segments: DirectSegment[];
+  /** Reel caption and hashtags, written by /api/videos/[id]/caption. */
+  caption?: string;
+  hashtags?: string[];
 }
 
 function errorMessage(error: unknown): string {
@@ -84,11 +87,15 @@ With a single part, return the script unchanged apart from making the duration m
 
 Also describe the first frame from the context, as a still photograph.`;
 
+const IDENTITY_FROM_PHOTO = `The woman's identity comes from a reference photo given to the image model. In firstFramePrompt do NOT describe her face, facial features, hair (color, length, style), eyes, skin tone, age, ethnicity or body: call her "the woman from the reference photo". Describe only her outfit and accessories, pose, gesture, expression, the place, the light and the camera framing.`;
+
 /** Plans a direct video: first-frame description plus the segment scripts. */
 export async function planDirectVideo(input: {
   script: string;
   context: string;
   durationSeconds: number;
+  /** The woman comes from a reference photo: the first frame must not describe her looks. */
+  withModelReference?: boolean;
   model?: string;
 }): Promise<DirectPlan> {
   const seconds = splitDuration(input.durationSeconds);
@@ -99,7 +106,7 @@ export async function planDirectVideo(input: {
   }>({
     name: "direct_video_plan",
     schema: PLAN_SCHEMA(seconds.length),
-    instructions: PLAN_INSTRUCTIONS,
+    instructions: input.withModelReference ? `${PLAN_INSTRUCTIONS}\n\n${IDENTITY_FROM_PHOTO}` : PLAN_INSTRUCTIONS,
     model: input.model ?? DEFAULT_VIDEO_TEXT_MODEL,
     input: [
       `Total duration: ${input.durationSeconds} seconds, vertical 9:16.`,
@@ -126,13 +133,17 @@ export function buildDirectFramePrompt(plan: DirectPlan, references: { model: bo
   return [
     "Vertical 9:16 photorealistic still frame from a smartphone video (TikTok / Reels UGC), natural light, authentic and unpolished, real skin texture with visible pores, no beauty filter.",
     references.model
-      ? "Image 1 = MODEL reference: the woman on screen is this exact person, with the same face, hair, skin tone and body type. Change only what the scene below describes (outfit, pose, place)."
+      ? [
+          "Image 1 = MODEL reference, the main identity reference. The woman in the frame is the SAME person as in image 1, not a similar-looking one: same face shape and facial features, eyes, eyebrows, nose, lips, hair color, length and texture, skin tone and body type.",
+          "If the scene text below describes her looks differently, image 1 wins. Take from the text only the outfit, accessories, pose, expression, place, light and framing.",
+        ].join("\n")
       : "",
     references.product
       ? `Image ${references.model ? 2 : 1} = PRODUCT reference: the supplement tub must look exactly like it, label facing the camera.`
       : "No supplement tub, bottle or packaging in the frame.",
     `Scene: ${plan.firstFramePrompt}`,
     "No on-screen text, captions, subtitles, watermarks or logos.",
+    references.model ? "Final check: she must be recognizable as the exact woman in image 1." : "",
   ]
     .filter(Boolean)
     .join("\n");
@@ -265,7 +276,8 @@ async function generateSegmentClip(projectId: string, context: string, plan: Dir
 
 /**
  * Runs (or resumes) a direct video end to end. Steps already done are kept,
- * so a retry after a failure picks up where it stopped.
+ * so a retry after a failure picks up where it stopped. It stops after the
+ * first image ("AWAITING_APPROVAL") until imageApprovedAt is set.
  */
 export async function runDirectVideo(projectId: string): Promise<string> {
   const project = await prisma.videoProject.findUniqueOrThrow({
@@ -283,6 +295,7 @@ export async function runDirectVideo(projectId: string): Promise<string> {
         script: project.directScript,
         context: project.directContext,
         durationSeconds: project.durationSeconds ?? DIRECT_DURATION.default,
+        withModelReference: project.product !== "ninguno",
         model: project.model ?? undefined,
       });
       await prisma.videoProject.update({
@@ -298,6 +311,9 @@ export async function runDirectVideo(projectId: string): Promise<string> {
     }
 
     const clips = await prisma.videoClip.findMany({ where: { projectId } });
+    // Wait for the reviewer to approve the image (projects that already
+    // have clips started before this step existed and keep going).
+    if (!project.imageApprovedAt && clips.length === 0) return "AWAITING_APPROVAL";
     for (let index = 0; index < plan.segments.length; index++) {
       if (clips.find((clip) => clip.sceneIndex === index)?.status === "READY") continue;
       const clip = await generateSegmentClip(projectId, project.directContext, plan, index);
@@ -327,6 +343,7 @@ export async function resetDirectVideo(projectId: string, target: { kind: "image
   }
   if (target.kind === "plan" || target.kind === "image") {
     await prisma.videoFrame.deleteMany({ where: { projectId } });
+    await prisma.videoProject.update({ where: { id: projectId }, data: { imageApprovedAt: null } });
   }
   const fromIndex = target.kind === "clip" ? target.index : 0;
   await prisma.videoClip.deleteMany({ where: { projectId, sceneIndex: { gte: fromIndex } } });

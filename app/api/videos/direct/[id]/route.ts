@@ -11,13 +11,15 @@ type RouteProps = { params: Promise<{ id: string }> };
 
 const actionSchema = z.discriminatedUnion("action", [
   z.object({ action: z.literal("retry") }),
+  z.object({ action: z.literal("approve-image") }),
   z.object({ action: z.literal("regenerate-image") }),
   z.object({ action: z.literal("regenerate-clip"), index: z.number().int().min(0) }),
   z.object({ action: z.literal("replan") }),
 ]);
 
 /**
- * Reruns a direct video from a step: "retry" resumes after a failure,
+ * Moves a direct video along: "approve-image" accepts the first image and
+ * starts the clips, "retry" resumes after a failure,
  * "regenerate-image" redoes the image and every clip, "regenerate-clip"
  * redoes one clip and the ones after it, "replan" splits the script again.
  */
@@ -44,6 +46,16 @@ export async function POST(request: NextRequest, ctx: RouteProps) {
     return NextResponse.json({ success: false, error: "Este video ya se publicó o se está publicando" }, { status: 409 });
   }
 
+  if (parsed.data.action === "approve-image") {
+    const frame = project.frames.find((row) => row.sceneIndex === 0 && row.position === "inicio");
+    if (frame?.status !== "READY") {
+      return NextResponse.json({ success: false, error: "La imagen inicial aún no está lista" }, { status: 409 });
+    }
+    if (project.imageApprovedAt) {
+      return NextResponse.json({ success: false, error: "La imagen ya está aprobada" }, { status: 409 });
+    }
+    await prisma.videoProject.update({ where: { id }, data: { imageApprovedAt: new Date() } });
+  }
   if (parsed.data.action === "regenerate-image") await resetDirectVideo(id, { kind: "image" });
   if (parsed.data.action === "regenerate-clip") await resetDirectVideo(id, { kind: "clip", index: parsed.data.index });
   if (parsed.data.action === "replan") await resetDirectVideo(id, { kind: "plan" });
