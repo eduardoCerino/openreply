@@ -26,6 +26,40 @@ export const DEFAULT_VIDEO_TEXT_MODEL: VideoTextModel = "gpt-6.1-terra";
 // other product's videos) and the product tub.
 export const REFERENCE_KINDS = ["modelo", "producto"] as const;
 export type ReferenceKind = (typeof REFERENCE_KINDS)[number];
+
+/**
+ * The exact packaging of each tub, read from the real product photo, so the
+ * image model copies the label instead of guessing it. Products without an
+ * entry rely on the reference photo alone.
+ */
+export const PRODUCT_LABEL_SPECS: Partial<Record<string, string>> = {
+  creatina: [
+    "Packaging: clear plastic jar with a glossy red screw lid; the white powder shows through the clear band above and below the label.",
+    "Light pink wraparound label. Front of the label, top to bottom:",
+    '1. A big red peach-shaped logo with a stem and one leaf on top; inside it the words "PEACH" over "PERFECT" in bold, bubbly, hand-drawn red letters, with a small "™". Smaller faded pink copies of the same peach logo are scattered in the label background.',
+    '2. "booty builder™" in red lowercase bold sans-serif.',
+    '3. One row in red, split by thin vertical bars: "5G creatine" | "1G collagen" | "1G bcaas", with a small illustration of a pink lemonade glass jar with lemon slices and a striped straw to the right.',
+    '4. A pale yellow banner with "Pink Lemonade" in pink cursive script.',
+    '5. Small red italic line at the bottom: "30 Servings   Dietary Supplement   Net wt. 9.6oz (272g)".',
+    "Copy every word exactly as written above, letter for letter, with the same spelling and capitalization. Never invent, misspell or add words on the label; if a line is too small to read in the shot, keep it small and blurred rather than replacing it with other text.",
+  ].join("\n"),
+  inositol: [
+    "Packaging: short, wide jar of opaque white plastic with a glossy red screw lid; white plastic shows above and below the label.",
+    "Light pink wraparound label. Front of the label, top to bottom:",
+    '1. A big red peach-shaped logo with a stem and one leaf on top; inside it the words "PEACH" over "PERFECT" in bold, bubbly, hand-drawn red letters, with a small "™". Around it, red and dark-red five-petal flowers with white centers and small red hearts.',
+    '2. "Inositol" over "Multivitamin™" in large, bold, dark-red sans-serif letters.',
+    '3. One row of three claims in red, split by thin vertical bars: "Cycle Regulation*" | "Fights Imbalances*" | "Healthy Skin + Hair*".',
+    '4. On the right, a round pink badge with "PINK" curved along the top and "LEMONADE" curved along the bottom, around a small pink lemonade glass jar with lemon slices.',
+    '5. Small red italic line at the bottom: "30 Servings   Dietary Supplement   4.75oz (135g)".',
+    "Copy every word exactly as written above, letter for letter, with the same spelling and capitalization. Never invent, misspell or add words on the label; if a line is too small to read in the shot, keep it small and blurred rather than replacing it with other text.",
+  ].join("\n"),
+};
+
+/** The label spec of a product, ready to drop into an image prompt. */
+export function productLabelSpec(product: string | null | undefined): string {
+  return product ? (PRODUCT_LABEL_SPECS[product] ?? "") : "";
+}
+
 export const FRAME_POSITIONS = ["inicio", "final"] as const;
 export type FramePosition = (typeof FRAME_POSITIONS)[number];
 // Vertical 9:16; the image model needs sides divisible by 16.

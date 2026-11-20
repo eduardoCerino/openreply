@@ -2,6 +2,7 @@ import { prisma } from "@/lib/db/client";
 import { generateWithReferences } from "@/lib/blog/openai";
 import {
   FRAME_SIZE,
+  productLabelSpec,
   videoImageModel,
   type FramePosition,
   type VideoProduct,
@@ -30,11 +31,14 @@ export function buildFramePrompt({
   scene,
   position,
   references,
+  product,
 }: {
   script: VideoScript;
   scene: VideoScene;
   position: FramePosition;
   references: ReferenceImage[];
+  /** Product whose label spec (PRODUCT_LABEL_SPECS) to copy onto the tub. */
+  product?: string;
 }): string {
   const shots = scene.shots ?? [];
   const shot = position === "inicio" ? shots[0] : shots[shots.length - 1];
@@ -53,13 +57,16 @@ export function buildFramePrompt({
     hasProduct
       ? "The supplement tub must look exactly like the PRODUCT reference: same red lid, pink label, logo and proportions, label facing the camera."
       : "No supplement tub, bottle or packaging in the frame.",
+    hasProduct ? productLabelSpec(product) : "",
     hasStart
       ? "This is the LAST frame of the same continuous shot that begins with the START FRAME: same location, lighting, outfit and camera setup, after the movement described below."
       : "",
     `Scene: ${framePrompt}`,
     shot ? `Camera: ${shot}.` : "",
     script.visualStyle ? `Visual style: ${script.visualStyle}.` : "",
-    "No on-screen text, captions, subtitles, watermarks or extra logos (text is added in editing). Nothing clinical.",
+    hasProduct
+      ? "No on-screen text, captions, subtitles, watermarks or extra logos (text is added in editing); the only text is the tub's own label. Nothing clinical."
+      : "No on-screen text, captions, subtitles, watermarks or extra logos (text is added in editing). Nothing clinical.",
   ]
     .filter(Boolean)
     .join("\n");
@@ -143,6 +150,7 @@ export async function generateFrame(frameId: string) {
       scene,
       position: frame.position as FramePosition,
       references,
+      product: frame.project.product,
     });
     const image = await generateWithReferences({ prompt, references, size: FRAME_SIZE, model: videoImageModel() });
     return await prisma.videoFrame.update({

@@ -63,6 +63,17 @@ describe("buildDirectFramePrompt", () => {
     expect(prompt).not.toContain("MODEL reference");
     expect(prompt).toContain("Image 1 = PRODUCT reference");
   });
+
+  it("spells out the tub's label when the product has a spec", () => {
+    const prompt = buildDirectFramePrompt({ ...plan, productVisible: true }, { model: true, product: true }, "creatina");
+    expect(prompt).toContain('"booty builder™"');
+    expect(prompt).toContain('"Pink Lemonade"');
+    expect(prompt).toContain("Net wt. 9.6oz (272g)");
+    expect(prompt).toContain("only text in the frame is the tub's own label");
+    expect(buildDirectFramePrompt({ ...plan, productVisible: true }, { model: true, product: true }, "inositol")).toContain(
+      '"Inositol" over "Multivitamin™"'
+    );
+  });
 });
 
 describe("directModelProduct", () => {

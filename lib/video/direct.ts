@@ -6,7 +6,7 @@ import { del } from "@vercel/blob";
 import { Prisma } from "@/app/generated/prisma/client";
 import { prisma } from "@/lib/db/client";
 import { generateImage, generateStructured, generateWithReferences } from "@/lib/blog/openai";
-import { DEFAULT_VIDEO_TEXT_MODEL, FRAME_SIZE, videoImageModel } from "@/lib/video/constants";
+import { DEFAULT_VIDEO_TEXT_MODEL, FRAME_SIZE, productLabelSpec, videoImageModel } from "@/lib/video/constants";
 import { generateClipVideo } from "@/lib/video/gateway-video";
 import { prepareRender, renderVideo } from "@/lib/video/render";
 
@@ -138,7 +138,12 @@ export async function planDirectVideo(input: {
   };
 }
 
-export function buildDirectFramePrompt(plan: DirectPlan, references: { model: boolean; product: boolean }): string {
+export function buildDirectFramePrompt(
+  plan: DirectPlan,
+  references: { model: boolean; product: boolean },
+  /** Product whose label spec (lib/video/constants PRODUCT_LABEL_SPECS) to copy onto the tub. */
+  product?: string
+): string {
   return [
     "Vertical 9:16 photorealistic still frame from a smartphone video (TikTok / Reels UGC), natural light, authentic and unpolished, real skin texture with visible pores, no beauty filter.",
     references.model
@@ -150,8 +155,11 @@ export function buildDirectFramePrompt(plan: DirectPlan, references: { model: bo
     references.product
       ? `Image ${references.model ? 2 : 1} = PRODUCT reference: the supplement tub must look exactly like it, label facing the camera.`
       : "No supplement tub, bottle or packaging in the frame.",
+    references.product ? productLabelSpec(product) : "",
     `Scene: ${plan.firstFramePrompt}`,
-    "No on-screen text, captions, subtitles, watermarks or logos.",
+    references.product
+      ? "No on-screen text, captions, subtitles or watermarks. The only text in the frame is the tub's own label."
+      : "No on-screen text, captions, subtitles, watermarks or logos.",
     references.model ? "Final check: she must be recognizable as the exact woman in image 1." : "",
   ]
     .filter(Boolean)
@@ -220,7 +228,7 @@ async function generateFirstFrame(projectId: string, plan: DirectPlan, product: 
         ? await prisma.videoReference.findUnique({ where: { product_kind: { product, kind: "producto" } } })
         : null;
     const references = [model, tub].filter((row): row is NonNullable<typeof row> => Boolean(row));
-    const prompt = buildDirectFramePrompt(plan, { model: Boolean(model), product: Boolean(tub) });
+    const prompt = buildDirectFramePrompt(plan, { model: Boolean(model), product: Boolean(tub) }, product);
     const image = references.length
       ? await generateWithReferences({
           prompt,
