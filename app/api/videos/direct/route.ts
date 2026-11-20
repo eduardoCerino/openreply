@@ -3,7 +3,7 @@ import { z } from "zod";
 import { prisma } from "@/lib/db/client";
 import { requireBlogAdmin } from "@/lib/blog/access";
 import { DEFAULT_VIDEO_TEXT_MODEL } from "@/lib/video/constants";
-import { DIRECT_DURATION, DIRECT_PRODUCTS } from "@/lib/video/direct";
+import { DIRECT_DURATION, DIRECT_MODELS, DIRECT_PRODUCTS } from "@/lib/video/direct";
 import { enqueueDirectJob } from "@/lib/video/jobs";
 
 export const runtime = "nodejs";
@@ -18,6 +18,8 @@ const createSchema = z.object({
     .max(DIRECT_DURATION.max, `Máximo ${DIRECT_DURATION.max} segundos`)
     .default(DIRECT_DURATION.default),
   product: z.enum(DIRECT_PRODUCTS).default("ninguno"),
+  /** Whose model photo to use when there is no product; with a product it is always that product's model. */
+  modelProduct: z.enum(DIRECT_MODELS).default("creatina"),
 });
 
 /** Direct videos, newest first. */
@@ -58,14 +60,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ success: false, error: `Falta ${missing.join(", ")} (en Vercel y en el worker)` }, { status: 400 });
   }
   const { script, context: videoContext, durationSeconds, product } = parsed.data;
-  if (product !== "ninguno") {
-    const model = await prisma.videoReference.findFirst({ where: { product, kind: "modelo" }, select: { id: true } });
-    if (!model) {
-      return NextResponse.json(
-        { success: false, error: `Falta la foto de la modelo de ${product}: súbela en Fotos de referencia o elige "Ningún producto"` },
-        { status: 400 }
-      );
-    }
+  // A model photo is always used; with a product, it is that product's model.
+  const modelProduct = product === "ninguno" ? parsed.data.modelProduct : product;
+  const model = await prisma.videoReference.findFirst({ where: { product: modelProduct, kind: "modelo" }, select: { id: true } });
+  if (!model) {
+    return NextResponse.json(
+      { success: false, error: `Falta la foto de la modelo de ${modelProduct}: súbela en Fotos de referencia` },
+      { status: 400 }
+    );
   }
   const firstLine = script.split("\n").find((line) => line.trim()) ?? script;
   const project = await prisma.videoProject.create({
@@ -80,6 +82,7 @@ export async function POST(request: NextRequest) {
       directScript: script,
       directContext: videoContext,
       durationSeconds,
+      modelProduct,
       model: DEFAULT_VIDEO_TEXT_MODEL,
       createdById: context.userId,
     },

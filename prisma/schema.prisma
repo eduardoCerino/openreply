@@ -624,6 +624,9 @@ model VideoProject {
   // Direct videos stop after the first image until it is approved here;
   // regenerating the image clears it.
   imageApprovedAt DateTime?
+  // Direct videos always use a model photo: the product's own model, or the
+  // one picked here ("creatina" / "inositol") when there is no product.
+  modelProduct   String?
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
   frames      VideoFrame[]

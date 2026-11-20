@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildDirectClipPrompt, buildDirectFramePrompt, splitDuration, type DirectPlan } from "../lib/video/direct";
+import { buildDirectClipPrompt, buildDirectFramePrompt, directModelProduct, splitDuration, type DirectPlan } from "../lib/video/direct";
 
 describe("splitDuration", () => {
   it("keeps short videos in one clip", () => {
@@ -62,5 +62,13 @@ describe("buildDirectFramePrompt", () => {
     const prompt = buildDirectFramePrompt({ ...plan, productVisible: true }, { model: false, product: true });
     expect(prompt).not.toContain("MODEL reference");
     expect(prompt).toContain("Image 1 = PRODUCT reference");
+  });
+});
+
+describe("directModelProduct", () => {
+  it("always picks a model photo", () => {
+    expect(directModelProduct({ product: "inositol", modelProduct: "creatina" })).toBe("inositol");
+    expect(directModelProduct({ product: "ninguno", modelProduct: "inositol" })).toBe("inositol");
+    expect(directModelProduct({ product: "ninguno", modelProduct: null })).toBe("creatina");
   });
 });

@@ -22,6 +22,11 @@ const PRODUCTS = [
   { id: "inositol", label: "Inositol" },
 ] as const;
 
+const MODELS = [
+  { id: "creatina", label: "Modelo de creatina" },
+  { id: "inositol", label: "Modelo de inositol" },
+] as const;
+
 const DURATION = { min: 5, max: 60, default: 30 };
 const SEGMENT_MAX = 15;
 
@@ -55,6 +60,7 @@ export default function DirectVideoPage() {
   const [context, setContext] = useState("");
   const [duration, setDuration] = useState(DURATION.default);
   const [product, setProduct] = useState<(typeof PRODUCTS)[number]["id"]>("ninguno");
+  const [modelProduct, setModelProduct] = useState<(typeof MODELS)[number]["id"]>("creatina");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [rows, setRows] = useState<DirectRow[]>([]);
@@ -80,7 +86,7 @@ export default function DirectVideoPage() {
     const response = await fetch("/api/videos/direct", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ script, context, durationSeconds: duration, product }),
+      body: JSON.stringify({ script, context, durationSeconds: duration, product, modelProduct }),
     });
     const payload = await response.json().catch(() => ({ success: false, error: "No se pudo crear el video" }));
     setSubmitting(false);
@@ -168,13 +174,30 @@ export default function DirectVideoPage() {
             </select>
             <span className="block text-xs text-muted">
               {product === "ninguno"
-                ? "La imagen inicial se crea solo con el contexto."
-                : "La imagen inicial usa la modelo de este producto (y el bote si sale) de Fotos de referencia."}{" "}
+                ? "No sale ningún bote. La modelo se elige abajo."
+                : "Sale la modelo de este producto, y el bote si el contexto lo muestra."}{" "}
               <Link href="/videos/referencias" className="text-accent hover:underline">
                 Fotos de referencia
               </Link>
             </span>
           </label>
+          {product === "ninguno" && (
+            <label className="block space-y-1.5">
+              <span className="text-sm font-medium text-foreground">Modelo</span>
+              <select
+                value={modelProduct}
+                onChange={(event) => setModelProduct(event.target.value as typeof modelProduct)}
+                className={inputClass}
+              >
+                {MODELS.map((item) => (
+                  <option key={item.id} value={item.id}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+              <span className="block text-xs text-muted">La imagen inicial siempre usa la foto de una modelo.</span>
+            </label>
+          )}
         </div>
 
         <div className="flex flex-wrap items-center gap-3 border-t border-border pt-4">

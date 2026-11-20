@@ -18,6 +18,15 @@ import { prepareRender, renderVideo } from "@/lib/video/render";
 
 export const DIRECT_PRODUCTS = ["creatina", "inositol", "ninguno"] as const;
 export type DirectProduct = (typeof DIRECT_PRODUCTS)[number];
+/** Products with a model photo in Fotos de referencia. */
+export const DIRECT_MODELS = ["creatina", "inositol"] as const;
+export type DirectModel = (typeof DIRECT_MODELS)[number];
+
+/** Whose model photo a direct video uses: the product's own model, else the one picked. */
+export function directModelProduct(project: { product: string; modelProduct: string | null }): string {
+  if (project.product !== "ninguno") return project.product;
+  return project.modelProduct ?? "creatina";
+}
 export const DIRECT_DURATION = { min: 5, max: 60, default: 30 } as const;
 export const MAX_SEGMENT_SECONDS = 15;
 
@@ -195,17 +204,21 @@ export async function extractLastFrame(video: Uint8Array): Promise<Uint8Array> {
   }
 }
 
-async function generateFirstFrame(projectId: string, plan: DirectPlan, product: string) {
+async function generateFirstFrame(projectId: string, plan: DirectPlan, product: string, modelProduct: string) {
   await prisma.videoFrame.upsert({
     where: { projectId_sceneIndex_position: { projectId, sceneIndex: 0, position: "inicio" } },
     create: { projectId, sceneIndex: 0, position: "inicio", status: "GENERATING" },
     update: { status: "GENERATING", error: null },
   });
   try {
-    const rows =
-      product === "ninguno" ? [] : await prisma.videoReference.findMany({ where: { product } });
-    const model = rows.find((row) => row.kind === "modelo");
-    const tub = plan.productVisible ? rows.find((row) => row.kind === "producto") : undefined;
+    const model = await prisma.videoReference.findUnique({
+      where: { product_kind: { product: modelProduct, kind: "modelo" } },
+    });
+    if (!model) throw new Error(`Falta la foto de la modelo de ${modelProduct} en Fotos de referencia`);
+    const tub =
+      product !== "ninguno" && plan.productVisible
+        ? await prisma.videoReference.findUnique({ where: { product_kind: { product, kind: "producto" } } })
+        : null;
     const references = [model, tub].filter((row): row is NonNullable<typeof row> => Boolean(row));
     const prompt = buildDirectFramePrompt(plan, { model: Boolean(model), product: Boolean(tub) });
     const image = references.length
@@ -295,7 +308,7 @@ export async function runDirectVideo(projectId: string): Promise<string> {
         script: project.directScript,
         context: project.directContext,
         durationSeconds: project.durationSeconds ?? DIRECT_DURATION.default,
-        withModelReference: project.product !== "ninguno",
+        withModelReference: true,
         model: project.model ?? undefined,
       });
       await prisma.videoProject.update({
@@ -306,7 +319,7 @@ export async function runDirectVideo(projectId: string): Promise<string> {
 
     const firstFrame = project.frames.find((frame) => frame.sceneIndex === 0 && frame.position === "inicio");
     if (firstFrame?.status !== "READY") {
-      const frame = await generateFirstFrame(projectId, plan, project.product);
+      const frame = await generateFirstFrame(projectId, plan, project.product, directModelProduct(project));
       if (frame.status !== "READY") throw new Error(`La imagen inicial falló: ${frame.error ?? ""}`);
     }
 

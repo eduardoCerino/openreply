@@ -17,6 +17,7 @@ type RowStatus = "PENDING" | "GENERATING" | "READY" | "FAILED";
 interface DirectProject extends PublishProject {
   mode: string;
   product: string;
+  modelProduct: string | null;
   durationSeconds: number | null;
   directScript: string | null;
   directContext: string | null;
@@ -242,10 +243,11 @@ export default function DirectVideoReviewPage() {
             <StatusBox status={frame?.status} error={frame?.error} waiting={plan ? "En cola" : "Esperando el plan"} />
           )}
           <div className="space-y-2">
-            <p className={`text-xs font-medium ${project.product === "ninguno" ? "text-error" : "text-foreground"}`}>
-              {project.product === "ninguno"
-                ? "Sin foto de modelo: con «Ningún producto» la persona se inventa a partir del contexto."
-                : `Con la foto de la modelo de ${PRODUCT_LABEL[project.product] ?? project.product} (Fotos de referencia).`}
+            <p className="text-xs font-medium text-foreground">
+              {(() => {
+                const owner = project.product !== "ninguno" ? project.product : project.modelProduct ?? "creatina";
+                return `Con la foto de la modelo de ${(PRODUCT_LABEL[owner] ?? owner).toLowerCase()} (Fotos de referencia).`;
+              })()}
             </p>
             {plan && <p className="text-xs text-muted whitespace-pre-line">{plan.firstFramePrompt}</p>}
           </div>
