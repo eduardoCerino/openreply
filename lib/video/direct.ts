@@ -6,7 +6,14 @@ import { del } from "@vercel/blob";
 import { Prisma } from "@/app/generated/prisma/client";
 import { prisma } from "@/lib/db/client";
 import { generateImage, generateStructured, generateWithReferences } from "@/lib/blog/openai";
-import { DEFAULT_VIDEO_TEXT_MODEL, FRAME_SIZE, productLabelSpec, videoImageModel } from "@/lib/video/constants";
+import {
+  CLIP_ANATOMY_RULE,
+  CLIP_NO_TEXT_RULE,
+  DEFAULT_VIDEO_TEXT_MODEL,
+  FRAME_SIZE,
+  productLabelSpec,
+  videoImageModel,
+} from "@/lib/video/constants";
 import { generateClipVideo } from "@/lib/video/gateway-video";
 import { prepareRender, renderVideo } from "@/lib/video/render";
 
@@ -92,6 +99,7 @@ Split the script into the requested number of consecutive parts with the given d
 - Repeat in every part the global requirements that apply to it (language, voice, delivery, audio requirements).
 - From the second part on, state that she continues speaking immediately from the first frame, mid-conversation, with no greeting, pause or restart, in the same continuous recording.
 - Keep stage directions (gestures, expressions) with the lines they belong to.
+- Drop every instruction to show on-screen text, captions, subtitles or titles: the video model must not write any text (subtitles are added in editing). Keep the spoken words.
 With a single part, return the script unchanged apart from making the duration match.
 
 Also describe the first frame from the context, as a still photograph.`;
@@ -157,6 +165,7 @@ export function buildDirectFramePrompt(
       : "No supplement tub, bottle or packaging in the frame.",
     references.product ? productLabelSpec(product) : "",
     `Scene: ${plan.firstFramePrompt}`,
+    CLIP_ANATOMY_RULE,
     references.product
       ? "No on-screen text, captions, subtitles or watermarks. The only text in the frame is the tub's own label."
       : "No on-screen text, captions, subtitles, watermarks or logos.",
@@ -170,6 +179,8 @@ export function buildDirectClipPrompt(context: string, plan: DirectPlan, index: 
   const segment = plan.segments[index];
   const total = plan.segments.length;
   return [
+    CLIP_NO_TEXT_RULE,
+    "",
     total > 1
       ? `PART ${index + 1} OF ${total} of one continuous recording. This clip lasts exactly ${segment.seconds} seconds, vertical 9:16.${
           index > 0
@@ -181,6 +192,9 @@ export function buildDirectClipPrompt(context: string, plan: DirectPlan, index: 
     context.trim(),
     "",
     segment.script.trim(),
+    "",
+    CLIP_ANATOMY_RULE,
+    CLIP_NO_TEXT_RULE,
   ].join("\n");
 }
 

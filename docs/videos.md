@@ -294,7 +294,9 @@ En **Videos → Video directo** (`/videos/directo`) pegas un guion ya escrito y 
   - **Regenerar imagen**, que rehace también las partes.
   - **Regenerar parte N**, que rehace también las siguientes.
   - **Volver a dividir** el guion.
-- **Variables:** `OPENAI_API_KEY`, `AI_GATEWAY_API_KEY` y `BLOB_READ_WRITE_TOKEN`, más ffmpeg en el worker.
+- **Sin texto de la IA:** cada prompt de clip prohíbe texto en pantalla (subtítulos, títulos, letreros), al principio y al final, y el plan quita del guion cualquier instrucción de texto en pantalla. También pide anatomía natural: dos brazos y dos manos; en selfie, una mano sostiene el teléfono y solo la otra hace gestos (`CLIP_NO_TEXT_RULE` y `CLIP_ANATOMY_RULE` en `lib/video/constants.ts`). Si aun así sale mal, usa **Regenerar parte N**.
+- **Subtítulos** (casilla en el formulario, activada por defecto; `VideoProject.subtitles`): se ponen en edición, no los genera la IA de video. Al unir el video, el worker saca el audio, lo transcribe con `whisper-1` (tiempos por palabra; OpenAI lo mantiene hasta el 26 de febrero de 2027) usando el diálogo del guion como guía, y los agrupa en frases de hasta 3 palabras. Luego ffmpeg los dibuja desde un archivo `.ass`: Montserrat en negrita, blanco con borde negro, en el tercio inferior por encima de los botones de Reels (`lib/video/subtitles.ts`). La marca siempre se escribe Peach Perfect. **Volver a unir** rehace el video y sus subtítulos. Los videos con guion también llevan subtítulos.
+- **Variables:** `OPENAI_API_KEY`, `AI_GATEWAY_API_KEY` y `BLOB_READ_WRITE_TOKEN`, más ffmpeg y la fuente Montserrat (`fonts-montserrat`) en el worker.
 
 ## Pendiente (siguientes fases)
 

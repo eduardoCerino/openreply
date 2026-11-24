@@ -18,6 +18,7 @@ interface DirectProject extends PublishProject {
   mode: string;
   product: string;
   modelProduct: string | null;
+  subtitles: boolean;
   durationSeconds: number | null;
   directScript: string | null;
   directContext: string | null;
@@ -143,7 +144,9 @@ export default function DirectVideoReviewPage() {
           : clipsReady < segments.length
           ? `Generando el video: parte ${Math.min(clipsReady + 1, segments.length)} de ${segments.length}…`
           : project.render?.status !== "READY"
-            ? "Uniendo las partes en el video final…"
+            ? project.subtitles
+              ? "Uniendo las partes y poniendo los subtítulos…"
+              : "Uniendo las partes en el video final…"
             : "Video listo.";
 
   return (
@@ -154,7 +157,7 @@ export default function DirectVideoReviewPage() {
         </Link>
         <h1 className="text-xl font-semibold text-foreground">Video directo</h1>
         <p className="text-sm text-muted">
-          {project.durationSeconds ?? "?"} s · {PRODUCT_LABEL[project.product] ?? project.product} · 720p vertical · con audio
+          {project.durationSeconds ?? "?"} s · {PRODUCT_LABEL[project.product] ?? project.product} · 720p vertical · con audio{project.subtitles ? " · con subtítulos" : ""}
         </p>
       </div>
 
@@ -314,7 +317,8 @@ export default function DirectVideoReviewPage() {
           project={{ ...project, script: plan?.caption ? { caption: plan.caption, hashtags: plan.hashtags } : null }}
           busy={busy}
           act={act}
-          allowRender={false}
+          // Only "Volver a unir" (e.g. to redo the subtitles): the first join runs by itself.
+          allowRender={project.render.status === "READY" || project.render.status === "FAILED"}
         />
       )}
     </div>

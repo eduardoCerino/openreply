@@ -20,6 +20,7 @@ const createSchema = z.object({
   product: z.enum(DIRECT_PRODUCTS).default("ninguno"),
   /** Whose model photo to use when there is no product; with a product it is always that product's model. */
   modelProduct: z.enum(DIRECT_MODELS).default("creatina"),
+  subtitles: z.boolean().default(true),
 });
 
 /** Direct videos, newest first. */
@@ -83,6 +84,7 @@ export async function POST(request: NextRequest) {
       directContext: videoContext,
       durationSeconds,
       modelProduct,
+      subtitles: parsed.data.subtitles,
       model: DEFAULT_VIDEO_TEXT_MODEL,
       createdById: context.userId,
     },

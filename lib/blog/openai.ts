@@ -201,3 +201,58 @@ export async function generateCoverImage(
     .toBuffer();
   return { data, mimeType: "image/webp" };
 }
+
+export interface TranscribedWord {
+  word: string;
+  start: number;
+  end: number;
+}
+
+/**
+ * Speech-to-text with per-word timings, for burned-in subtitles. Only
+ * whisper-1 returns word timestamps (OpenAI keeps it until 2027-02-26).
+ */
+export async function transcribeWords({
+  audio,
+  filename,
+  mimeType,
+  language,
+  prompt,
+}: {
+  audio: Uint8Array;
+  filename: string;
+  mimeType: string;
+  language?: string;
+  /** Expected wording (the script), so names and brands come out right. */
+  prompt?: string;
+}): Promise<TranscribedWord[]> {
+  const result = await withRetry(
+    "OpenAI transcription",
+    async () => {
+      const form = new FormData();
+      form.append("file", new Blob([Buffer.from(audio)], { type: mimeType }), filename);
+      form.append("model", "whisper-1");
+      form.append("response_format", "verbose_json");
+      form.append("timestamp_granularities[]", "word");
+      if (language) form.append("language", language);
+      if (prompt) form.append("prompt", prompt);
+      const response = await fetch(`${OPENAI_BASE}/audio/transcriptions`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${apiKey()}` },
+        body: form,
+        signal: AbortSignal.timeout(180_000),
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new HttpError(
+          `OpenAI /audio/transcriptions ${response.status}: ${data?.error?.message ?? response.statusText}`,
+          response.status,
+          parseRetryAfter(response.headers.get("retry-after"))
+        );
+      }
+      return data as { words?: TranscribedWord[] };
+    },
+    { attempts: 3, baseDelayMs: 3000 }
+  );
+  return (result.words ?? []).filter((word) => word.word.trim() && word.end > word.start);
+}

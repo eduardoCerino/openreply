@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/db/client";
-import { CLIP_SECONDS } from "@/lib/video/constants";
+import { CLIP_ANATOMY_RULE, CLIP_NO_TEXT_RULE, CLIP_SECONDS } from "@/lib/video/constants";
 import type { VideoScene, VideoScript } from "@/lib/video/prompt";
 import { CLIP_SETTINGS, generateClipVideo } from "@/lib/video/gateway-video";
 
@@ -32,7 +32,9 @@ export function buildClipPrompt(script: VideoScript, scene: VideoScene): string 
     scene.shots?.length ? `Camera: ${scene.shots.join(" Then ")}` : "",
     actions ? `Actions: ${actions}.` : "",
     `Audio: she speaks natural Mexican Spanish, warm and conversational, lip-synced to her mouth, saying exactly: ${spoken}.${pause}`,
-    "Only room ambience under the voice, no background music. No on-screen text, captions or watermarks.",
+    "Only room ambience under the voice, no background music.",
+    CLIP_ANATOMY_RULE,
+    CLIP_NO_TEXT_RULE,
     script.visualStyle ? `Look: ${script.visualStyle}.` : "",
   ]
     .filter(Boolean)

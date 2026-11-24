@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/db/client";
 import { generateWithReferences } from "@/lib/blog/openai";
 import {
+  CLIP_ANATOMY_RULE,
   FRAME_SIZE,
   productLabelSpec,
   videoImageModel,
@@ -62,6 +63,7 @@ export function buildFramePrompt({
       ? "This is the LAST frame of the same continuous shot that begins with the START FRAME: same location, lighting, outfit and camera setup, after the movement described below."
       : "",
     `Scene: ${framePrompt}`,
+    CLIP_ANATOMY_RULE,
     shot ? `Camera: ${shot}.` : "",
     script.visualStyle ? `Visual style: ${script.visualStyle}.` : "",
     hasProduct

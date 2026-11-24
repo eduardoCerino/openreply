@@ -60,6 +60,16 @@ export function productLabelSpec(product: string | null | undefined): string {
   return product ? (PRODUCT_LABEL_SPECS[product] ?? "") : "";
 }
 
+/**
+ * Rules every video clip prompt ends with. The video model must never write
+ * text (subtitles are burned in afterwards, lib/video/subtitles.ts) and tends
+ * to add a third arm in selfie shots.
+ */
+export const CLIP_NO_TEXT_RULE =
+  "ABSOLUTELY NO TEXT IN THE VIDEO: no subtitles, captions, titles, on-screen words, letters, numbers, stickers or watermarks at any moment, even if the script mentions on-screen text. Subtitles are added later in editing.";
+export const CLIP_ANATOMY_RULE =
+  "Natural anatomy at all times: she has exactly two arms and two hands with five fingers each. In a selfie, one arm holds the phone (extended toward the camera or out of frame) and only her other hand gestures. Never an extra arm, hand or fingers, never limbs appearing from nowhere.";
+
 export const FRAME_POSITIONS = ["inicio", "final"] as const;
 export type FramePosition = (typeof FRAME_POSITIONS)[number];
 // Vertical 9:16; the image model needs sides divisible by 16.

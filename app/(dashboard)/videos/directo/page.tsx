@@ -61,6 +61,7 @@ export default function DirectVideoPage() {
   const [duration, setDuration] = useState(DURATION.default);
   const [product, setProduct] = useState<(typeof PRODUCTS)[number]["id"]>("ninguno");
   const [modelProduct, setModelProduct] = useState<(typeof MODELS)[number]["id"]>("creatina");
+  const [subtitles, setSubtitles] = useState(true);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [rows, setRows] = useState<DirectRow[]>([]);
@@ -86,7 +87,7 @@ export default function DirectVideoPage() {
     const response = await fetch("/api/videos/direct", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ script, context, durationSeconds: duration, product, modelProduct }),
+      body: JSON.stringify({ script, context, durationSeconds: duration, product, modelProduct, subtitles }),
     });
     const payload = await response.json().catch(() => ({ success: false, error: "No se pudo crear el video" }));
     setSubmitting(false);
@@ -199,6 +200,17 @@ export default function DirectVideoPage() {
             </label>
           )}
         </div>
+
+        <label className="flex items-start gap-2 text-sm text-foreground">
+          <input type="checkbox" checked={subtitles} onChange={(event) => setSubtitles(event.target.checked)} className="mt-1" />
+          <span>
+            Subtítulos
+            <span className="block text-xs text-muted">
+              Se agregan al final, en edición: se transcribe el audio y se ponen en letra blanca con borde negro. La IA de video
+              nunca escribe texto.
+            </span>
+          </span>
+        </label>
 
         <div className="flex flex-wrap items-center gap-3 border-t border-border pt-4">
           <button type="submit" disabled={submitting} className={primaryButton}>

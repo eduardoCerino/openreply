@@ -627,6 +627,9 @@ model VideoProject {
   // Direct videos always use a model photo: the product's own model, or the
   // one picked here ("creatina" / "inositol") when there is no product.
   modelProduct   String?
+  // Burn subtitles into the final video, transcribed from its audio
+  // (lib/video/subtitles.ts). The video model itself never writes text.
+  subtitles      Boolean @default(true)
   createdAt   DateTime           @default(now())
   updatedAt   DateTime           @updatedAt
   frames      VideoFrame[]

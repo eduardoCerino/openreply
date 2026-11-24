@@ -81,7 +81,7 @@ export function PublishPanel({
   project: PublishProject;
   busy: boolean;
   act: (path: string, init: RequestInit, onSuccess?: () => void) => Promise<void>;
-  /** Direct videos join their clips by themselves, so the join button is hidden. */
+  /** Direct videos join their clips by themselves; they only show "Volver a unir" once joined. */
   allowRender?: boolean;
 }) {
   const render = project.render ?? null;

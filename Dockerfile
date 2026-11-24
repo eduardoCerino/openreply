@@ -35,9 +35,9 @@ ENV NODE_ENV=production
 
 # scripts/cron.sh calls the /api/cron routes with wget, which node:20-slim does
 # not include. The video worker joins the scene clips with ffmpeg
-# (lib/video/render.ts).
+# (lib/video/render.ts) and burns subtitles in Montserrat (lib/video/subtitles.ts).
 RUN apt-get update \
- && apt-get install -y --no-install-recommends wget ca-certificates ffmpeg \
+ && apt-get install -y --no-install-recommends wget ca-certificates ffmpeg fonts-montserrat fontconfig \
  && rm -rf /var/lib/apt/lists/*
 
 COPY --from=build /app/node_modules ./node_modules
