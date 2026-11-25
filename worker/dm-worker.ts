@@ -53,6 +53,20 @@ async function heartbeat() {
 void heartbeat();
 const heartbeatTimer = setInterval(() => void heartbeat(), HEARTBEAT_INTERVAL_MS);
 
+// Memory in the Railway logs, to tell real growth from lazy GC: heap is JS
+// objects, external/arrayBuffers are Buffers (images, clips), rss is the
+// whole process as Railway bills it.
+const MEMORY_LOG_INTERVAL_MS = 30 * 60_000;
+const mb = (bytes: number) => Math.round(bytes / 1048576);
+function logMemory() {
+  const { rss, heapUsed, heapTotal, external, arrayBuffers } = process.memoryUsage();
+  console.log(
+    `[DM Worker] Memory rss=${mb(rss)}MB heap=${mb(heapUsed)}/${mb(heapTotal)}MB external=${mb(external)}MB arrayBuffers=${mb(arrayBuffers)}MB`
+  );
+}
+logMemory();
+const memoryTimer = setInterval(logMemory, MEMORY_LOG_INTERVAL_MS);
+
 async function poll() {
   try {
     const attached = await attachPendingNextReels();
@@ -74,6 +88,7 @@ async function shutdown(signal: string) {
   console.log(`[DM Worker] ${signal} received, closing worker`);
   clearInterval(heartbeatTimer);
   clearInterval(pollTimer);
+  clearInterval(memoryTimer);
   await worker.close();
   await (await blogWorkerPromise)?.close();
   await videoWorker?.close();

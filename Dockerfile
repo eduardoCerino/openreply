@@ -2,7 +2,7 @@
 #
 # Two runtime processes ship from this image:
 #   - web:    `npm run start`  → next start (needs .next + node_modules)
-#   - worker: `npm run worker` → tsx worker/dm-worker.ts (runs RAW TypeScript,
+#   - worker: `npm run worker` → node --import tsx worker/dm-worker.ts (RAW TypeScript,
 #             not a bundled output — needs the generated Prisma client, the
 #             full source tree under lib/ and worker/, and tsconfig.json for
 #             the `@/*` path alias tsx resolves at runtime)
@@ -32,6 +32,11 @@ RUN npm run build
 FROM node:20-slim AS runner
 WORKDIR /app
 ENV NODE_ENV=production
+# glibc gives every thread its own malloc arena; with sharp, pg and ffmpeg
+# buffers the freed memory stays fragmented across them and RSS only climbs.
+# Two arenas keep it returning to the OS (the worker went 225 MB -> 900 MB
+# over a week without it).
+ENV MALLOC_ARENA_MAX=2
 
 # scripts/cron.sh calls the /api/cron routes with wget, which node:20-slim does
 # not include. The video worker joins the scene clips with ffmpeg

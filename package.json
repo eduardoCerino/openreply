@@ -10,7 +10,7 @@
     "lint": "eslint",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate deploy",
-    "worker": "tsx worker/dm-worker.ts",
+    "worker": "node --max-old-space-size=384 --import tsx worker/dm-worker.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "blog:run": "tsx scripts/blog-run.ts"
