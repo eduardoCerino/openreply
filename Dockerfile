@@ -41,9 +41,13 @@ ENV MALLOC_ARENA_MAX=2
 # scripts/cron.sh calls the /api/cron routes with wget, which node:20-slim does
 # not include. The video worker joins the scene clips with ffmpeg
 # (lib/video/render.ts) and burns subtitles in Montserrat (lib/video/subtitles.ts).
+# Debian bookworm has no Montserrat package, so the font ships in fonts/ (SIL
+# OFL, see fonts/OFL.txt) and is registered with fontconfig for libass.
 RUN apt-get update \
- && apt-get install -y --no-install-recommends wget ca-certificates ffmpeg fonts-montserrat fontconfig \
+ && apt-get install -y --no-install-recommends wget ca-certificates ffmpeg fontconfig \
  && rm -rf /var/lib/apt/lists/*
+COPY fonts/ /usr/share/fonts/truetype/montserrat/
+RUN fc-cache -f
 
 COPY --from=build /app/node_modules ./node_modules
 COPY --from=build /app/.next ./.next
